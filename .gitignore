@@ -5,6 +5,12 @@ data/
 *.log
 .DS_Store
 Thumbs.db
+.claude/
+
+# Python (apps/ai-service)
+.venv/
+__pycache__/
+*.pyc
 
 # Vendored offline binaries are large and platform-specific; restored by
 # offline-sdk/node/README.md's vendoring script, not committed as blobs.
