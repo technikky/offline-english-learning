@@ -65,6 +65,7 @@ function showLoggedIn(user) {
   loadNotebook();
   loadStudentAnalytics();
   loadGrammarTopics();
+  loadReadingPassages();
 }
 
 function showLoggedOut() {
@@ -104,6 +105,10 @@ function showLoggedOut() {
   document.getElementById("grammarTopicList").innerHTML = "";
   document.getElementById("grammarLessonDetail").classList.add("hidden");
   document.getElementById("grammarExerciseArea").innerHTML = "";
+  document.getElementById("readingPassageList").innerHTML = "";
+  document.getElementById("readingPassageDetail").classList.add("hidden");
+  document.getElementById("readingQuestions").innerHTML = "";
+  document.getElementById("readingResult").innerHTML = "";
   showChatTab();
 }
 
@@ -1139,18 +1144,29 @@ const GRAMMAR_LEVEL_LABELS = {
   advanced: "Advanced",
 };
 
+function showMainTab(tabName) {
+  const tabs = {
+    conversation: { btn: "tabConversationBtn", panel: "chatPanel" },
+    grammar: { btn: "tabGrammarBtn", panel: "grammarPanel" },
+    reading: { btn: "tabReadingBtn", panel: "readingPanel" },
+  };
+  for (const [name, ids] of Object.entries(tabs)) {
+    const isActive = name === tabName;
+    document.getElementById(ids.btn).classList.toggle("active", isActive);
+    document.getElementById(ids.panel).classList.toggle("hidden", !isActive);
+  }
+}
+
 function showChatTab() {
-  document.getElementById("tabConversationBtn").classList.add("active");
-  document.getElementById("tabGrammarBtn").classList.remove("active");
-  document.getElementById("chatPanel").classList.remove("hidden");
-  document.getElementById("grammarPanel").classList.add("hidden");
+  showMainTab("conversation");
 }
 
 function showGrammarTab() {
-  document.getElementById("tabConversationBtn").classList.remove("active");
-  document.getElementById("tabGrammarBtn").classList.add("active");
-  document.getElementById("chatPanel").classList.add("hidden");
-  document.getElementById("grammarPanel").classList.remove("hidden");
+  showMainTab("grammar");
+}
+
+function showReadingTab() {
+  showMainTab("reading");
 }
 
 async function loadGrammarTopics() {
@@ -1322,6 +1338,164 @@ document.getElementById("tabConversationBtn").addEventListener("click", showChat
 document.getElementById("tabGrammarBtn").addEventListener("click", showGrammarTab);
 document.getElementById("grammarBackBtn").addEventListener("click", closeGrammarTopic);
 document.getElementById("grammarNewExerciseBtn").addEventListener("click", generateGrammarExercise);
+
+// --- Reading Module (Stage 15) ---
+
+let currentReadingPassageId = null;
+let currentReadingQuestions = [];
+
+async function loadReadingPassages() {
+  const container = document.getElementById("readingPassageList");
+  try {
+    const [passagesRes, progressRes] = await Promise.all([
+      fetch(`${API_BASE}/reading/passages`, { headers: authHeaders() }),
+      fetch(`${API_BASE}/reading/progress`, { headers: authHeaders() }),
+    ]);
+    if (!passagesRes.ok) return;
+    const passages = await passagesRes.json();
+    const progress = progressRes.ok ? await progressRes.json() : { passages: [] };
+    const progressByPassage = new Map(progress.passages.map((p) => [p.passageId, p]));
+
+    container.innerHTML = "";
+    for (const passage of passages) {
+      const p = progressByPassage.get(passage.id);
+      const card = document.createElement("div");
+      card.className = "grammar-topic-card";
+      card.innerHTML = `
+        <span class="badge">${passage.cefrLevel}</span>
+        <h4>${passage.title}</h4>
+        <div style="font-size: 12px; opacity: 0.75">${passage.estimatedReadingMinutes} min read${
+          p ? ` · best score ${p.bestScore}%` : " · not read yet"
+        }</div>
+        <div class="topic-progress-bar"><div class="topic-progress-fill" style="width: ${p ? p.bestScore : 0}%"></div></div>
+      `;
+      card.addEventListener("click", () => openReadingPassage(passage.id));
+      container.appendChild(card);
+    }
+  } catch (err) {
+    container.innerHTML = "Could not reach the backend.";
+  }
+}
+
+async function openReadingPassage(passageId) {
+  const listEl = document.getElementById("readingPassageList");
+  const detailEl = document.getElementById("readingPassageDetail");
+  listEl.classList.add("hidden");
+  detailEl.classList.remove("hidden");
+  document.getElementById("readingPassageTitle").textContent = "Loading…";
+  document.getElementById("readingPassageContent").textContent = "";
+  document.getElementById("readingPassageSummary").textContent = "";
+  document.getElementById("readingVocabList").innerHTML = "";
+  document.getElementById("readingQuestions").innerHTML = "";
+  document.getElementById("readingResult").innerHTML = "";
+
+  try {
+    const res = await fetch(`${API_BASE}/reading/passages/${passageId}`, {
+      headers: authHeaders(),
+    });
+    if (!res.ok) {
+      document.getElementById("readingPassageTitle").textContent = "Could not load this passage.";
+      return;
+    }
+    const passage = await res.json();
+    currentReadingPassageId = passageId;
+    currentReadingQuestions = passage.questions;
+
+    document.getElementById("readingPassageTitle").textContent = `${passage.title} (${passage.cefrLevel})`;
+    document.getElementById("readingPassageContent").textContent = passage.content;
+    document.getElementById("readingPassageSummary").textContent = passage.summary;
+
+    const vocabList = document.getElementById("readingVocabList");
+    for (const word of passage.vocabularyWords) {
+      const chip = document.createElement("span");
+      chip.className = "reading-vocab-chip";
+      chip.textContent = word;
+      chip.title = "Click to add to your vocabulary notebook";
+      chip.addEventListener("click", async () => {
+        await addWordToNotebook(word, document.getElementById("readingResult"));
+      });
+      vocabList.appendChild(chip);
+    }
+
+    const questionsEl = document.getElementById("readingQuestions");
+    passage.questions.forEach((q, index) => {
+      const block = document.createElement("div");
+      block.className = "reading-question";
+      const questionText = document.createElement("p");
+      questionText.textContent = `${index + 1}. ${q.question}`;
+      block.appendChild(questionText);
+      for (const option of q.options) {
+        const label = document.createElement("label");
+        label.style.display = "block";
+        const input = document.createElement("input");
+        input.type = "radio";
+        input.name = `readingQuestion${index}`;
+        input.value = option;
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(" " + option));
+        block.appendChild(label);
+      }
+      questionsEl.appendChild(block);
+    });
+  } catch (err) {
+    document.getElementById("readingPassageTitle").textContent = "Could not reach the backend.";
+  }
+}
+
+function closeReadingPassage() {
+  document.getElementById("readingPassageList").classList.remove("hidden");
+  document.getElementById("readingPassageDetail").classList.add("hidden");
+  currentReadingPassageId = null;
+  loadReadingPassages();
+}
+
+async function listenToReadingPassage() {
+  const content = document.getElementById("readingPassageContent").textContent;
+  if (!content) return;
+  try {
+    const res = await fetch(`${API_BASE}/speech/synthesize`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ text: content }),
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    await playBase64Wav(data.audioBase64);
+  } catch (err) {
+    // non-critical path; fail silently
+  }
+}
+
+async function submitReadingAnswers() {
+  const resultEl = document.getElementById("readingResult");
+  resultEl.textContent = "";
+
+  const answers = currentReadingQuestions.map((_, index) => {
+    const selected = document.querySelector(`input[name="readingQuestion${index}"]:checked`);
+    return selected ? selected.value : "";
+  });
+
+  try {
+    const res = await fetch(`${API_BASE}/reading/passages/${currentReadingPassageId}/submit`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ answers }),
+    });
+    if (!res.ok) {
+      resultEl.textContent = "Could not submit answers.";
+      return;
+    }
+    const result = await res.json();
+    resultEl.textContent = `Score: ${result.score}% (${result.correctCount}/${result.totalQuestions} correct)`;
+  } catch (err) {
+    resultEl.textContent = "Could not reach the backend.";
+  }
+}
+
+document.getElementById("tabReadingBtn").addEventListener("click", showReadingTab);
+document.getElementById("readingBackBtn").addEventListener("click", closeReadingPassage);
+document.getElementById("readingListenBtn").addEventListener("click", listenToReadingPassage);
+document.getElementById("readingSubmitBtn").addEventListener("click", submitReadingAnswers);
 
 // --- Admin console (Stage 12) ---
 

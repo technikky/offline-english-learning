@@ -32,7 +32,7 @@ See [docs/04-repo-structure.md](docs/04-repo-structure.md).
 
 ## Current stage
 
-**v1.2.0 — post-v1.0.0 platform expansion, Stage 14 (Grammar learning module) complete.** All 12 originally-planned stages shipped as v1.0.0; development continues in further scoped stages per a master development brief expanding this into a full AI English Tutor platform (grammar/reading/listening/writing modules, quiz generator, multi-tenancy, and more — tracked stage by stage, same methodology as Stages 1–12). See [docs/21-stage14-plan.md](docs/21-stage14-plan.md) and [CHANGELOG.md](CHANGELOG.md) for the latest, or [docs/03-roadmap.md](docs/03-roadmap.md) for the original 12-stage history.
+**v1.3.0 — post-v1.0.0 platform expansion, Stage 15 (Reading module) complete.** All 12 originally-planned stages shipped as v1.0.0; development continues in further scoped stages per a master development brief expanding this into a full AI English Tutor platform (listening/writing modules, quiz generator, multi-tenancy, and more — tracked stage by stage, same methodology as Stages 1–12). See [docs/22-stage15-plan.md](docs/22-stage15-plan.md) and [CHANGELOG.md](CHANGELOG.md) for the latest, or [docs/03-roadmap.md](docs/03-roadmap.md) for the original 12-stage history.
 
 ## Guides
 

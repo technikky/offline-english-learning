@@ -190,6 +190,26 @@
         border-color: #dc2626;
         background: #451a1a;
       }
+      .reading-content {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 16px;
+        line-height: 1.7;
+        font-size: 15px;
+      }
+      .reading-vocab-chip {
+        display: inline-block;
+        background: #4338ca;
+        border-radius: 999px;
+        padding: 3px 10px;
+        margin: 3px 4px 3px 0;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .reading-question {
+        margin-bottom: 16px;
+      }
       #chatLog {
         flex: 1;
         overflow-y: auto;
@@ -685,6 +705,7 @@
         <div id="mainTabs" class="main-tabs">
           <button id="tabConversationBtn" class="main-tab active">💬 Conversation</button>
           <button id="tabGrammarBtn" class="main-tab">📘 Grammar</button>
+          <button id="tabReadingBtn" class="main-tab">📖 Reading</button>
         </div>
 
         <div id="chatPanel">
@@ -717,6 +738,33 @@
               </div>
               <div id="grammarExerciseArea"></div>
               <div id="grammarExerciseError" class="error"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="readingPanel" class="hidden">
+          <div id="readingPassageList" class="grammar-topic-list"></div>
+          <div id="readingPassageDetail" class="hidden">
+            <button id="readingBackBtn" class="secondary">← Back to passages</button>
+            <h2 id="readingPassageTitle"></h2>
+            <button id="readingListenBtn">🔊 Listen to passage</button>
+            <p id="readingPassageContent" class="reading-content"></p>
+
+            <div class="panel">
+              <h3>Summary</h3>
+              <p id="readingPassageSummary"></p>
+            </div>
+
+            <div class="panel">
+              <h3>Key vocabulary</h3>
+              <div id="readingVocabList"></div>
+            </div>
+
+            <div class="panel">
+              <h3>Comprehension check</h3>
+              <div id="readingQuestions"></div>
+              <button id="readingSubmitBtn">Submit answers</button>
+              <div id="readingResult"></div>
             </div>
           </div>
         </div>

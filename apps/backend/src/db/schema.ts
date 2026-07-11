@@ -187,3 +187,34 @@ export const grammarExerciseAttempts = sqliteTable("grammar_exercise_attempts", 
     .notNull()
     .default(sql`(current_timestamp)`),
 });
+
+// Stage 15: Reading Module. passageId references passages.ts's static
+// passage ids (not a DB foreign key -- the passage catalog isn't a table).
+// Comprehension questions/summary/vocabulary are generated once per passage
+// by the AI and cached here -- unlike grammar exercises, a reading
+// comprehension quiz should stay consistent for a given passage rather than
+// varying each attempt.
+export const readingComprehensionCache = sqliteTable("reading_comprehension_cache", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  passageId: text("passage_id").notNull().unique(),
+  summary: text("summary").notNull(),
+  vocabularyWords: text("vocabulary_words").notNull(), // JSON-encoded string[]
+  questions: text("questions").notNull(), // JSON-encoded ComprehensionQuestion[]
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
+
+export const readingResults = sqliteTable("reading_results", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  studentId: integer("student_id")
+    .notNull()
+    .references(() => users.id),
+  passageId: text("passage_id").notNull(),
+  score: integer("score").notNull(),
+  correctCount: integer("correct_count").notNull(),
+  totalQuestions: integer("total_questions").notNull(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});

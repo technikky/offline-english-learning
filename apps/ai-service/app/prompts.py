@@ -361,3 +361,71 @@ def parse_grammar_exercise_response(raw_text: str, exercise_type: str) -> dict:
         "correctAnswer": answer,
         "explanation": explanation,
     }
+
+
+# Stage 15: Reading Module comprehension generation. Uses a numbered-marker
+# format (Q1/OPTIONS1/ANSWER1 .. Q4/OPTIONS4/ANSWER4) rather than a single
+# repeated block, since that's easier for a small local model to follow
+# consistently than an open-ended "repeat this format N times" instruction.
+READING_COMPREHENSION_QUESTION_COUNT = 4
+
+
+def build_reading_comprehension_prompt(passage_content: str, cefr_level: str) -> list[dict]:
+    difficulty_text = DIFFICULTY_INSTRUCTIONS.get(cefr_level, DIFFICULTY_INSTRUCTIONS["B1"])
+
+    question_format = "\n".join(
+        f"Q{i}: <question {i} about the passage>\n"
+        f"OPTIONS{i}: <exactly 4 possible answers, comma-separated>\n"
+        f"ANSWER{i}: <the correct option, exactly as written in OPTIONS{i}>"
+        for i in range(1, READING_COMPREHENSION_QUESTION_COUNT + 1)
+    )
+
+    system = (
+        "You are an English reading comprehension tutor. Read the passage "
+        "below and create study material for a student. "
+        f"{difficulty_text}\n\n"
+        "Respond in exactly this format, with nothing before or after:\n"
+        "SUMMARY: <a 2-3 sentence summary of the passage>\n"
+        "VOCABULARY: <5-8 useful or challenging words from the passage, "
+        "comma-separated>\n"
+        f"{question_format}"
+    )
+    user = f"Passage:\n{passage_content}"
+    return [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
+
+
+def parse_reading_comprehension_response(raw_text: str) -> dict:
+    """Falls back to an empty question list (rather than raising) if a
+    question block fails to parse -- a passage with a shorter-than-usual
+    question set is still useful, unlike a 500 during a reading exercise."""
+    summary = _extract_marked_section(raw_text, "SUMMARY:", "VOCABULARY:")
+    vocabulary_raw = _extract_marked_section(raw_text, "VOCABULARY:", "Q1:")
+    vocabulary_words = [w.strip() for w in vocabulary_raw.split(",") if w.strip()]
+
+    questions = []
+    for i in range(1, READING_COMPREHENSION_QUESTION_COUNT + 1):
+        question_marker = f"Q{i}:"
+        options_marker = f"OPTIONS{i}:"
+        answer_marker = f"ANSWER{i}:"
+        next_marker = f"Q{i + 1}:" if i < READING_COMPREHENSION_QUESTION_COUNT else None
+
+        question_text = _extract_marked_section(raw_text, question_marker, options_marker)
+        options_raw = _extract_marked_section(raw_text, options_marker, answer_marker)
+        answer_text = _extract_marked_section(raw_text, answer_marker, next_marker)
+
+        if not question_text or not answer_text:
+            continue
+
+        options = [o.strip() for o in options_raw.split(",") if o.strip()]
+        questions.append(
+            {"question": question_text, "options": options, "correctAnswer": answer_text}
+        )
+
+    return {
+        "summary": summary or raw_text.strip(),
+        "vocabularyWords": vocabulary_words,
+        "questions": questions,
+    }

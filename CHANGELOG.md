@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.3.0 — Stage 15: Reading module
+
+- **New Reading Module** (previously nonexistent): 5 curated passages across CEFR A1-C1 (a simple park story up through an academic AI-ethics piece), each with an AI-generated summary, vocabulary highlights, and a 4-question comprehension quiz.
+- **Comprehension caching, deliberately different from Stage 14's grammar exercises**: a passage's quiz is generated once and cached (`reading_comprehension_cache`), not regenerated per read -- a reading test should stay consistent, unlike a grammar drill which should vary each attempt. Verified the cache actually prevents a second AI call on a repeat read.
+- **Audio playback reused existing infrastructure with zero new AI-service code**: "Listen to passage" calls the same `POST /speech/synthesize` (Piper TTS) built in Stage 9 for pronunciation practice -- a direct payoff of building shared, reusable AI service endpoints instead of one-off ones per feature.
+- New `reading_results` table + `GET /reading/progress` for per-passage best score and overall average, same aggregation pattern as Stage 8/14.
+- **Real finding**: same class of small-model quality limitation as Stage 14 -- one live-generated question had a duplicate option, and the vocabulary list over-included nearly every content word rather than a curated subset. Documented in `docs/22-stage15-plan.md`, not treated as a bug.
+- **Desktop UI**: new "📖 Reading" tab (third alongside Conversation/Grammar) -- passage cards with progress, full passage view with Listen button and clickable vocabulary chips (added directly to the existing notebook), and a comprehension quiz with live scoring. Verified end-to-end with the live LLM: real summary/questions generated, audio synthesis confirmed (200 OK), quiz answered and scored (75%, 3/4), progress updated correctly.
+- Backend: 64 tests passing (6 new). AI service: 24 pytest tests passing (4 new).
+
 ## v1.2.0 — Stage 14: Grammar learning module
 
 - **New Grammar Learning Module**: a curated 9-topic curriculum across beginner/intermediate/advanced (Present Simple, Past Simple, Articles, Prepositions, Present Perfect, Passive Voice, Conditionals, Modal Verbs of Deduction, Relative Clauses), each with an explanation and real examples. Curriculum is static/curated code, not AI-generated or a DB table — reliability for foundational teaching content matters more than variety there.
