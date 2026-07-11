@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'screens/connect_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
+import 'services/auth_session.dart';
 import 'services/server_config.dart';
 
 void main() {
@@ -23,26 +25,43 @@ class EnglishClassApp extends StatelessWidget {
   }
 }
 
-/// Decides whether to show the server-connect screen or go straight to the
-/// home screen, based on whether a server was previously configured.
+class _StartupState {
+  final ServerConfig? config;
+  final AuthSession? session;
+
+  _StartupState(this.config, this.session);
+}
+
+/// Decides which screen to land on based on whether a server has been
+/// configured and whether a login session already exists for it.
 class StartupGate extends StatelessWidget {
   const StartupGate({super.key});
 
+  Future<_StartupState> _load() async {
+    final config = await ServerConfig.load();
+    final session = config == null ? null : await AuthSession.load();
+    return _StartupState(config, session);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<ServerConfig?>(
-      future: ServerConfig.load(),
+    return FutureBuilder<_StartupState>(
+      future: _load(),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        final config = snapshot.data;
-        if (config == null) {
+
+        final state = snapshot.data!;
+        if (state.config == null) {
           return const ConnectScreen();
         }
-        return HomeScreen(config: config);
+        if (state.session == null) {
+          return LoginScreen(config: state.config!);
+        }
+        return HomeScreen(config: state.config!, session: state.session!);
       },
     );
   }

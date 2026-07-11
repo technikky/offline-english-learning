@@ -25,4 +25,4 @@ See [docs/04-repo-structure.md](docs/04-repo-structure.md).
 
 ## Current stage
 
-Stage 2 — Android client. See [docs/03-roadmap.md](docs/03-roadmap.md) and [CHANGELOG.md](CHANGELOG.md).
+Stage 3 — Authentication and user management. See [docs/06-stage3-plan.md](docs/06-stage3-plan.md) and [CHANGELOG.md](CHANGELOG.md).

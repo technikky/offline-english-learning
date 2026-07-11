@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
 import '../services/server_config.dart';
-import 'home_screen.dart';
+import 'login_screen.dart';
 
 /// Manual LAN server entry. Automatic discovery (mDNS/UDP broadcast for the
 /// school server) is a candidate follow-up once real deployments show
@@ -52,7 +52,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
       await ServerConfig.save(config);
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => HomeScreen(config: config)),
+        MaterialPageRoute(builder: (_) => LoginScreen(config: config)),
       );
     } catch (e) {
       setState(() => _error = 'Could not reach server at $host:$port');

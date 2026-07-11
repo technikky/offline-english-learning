@@ -12,7 +12,9 @@ class ServerConfig {
 
   const ServerConfig({required this.host, required this.port});
 
-  Uri healthUri() => Uri.parse('http://$host:$port/health');
+  Uri healthUri() => apiUri('/health');
+
+  Uri apiUri(String path) => Uri.parse('http://$host:$port$path');
 
   static Future<ServerConfig?> load() async {
     final prefs = await SharedPreferences.getInstance();

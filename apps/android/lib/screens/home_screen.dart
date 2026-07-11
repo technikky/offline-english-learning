@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
+import '../services/auth_session.dart';
 import '../services/server_config.dart';
 import 'connect_screen.dart';
+import 'login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final ServerConfig config;
+  final AuthSession session;
 
-  const HomeScreen({super.key, required this.config});
+  const HomeScreen({super.key, required this.config, required this.session});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -34,8 +37,18 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _logout() async {
+    await AuthSession.clear();
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => LoginScreen(config: widget.config)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final user = widget.session.user;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Offline English Learning'),
@@ -43,7 +56,9 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.settings),
             tooltip: 'Change server',
-            onPressed: () {
+            onPressed: () async {
+              await AuthSession.clear();
+              if (!context.mounted) return;
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(builder: (_) => const ConnectScreen()),
               );
@@ -56,6 +71,24 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user.displayName,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    Text('${user.email} — ${user.role}'),
+                    const SizedBox(height: 12),
+                    OutlinedButton(onPressed: _logout, child: const Text('Log out')),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -86,10 +119,9 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Padding(
                 padding: EdgeInsets.all(16),
                 child: Text(
-                  'Login and class features arrive in Stage 3 '
-                  '(Authentication and user management). This screen '
-                  'proves the Android client can reach the school\'s '
-                  'offline backend over the LAN.',
+                  'Class and lesson features arrive in later stages. This '
+                  'screen proves the Android client can log in against '
+                  'the school\'s offline backend over the LAN.',
                 ),
               ),
             ),

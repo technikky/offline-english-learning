@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Offline English Learning — Stage 1</title>
+    <title>Offline English Learning — Stage 3</title>
     <style>
       body {
         font-family: system-ui, sans-serif;
@@ -35,13 +35,70 @@
         background: #7f1d1d;
         color: #fecaca;
       }
+      input {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        margin: 8px 0;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid #334155;
+        background: #0f172a;
+        color: #e2e8f0;
+        font-size: 14px;
+      }
+      button {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: none;
+        background: #4338ca;
+        color: white;
+        font-size: 14px;
+        cursor: pointer;
+        margin-top: 8px;
+      }
+      button:hover {
+        background: #4f46e5;
+      }
+      button.secondary {
+        background: #334155;
+      }
+      .error {
+        color: #fca5a5;
+        font-size: 13px;
+        margin-top: 8px;
+        min-height: 16px;
+      }
+      .hidden {
+        display: none;
+      }
+      .profile-row {
+        display: flex;
+        justify-content: space-between;
+        margin: 4px 0;
+        font-size: 14px;
+      }
     </style>
   </head>
   <body>
     <div class="card">
       <h2>Offline AI English Learning System</h2>
-      <p>Stage 1: Desktop foundation</p>
       <div id="status" class="status">Checking backend…</div>
+
+      <div id="loginView">
+        <input id="email" type="email" placeholder="Email" autocomplete="username" />
+        <input id="password" type="password" placeholder="Password" autocomplete="current-password" />
+        <button id="loginBtn">Log in</button>
+        <div id="loginError" class="error"></div>
+      </div>
+
+      <div id="profileView" class="hidden">
+        <div class="profile-row"><span>Name</span><span id="profileName"></span></div>
+        <div class="profile-row"><span>Role</span><span id="profileRole"></span></div>
+        <div class="profile-row"><span>Email</span><span id="profileEmail"></span></div>
+        <button id="logoutBtn" class="secondary">Log out</button>
+      </div>
     </div>
     <script src="renderer.js"></script>
   </body>

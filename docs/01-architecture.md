@@ -86,10 +86,12 @@
 
 ## 7. Security model
 
-- Local JWT-based auth issued by the Node backend; passwords hashed with argon2.
-- RBAC: `admin`, `teacher`, `student` roles enforced via middleware on every route.
+- Local JWT-based auth issued by the Node backend; passwords hashed with argon2id (Stage 3). Access tokens are short-lived (15 min); refresh tokens are opaque, stored only as a hash, and rotate on every use.
+- RBAC: `admin`, `teacher`, `student` roles enforced via middleware (`authenticate` + `requireRole`) on every protected route (Stage 3).
+- **Offline admin bootstrap**: there is no email/SMS channel to deliver a first admin password through, so on first boot with an empty `users` table the backend generates one, writes it once to a local file (`data/admin-credentials.txt`), and logs a warning. All subsequent account creation is admin/teacher-mediated — this is the permanent design for password provisioning, not a stopgap (see [docs/06-stage3-plan.md](06-stage3-plan.md)).
+- The JWT signing secret is likewise generated on first boot and persisted to `data/jwt-secret.txt` (or overridden via `JWT_SECRET`), since there's no secrets manager to source one from in a fully offline deployment.
 - All traffic on LAN is HTTP; for school deployments a self-signed TLS cert is generated at install time so LAN traffic is encrypted (documented as optional-but-default-on for Stage 11 hardening).
 - SQLite file permissions restricted to the service account; nightly automated backups to `offline-sdk-data/backups/` with rotation.
-- Structured logging (pino) to local rotating files; no telemetry leaves the machine.
+- Structured logging (pino) to local rotating files; no telemetry leaves the machine. Client-side token storage (Android `shared_preferences`) is plaintext for now — encrypted storage is a Stage 11 hardening item, not a Stage 3 blocker.
 
 See [02-technology-selection.md](02-technology-selection.md) for the reasoning behind each technology choice, and [03-roadmap.md](03-roadmap.md) for how this architecture is built up incrementally.
