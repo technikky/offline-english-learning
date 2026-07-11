@@ -81,5 +81,26 @@ export function ensureSchema(): void {
       example TEXT,
       created_at TEXT NOT NULL DEFAULT (current_timestamp)
     );
+
+    CREATE TABLE IF NOT EXISTS vocabulary (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      word TEXT NOT NULL UNIQUE,
+      definition TEXT NOT NULL,
+      example TEXT NOT NULL,
+      synonyms TEXT NOT NULL,
+      antonyms TEXT NOT NULL,
+      cefr_level TEXT NOT NULL,
+      embedding BLOB NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (current_timestamp)
+    );
+
+    CREATE TABLE IF NOT EXISTS vocabulary_notebook (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id INTEGER NOT NULL REFERENCES users(id),
+      vocabulary_id INTEGER NOT NULL REFERENCES vocabulary(id),
+      source TEXT NOT NULL CHECK (source IN ('manual', 'recommended')),
+      created_at TEXT NOT NULL DEFAULT (current_timestamp),
+      UNIQUE (student_id, vocabulary_id)
+    );
   `);
 }

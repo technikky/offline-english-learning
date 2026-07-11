@@ -1,4 +1,4 @@
-import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
+import { sqliteTable, integer, text, blob } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 // Placeholder table proving the migration pipeline end-to-end (Stage 1).
@@ -94,6 +94,36 @@ export const grammarMistakes = sqliteTable("grammar_mistakes", {
   category: text("category").notNull(),
   explanation: text("explanation"),
   example: text("example"),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
+
+// Shared dictionary cache — one row per distinct word the AI has ever
+// explained across the whole school, not per-student. See docs/09-stage6-plan.md.
+export const vocabulary = sqliteTable("vocabulary", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  word: text("word").notNull().unique(),
+  definition: text("definition").notNull(),
+  example: text("example").notNull(),
+  synonyms: text("synonyms").notNull(), // JSON-encoded string[]
+  antonyms: text("antonyms").notNull(), // JSON-encoded string[]
+  cefrLevel: text("cefr_level").notNull(),
+  embedding: blob("embedding", { mode: "buffer" }).notNull(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
+
+export const vocabularyNotebook = sqliteTable("vocabulary_notebook", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  studentId: integer("student_id")
+    .notNull()
+    .references(() => users.id),
+  vocabularyId: integer("vocabulary_id")
+    .notNull()
+    .references(() => vocabulary.id),
+  source: text("source", { enum: ["manual", "recommended"] }).notNull(),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),
