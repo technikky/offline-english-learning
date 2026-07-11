@@ -104,3 +104,69 @@ def parse_grammar_explain_response(raw_text: str) -> tuple[str, str]:
         return explanation_part.strip(), example_part.strip()
 
     return raw_text.strip(), ""
+
+
+VOCABULARY_EXPLAIN_MARKERS = ("DEFINITION:", "EXAMPLE:", "SYNONYMS:", "ANTONYMS:", "CEFR:")
+
+
+def build_vocabulary_explain_prompt(word: str, difficulty_level: str) -> list[dict]:
+    difficulty_text = DIFFICULTY_INSTRUCTIONS.get(
+        difficulty_level, DIFFICULTY_INSTRUCTIONS["B1"]
+    )
+    system = (
+        "You are a helpful English vocabulary tutor. A student wants to "
+        f"understand the word they encountered. {difficulty_text}\n\n"
+        "Respond in exactly this format, with nothing before or after, one "
+        "item per line:\n"
+        "DEFINITION: <a short, clear definition>\n"
+        "EXAMPLE: <one example sentence using the word naturally>\n"
+        "SYNONYMS: <2-4 synonyms, comma-separated, or 'none' if there are none>\n"
+        "ANTONYMS: <2-4 antonyms, comma-separated, or 'none' if there are none>\n"
+        "CEFR: <the word's own intrinsic difficulty level, exactly one of "
+        "A1, A2, B1, B2, C1, C2>"
+    )
+    user = f'Word: "{word}"'
+    return [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
+
+
+def _extract_marked_section(raw_text: str, start_marker: str, end_marker: str | None) -> str:
+    if start_marker not in raw_text:
+        return ""
+    _, rest = raw_text.split(start_marker, 1)
+    if end_marker and end_marker in rest:
+        rest, _ = rest.split(end_marker, 1)
+    return rest.strip()
+
+
+def parse_vocabulary_explain_response(raw_text: str) -> dict:
+    """Lenient marker-based parse, same reasoning as grammar explain. Falls
+    back to empty/placeholder values per field rather than raising, since a
+    partially-parsed response is still more useful to the student than a 500."""
+    definition_m, example_m, synonyms_m, antonyms_m, cefr_m = VOCABULARY_EXPLAIN_MARKERS
+
+    definition = _extract_marked_section(raw_text, definition_m, example_m) or raw_text.strip()
+    example = _extract_marked_section(raw_text, example_m, synonyms_m)
+    synonyms_raw = _extract_marked_section(raw_text, synonyms_m, antonyms_m)
+    antonyms_raw = _extract_marked_section(raw_text, antonyms_m, cefr_m)
+    cefr_raw = _extract_marked_section(raw_text, cefr_m, None)
+
+    def parse_word_list(raw: str) -> list[str]:
+        if not raw or raw.strip().lower() == "none":
+            return []
+        return [w.strip() for w in raw.split(",") if w.strip()]
+
+    valid_cefr_levels = {"A1", "A2", "B1", "B2", "C1", "C2"}
+    cefr_level = cefr_raw.strip().upper()
+    if cefr_level not in valid_cefr_levels:
+        cefr_level = "B1"
+
+    return {
+        "definition": definition,
+        "example": example,
+        "synonyms": parse_word_list(synonyms_raw),
+        "antonyms": parse_word_list(antonyms_raw),
+        "cefrLevel": cefr_level,
+    }

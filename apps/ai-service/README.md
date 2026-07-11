@@ -1,6 +1,8 @@
-# AI Service (Stage 4 + 5)
+# AI Service (Stage 4 + 5 + 6)
 
-FastAPI service wrapping a local llama.cpp model for conversation practice and grammar-mistake explanations. See [docs/07-stage4-plan.md](../../docs/07-stage4-plan.md) and [docs/08-stage5-plan.md](../../docs/08-stage5-plan.md) for the design rationale.
+FastAPI service wrapping a local llama.cpp model for conversation practice, grammar-mistake explanations, and vocabulary lookups/embeddings. See [docs/07-stage4-plan.md](../../docs/07-stage4-plan.md), [docs/08-stage5-plan.md](../../docs/08-stage5-plan.md), and [docs/09-stage6-plan.md](../../docs/09-stage6-plan.md) for the design rationale.
+
+**Concurrency note**: every route that touches the LLM or the embedding model acquires a single process-wide lock (`app/inference_lock.py`) before doing so. FastAPI's sync `def` routes run in a threadpool, so without this lock, overlapping requests (e.g. a chat reply still streaming while a vocabulary-recommendation batch fires off several `/v1/embed`/`/v1/vocabulary/explain` calls) really do hit the same llama.cpp/ONNX session concurrently — this crashed the process during Stage 6 development. Since it's a single CPU-bound model anyway, serializing access costs no real throughput.
 
 ## Setup
 
@@ -25,8 +27,11 @@ GGUF file without any code changes.
 - `GET /health` — `{ "status": "ok", "modelLoaded": true }`
 - `POST /v1/chat` — body `{ messages: [{role, content}], scenario, difficultyLevel }`, streams newline-delimited JSON: one `{"token": "..."}` line per generated token, then a final `{"done": true, "fullText": "..."}` line.
 - `POST /v1/grammar/explain` — body `{ originalText, correctedText, ruleDescription, difficultyLevel }`, non-streaming (a short explanation doesn't need token-by-token delivery). Returns `{ explanation, example }`. Parses the model's `EXPLANATION:`/`EXAMPLE:`-marked output leniently rather than requiring strict JSON, since small local models aren't reliable at that.
+- `POST /v1/embed` — body `{ text }`. Returns `{ embedding: number[] }` (384-dim, `all-MiniLM-L6-v2` via `fastembed`/ONNX runtime — no PyTorch dependency).
+- `POST /v1/vocabulary/explain` — body `{ word, difficultyLevel }`. Non-streaming. Returns `{ definition, example, synonyms: string[], antonyms: string[], cefrLevel }`, same lenient marker-based parsing as grammar/explain.
 
 ## Config
 
 - `AI_MODEL_PATH` — path to the GGUF model file.
 - `AI_CONTEXT_SIZE` — context window size in tokens (default 4096).
+- `EMBEDDING_CACHE_DIR` — where the ONNX embedding model is cached (default `offline-sdk/ai-models/fastembed-cache/`).

@@ -120,3 +120,34 @@ export interface ExplainMistakeResponse {
   explanation: string;
   example: string;
 }
+
+export interface VocabularyDto {
+  id: number;
+  word: string;
+  definition: string;
+  example: string;
+  synonyms: string[];
+  antonyms: string[];
+  cefrLevel: CefrLevel;
+}
+
+export interface LookupWordRequest {
+  word: string;
+}
+
+export type NotebookSource = "manual" | "recommended";
+
+export interface NotebookEntryDto {
+  id: number;
+  source: NotebookSource;
+  createdAt: string;
+  vocabulary: VocabularyDto;
+}
+
+export interface SimilarWordsResponse {
+  words: VocabularyDto[];
+}
+
+export interface RecommendationsResponse {
+  words: VocabularyDto[];
+}

@@ -23,3 +23,24 @@ class GrammarExplainRequest(BaseModel):
 class GrammarExplainResponse(BaseModel):
     explanation: str
     example: str
+
+
+class EmbedRequest(BaseModel):
+    text: str
+
+
+class EmbedResponse(BaseModel):
+    embedding: list[float]
+
+
+class VocabularyExplainRequest(BaseModel):
+    word: str
+    difficultyLevel: str = "B1"
+
+
+class VocabularyExplainResponse(BaseModel):
+    definition: str
+    example: str
+    synonyms: list[str]
+    antonyms: list[str]
+    cefrLevel: str

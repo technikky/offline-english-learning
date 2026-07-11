@@ -23,6 +23,7 @@ function showLoggedIn(user) {
   document.getElementById("profileName").textContent = user.displayName;
   document.getElementById("profileRole").textContent = user.role;
   document.getElementById("profileEmail").textContent = user.email;
+  loadNotebook();
 }
 
 function showLoggedOut() {
@@ -36,6 +37,10 @@ function showLoggedOut() {
   document.getElementById("chatLog").innerHTML = "";
   document.getElementById("messageInput").disabled = true;
   document.getElementById("sendBtn").disabled = true;
+  document.getElementById("notebookList").innerHTML = "";
+  const wordsToLearn = document.getElementById("wordsToLearn");
+  wordsToLearn.innerHTML = "";
+  wordsToLearn.classList.add("hidden");
 }
 
 async function login() {
@@ -171,6 +176,169 @@ function renderCorrections(mistakes) {
   return container;
 }
 
+function renderNotebookDetail(vocab) {
+  const box = document.createElement("div");
+  box.className = "notebook-detail";
+
+  const def = document.createElement("div");
+  def.textContent = vocab.definition;
+  box.appendChild(def);
+
+  if (vocab.example) {
+    const example = document.createElement("div");
+    example.className = "example";
+    example.textContent = vocab.example;
+    box.appendChild(example);
+  }
+
+  if (vocab.synonyms && vocab.synonyms.length > 0) {
+    const synonyms = document.createElement("div");
+    synonyms.className = "synonyms";
+    synonyms.textContent = `Synonyms: ${vocab.synonyms.join(", ")}`;
+    box.appendChild(synonyms);
+  }
+
+  if (vocab.antonyms && vocab.antonyms.length > 0) {
+    const antonyms = document.createElement("div");
+    antonyms.textContent = `Antonyms: ${vocab.antonyms.join(", ")}`;
+    box.appendChild(antonyms);
+  }
+
+  return box;
+}
+
+function renderNotebookItem(entry) {
+  const item = document.createElement("div");
+  item.className = "notebook-item";
+
+  const row = document.createElement("div");
+  row.className = "notebook-item-row";
+
+  const wordSpan = document.createElement("span");
+  wordSpan.innerHTML =
+    `<span class="word">${entry.vocabulary.word}</span>` +
+    `<span class="cefr">${entry.vocabulary.cefrLevel}</span>`;
+
+  const removeBtn = document.createElement("button");
+  removeBtn.className = "remove-btn";
+  removeBtn.textContent = "Remove";
+  removeBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    removeFromNotebook(entry.id);
+  });
+
+  row.appendChild(wordSpan);
+  row.appendChild(removeBtn);
+  item.appendChild(row);
+
+  const detail = renderNotebookDetail(entry.vocabulary);
+  detail.classList.add("hidden");
+  item.appendChild(detail);
+
+  item.addEventListener("click", () => {
+    detail.classList.toggle("hidden");
+  });
+
+  return item;
+}
+
+async function loadNotebook() {
+  try {
+    const res = await fetch(`${API_BASE}/vocabulary/notebook`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!res.ok) return;
+
+    const entries = await res.json();
+    const list = document.getElementById("notebookList");
+    list.innerHTML = "";
+    for (const entry of entries) {
+      list.appendChild(renderNotebookItem(entry));
+    }
+  } catch (err) {
+    // silently ignore; the notebook is a convenience panel, not core flow
+  }
+}
+
+async function addWordToNotebook(word, errorEl) {
+  try {
+    const res = await fetch(`${API_BASE}/vocabulary/notebook`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ word }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      if (errorEl) errorEl.textContent = body.error || "Could not add word";
+      return;
+    }
+
+    await loadNotebook();
+  } catch (err) {
+    if (errorEl) errorEl.textContent = "Could not reach the backend.";
+  }
+}
+
+async function removeFromNotebook(entryId) {
+  try {
+    await fetch(`${API_BASE}/vocabulary/notebook/${entryId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    await loadNotebook();
+  } catch (err) {
+    // ignore; list will just look stale until next reload
+  }
+}
+
+async function loadRecommendations(conversationId) {
+  const container = document.getElementById("wordsToLearn");
+  try {
+    const res = await fetch(
+      `${API_BASE}/vocabulary/recommendations?conversationId=${conversationId}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
+    if (!res.ok) return;
+
+    const data = await res.json();
+    if (!data.words || data.words.length === 0) return;
+
+    container.innerHTML = "";
+    const label = document.createElement("span");
+    label.className = "label";
+    label.textContent = "Words to learn:";
+    container.appendChild(label);
+
+    for (const word of data.words) {
+      const chip = document.createElement("span");
+      chip.className = "word-chip";
+
+      const text = document.createElement("span");
+      text.textContent = word.word;
+      chip.appendChild(text);
+
+      const addBtn = document.createElement("button");
+      addBtn.textContent = "+ Add";
+      addBtn.addEventListener("click", async () => {
+        addBtn.disabled = true;
+        addBtn.textContent = "Added";
+        await addWordToNotebook(word.word, null);
+      });
+      chip.appendChild(addBtn);
+
+      container.appendChild(chip);
+    }
+
+    container.classList.remove("hidden");
+  } catch (err) {
+    // recommendations are a nice-to-have; fail silently
+  }
+}
+
 async function startConversation() {
   const scenario = document.getElementById("scenarioSelect").value;
   const errorEl = document.getElementById("conversationError");
@@ -197,6 +365,9 @@ async function startConversation() {
     document.getElementById("chatLog").innerHTML = "";
     document.getElementById("messageInput").disabled = false;
     document.getElementById("sendBtn").disabled = false;
+    const wordsToLearn = document.getElementById("wordsToLearn");
+    wordsToLearn.innerHTML = "";
+    wordsToLearn.classList.add("hidden");
     appendBubble("assistant", `New ${scenario.replace("_", " ")} conversation started. Say hello!`);
   } catch (err) {
     errorEl.textContent = "Could not reach the backend.";
@@ -269,6 +440,7 @@ async function sendMessage() {
     input.disabled = false;
     document.getElementById("sendBtn").disabled = false;
     input.focus();
+    if (currentConversationId) loadRecommendations(currentConversationId);
   }
 }
 
@@ -281,6 +453,22 @@ document.getElementById("startConversationBtn").addEventListener("click", startC
 document.getElementById("sendBtn").addEventListener("click", sendMessage);
 document.getElementById("messageInput").addEventListener("keydown", (e) => {
   if (e.key === "Enter") sendMessage();
+});
+document.getElementById("notebookAddBtn").addEventListener("click", async () => {
+  const input = document.getElementById("notebookWordInput");
+  const errorEl = document.getElementById("notebookError");
+  errorEl.textContent = "";
+  const word = input.value.trim();
+  if (!word) return;
+
+  input.disabled = true;
+  await addWordToNotebook(word, errorEl);
+  input.disabled = false;
+  input.value = "";
+  input.focus();
+});
+document.getElementById("notebookWordInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("notebookAddBtn").click();
 });
 
 checkHealth();

@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Offline English Learning — Stage 5</title>
+    <title>Offline English Learning — Stage 6</title>
     <style>
       * {
         box-sizing: border-box;
@@ -208,6 +208,104 @@
         font-style: italic;
         opacity: 0.85;
       }
+
+      #notebookAddRow {
+        display: flex;
+        gap: 6px;
+      }
+      #notebookAddRow input {
+        margin: 0;
+      }
+      #notebookAddRow button {
+        width: auto;
+        margin-top: 0;
+        white-space: nowrap;
+      }
+      #notebookList {
+        margin-top: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 260px;
+        overflow-y: auto;
+      }
+      .notebook-item {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .notebook-item-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .notebook-item .word {
+        font-weight: 600;
+      }
+      .notebook-item .cefr {
+        font-size: 10px;
+        background: #334155;
+        border-radius: 4px;
+        padding: 1px 5px;
+        margin-left: 6px;
+        opacity: 0.85;
+      }
+      .notebook-item .remove-btn {
+        width: auto;
+        margin-top: 0;
+        padding: 2px 6px;
+        font-size: 11px;
+        background: #7f1d1d;
+      }
+      .notebook-detail {
+        margin-top: 6px;
+        line-height: 1.4;
+        font-size: 12px;
+        opacity: 0.9;
+      }
+      .notebook-detail .example {
+        font-style: italic;
+        margin-top: 4px;
+      }
+      .notebook-detail .synonyms {
+        margin-top: 4px;
+      }
+
+      .words-to-learn {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+      }
+      .words-to-learn .label {
+        font-size: 12px;
+        opacity: 0.75;
+        margin-right: 4px;
+      }
+      .word-chip {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .word-chip button {
+        width: auto;
+        margin-top: 0;
+        padding: 1px 8px;
+        font-size: 11px;
+        background: #4338ca;
+      }
+      .word-chip button:disabled {
+        background: #334155;
+      }
     </style>
   </head>
   <body>
@@ -244,10 +342,19 @@
         </select>
         <button id="startConversationBtn">Start conversation</button>
         <div id="conversationError" class="error"></div>
+
+        <h3>Vocabulary notebook</h3>
+        <div id="notebookAddRow">
+          <input id="notebookWordInput" type="text" placeholder="Look up a word…" />
+          <button id="notebookAddBtn">Add</button>
+        </div>
+        <div id="notebookError" class="error"></div>
+        <div id="notebookList"></div>
       </div>
 
       <div id="main">
         <div id="chatLog"></div>
+        <div id="wordsToLearn" class="words-to-learn hidden"></div>
         <div id="composer">
           <input id="messageInput" type="text" placeholder="Type a message and press Enter…" disabled />
           <button id="sendBtn" disabled>Send</button>

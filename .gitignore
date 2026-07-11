@@ -19,3 +19,4 @@ offline-sdk/ai-models/*.gguf
 offline-sdk/speech-models/**/*.bin
 offline-sdk/speech-models/**/*.onnx
 offline-sdk/build-tools/*/
+offline-sdk/ai-models/fastembed-cache/

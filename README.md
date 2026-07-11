@@ -25,4 +25,4 @@ See [docs/04-repo-structure.md](docs/04-repo-structure.md).
 
 ## Current stage
 
-Stage 5 — Grammar correction engine. See [docs/08-stage5-plan.md](docs/08-stage5-plan.md) and [CHANGELOG.md](CHANGELOG.md).
+Stage 6 — Vocabulary learning system. See [docs/09-stage6-plan.md](docs/09-stage6-plan.md) and [CHANGELOG.md](CHANGELOG.md).

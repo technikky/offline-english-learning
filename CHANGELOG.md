@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.6.0 — Stage 6: Vocabulary learning system
+
+- AI Service: `POST /v1/embed` (384-dim vectors via `fastembed`/ONNX `all-MiniLM-L6-v2` — no PyTorch dependency, a lighter ONNX path than raw `sentence-transformers`) and `POST /v1/vocabulary/explain` (definition, example, synonyms, antonyms, and the word's own CEFR level, same lenient marker-based parsing as grammar/explain).
+- **Important robustness fix**: added a process-wide inference lock (`app/inference_lock.py`). Concurrent requests to the AI service (e.g. a recommendations batch firing off several embed/explain calls) were crashing the single llama.cpp/ONNX instance during development — FastAPI's threadpool really does run "concurrent" sync routes in parallel. All model-touching routes now serialize through one lock; no throughput lost since it's a single CPU-bound model anyway.
+- Backend: `vocabulary` (shared dictionary cache, one row per distinct word across the whole school, embeddings stored as blobs) and `vocabulary_notebook` (per-student) schema. `POST /vocabulary/lookup`, `POST /vocabulary/notebook`, `GET /vocabulary/notebook`, `DELETE /vocabulary/notebook/:id`, `GET /vocabulary/recommendations?conversationId=` (difficult-word heuristic over the AI's own replies, v1: length + stoplist), `GET /vocabulary/similar?word=` (brute-force cosine similarity over cached embeddings).
+- Two documented architecture deviations from the original tech-selection doc, both scale-aware simplifications: `fastembed` (ONNX) instead of `sentence-transformers`+PyTorch, and brute-force cosine similarity instead of `sqlite-vec` (a single school's vocabulary cache is small enough that indexed ANN search has no measurable benefit yet) — see `docs/09-stage6-plan.md`.
+- Desktop: a Vocabulary Notebook panel in the sidebar (manual lookup/add, expandable word detail, remove), and a "Words to learn" strip after each AI reply surfacing recommended words with one-click add.
+- Verified end-to-end via curl against the real embedding model and LLM: looked up "meticulous" (real definition/synonyms/antonyms/CEFR + a real embedding vector), confirmed `/vocabulary/similar` correctly ranks a semantically related word above an unrelated one, and confirmed conversation-based recommendations surface real candidate words while excluding ones already saved. 24 backend tests pass, including 8 new ones (AI service faked in tests, per the same reasoning as Stages 4–5).
+
 ## v0.5.0 — Stage 5: Grammar correction engine
 
 - Vendored LanguageTool 6.5 (fully offline, rule-based grammar checker) under `offline-sdk/build-tools/` (gitignored). Detects tenses, subject-verb agreement, articles, prepositions, punctuation, and more, with stable rule IDs/categories for later analytics.
