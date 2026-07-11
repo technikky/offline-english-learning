@@ -308,9 +308,42 @@
       }
 
       /* Teacher dashboard */
-      #teacherView {
+      #teacherView,
+      #adminView {
         display: flex;
         height: 100vh;
+      }
+      #adminSidebar {
+        width: 260px;
+        background: #1e293b;
+        padding: 20px;
+        border-right: 1px solid #334155;
+        overflow-y: auto;
+      }
+      #adminMain {
+        flex: 1;
+        padding: 24px;
+        overflow-y: auto;
+      }
+      .kv-table {
+        width: 100%;
+        font-size: 13px;
+      }
+      .kv-table td {
+        padding: 4px 8px;
+        border-bottom: 1px solid #334155;
+      }
+      .kv-table td:first-child {
+        opacity: 0.7;
+        width: 40%;
+      }
+      .badge.ok {
+        background: #14532d;
+        color: #bbf7d0;
+      }
+      .badge.down {
+        background: #451a1a;
+        color: #fecaca;
       }
       #teacherSidebar {
         width: 260px;
@@ -648,6 +681,71 @@
               <button id="downloadPdfBtn">Download PDF</button>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminView" class="hidden">
+      <div id="adminSidebar">
+        <div class="profile-row"><span>Name</span><span id="adminProfileName"></span></div>
+        <div class="profile-row"><span>Role</span><span id="adminProfileRole"></span></div>
+        <button id="adminLogoutBtn" class="secondary">Log out</button>
+      </div>
+
+      <div id="adminMain">
+        <h2>Admin console</h2>
+
+        <div class="panel">
+          <h3>System health</h3>
+          <button id="refreshHealthBtn">Refresh</button>
+          <table class="kv-table" id="systemHealthTable"></table>
+        </div>
+
+        <div class="panel">
+          <h3>Server configuration</h3>
+          <table class="kv-table" id="serverConfigTable"></table>
+        </div>
+
+        <div class="panel">
+          <h3>AI model management</h3>
+          <p style="font-size: 12px; opacity: 0.75; margin-top: -6px">
+            Selecting a model writes the choice for the AI service to pick up on its next restart — it does not hot-swap the running model.
+          </p>
+          <table class="data-table">
+            <thead>
+              <tr><th>Model file</th><th>Size</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody id="aiModelsBody"></tbody>
+          </table>
+          <div id="aiModelSelectError" class="error"></div>
+        </div>
+
+        <div class="panel">
+          <h3>Backup &amp; restore</h3>
+          <button id="createBackupBtn">Create backup now</button>
+          <div id="backupError" class="error"></div>
+          <table class="data-table">
+            <thead>
+              <tr><th>Filename</th><th>Size</th><th>Created</th><th></th></tr>
+            </thead>
+            <tbody id="backupsBody"></tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <h3>Create teacher / student account</h3>
+          <div class="inline-form">
+            <input id="newUserEmail" type="email" placeholder="Email" />
+            <input id="newUserName" type="text" placeholder="Display name" />
+            <input id="newUserPassword" type="password" placeholder="Initial password" />
+            <select id="newUserRole">
+              <option value="teacher">Teacher</option>
+              <option value="student">Student</option>
+            </select>
+            <button id="createUserBtn">Create</button>
+          </div>
+          <div id="createUserError" class="error"></div>
+          <div id="createUserSuccess" style="font-size: 12px; opacity: 0.85"></div>
         </div>
       </div>
     </div>

@@ -57,3 +57,65 @@ test("admin can create a teacher account; a student calling the same route is re
   });
   assert.equal(denied.statusCode, 403);
 });
+
+test("admin can read server config", async () => {
+  ensureSchema();
+  const passwordHash = await hashPassword("adminpass123");
+  const [admin] = await db
+    .insert(users)
+    .values({ email: "admin2@x.com", passwordHash, role: "admin", displayName: "Admin" })
+    .returning();
+
+  const app = buildApp();
+  const adminToken = signAccessToken({ sub: admin.id, role: "admin" });
+
+  const res = await app.inject({
+    method: "GET",
+    url: "/admin/config",
+    headers: { authorization: `Bearer ${adminToken}` },
+  });
+  assert.equal(res.statusCode, 200);
+  const body = res.json();
+  assert.equal(typeof body.port, "number");
+  assert.equal(typeof body.tlsEnabled, "boolean");
+});
+
+test("admin can list vendored AI models", async () => {
+  ensureSchema();
+  const passwordHash = await hashPassword("adminpass123");
+  const [admin] = await db
+    .insert(users)
+    .values({ email: "admin3@x.com", passwordHash, role: "admin", displayName: "Admin" })
+    .returning();
+
+  const app = buildApp();
+  const adminToken = signAccessToken({ sub: admin.id, role: "admin" });
+
+  const res = await app.inject({
+    method: "GET",
+    url: "/admin/ai-models",
+    headers: { authorization: `Bearer ${adminToken}` },
+  });
+  assert.equal(res.statusCode, 200);
+  assert.ok(Array.isArray(res.json()));
+});
+
+test("selecting a nonexistent AI model returns 404", async () => {
+  ensureSchema();
+  const passwordHash = await hashPassword("adminpass123");
+  const [admin] = await db
+    .insert(users)
+    .values({ email: "admin4@x.com", passwordHash, role: "admin", displayName: "Admin" })
+    .returning();
+
+  const app = buildApp();
+  const adminToken = signAccessToken({ sub: admin.id, role: "admin" });
+
+  const res = await app.inject({
+    method: "POST",
+    url: "/admin/ai-models/select",
+    headers: { authorization: `Bearer ${adminToken}` },
+    payload: { filename: "does-not-exist.gguf" },
+  });
+  assert.equal(res.statusCode, 404);
+});

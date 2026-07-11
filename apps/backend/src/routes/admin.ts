@@ -7,6 +7,10 @@ import { hashPassword } from "../auth/password";
 import { authenticate, requireRole } from "../auth/middleware";
 import { recordAuditEvent } from "../audit/log";
 import { createBackup, listBackups, restoreBackup } from "../admin/backup";
+import { getSystemHealth } from "../admin/systemHealth";
+import { getServerConfig } from "../admin/config";
+import { listAiModels, selectAiModel } from "../admin/aiModels";
+import type { SelectAiModelRequest } from "@englishclass/types";
 
 export function registerAdminRoutes(app: FastifyInstance): void {
   app.post<{ Body: CreateUserRequest }>(
@@ -93,6 +97,49 @@ export function registerAdminRoutes(app: FastifyInstance): void {
         userId: request.authUser!.sub,
         action: "backup_restored",
         detail: `filename=${request.params.filename}`,
+        ipAddress: request.ip,
+      });
+      return { ok: true };
+    },
+  );
+
+  app.get(
+    "/admin/system-health",
+    { preHandler: [authenticate, requireRole("admin")] },
+    async () => {
+      return getSystemHealth();
+    },
+  );
+
+  app.get(
+    "/admin/config",
+    { preHandler: [authenticate, requireRole("admin")] },
+    async () => {
+      return getServerConfig();
+    },
+  );
+
+  app.get(
+    "/admin/ai-models",
+    { preHandler: [authenticate, requireRole("admin")] },
+    async () => {
+      return listAiModels();
+    },
+  );
+
+  app.post<{ Body: SelectAiModelRequest }>(
+    "/admin/ai-models/select",
+    { preHandler: [authenticate, requireRole("admin")] },
+    async (request, reply) => {
+      try {
+        selectAiModel(request.body.filename);
+      } catch (err) {
+        return reply.code(404).send({ error: (err as Error).message });
+      }
+      await recordAuditEvent({
+        userId: request.authUser!.sub,
+        action: "ai_model_selected",
+        detail: `filename=${request.body.filename}`,
         ipAddress: request.ip,
       });
       return { ok: true };

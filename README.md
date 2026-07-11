@@ -25,7 +25,14 @@ See [docs/04-repo-structure.md](docs/04-repo-structure.md).
 
 ## Current stage
 
-Stage 11 — Testing and security improvements. See [docs/14-stage11-plan.md](docs/14-stage11-plan.md) and [CHANGELOG.md](CHANGELOG.md).
+**v1.0.0 — all 12 stages complete.** See [docs/15-stage12-plan.md](docs/15-stage12-plan.md) and [CHANGELOG.md](CHANGELOG.md) for the final stage, or [docs/03-roadmap.md](docs/03-roadmap.md) for the full history.
+
+## Guides
+
+- [Install guide](docs/16-install-guide.md) — setting the system up at a school.
+- [Admin guide](docs/17-admin-guide.md) — the admin console (system health, server config, AI model management, backup/restore, account creation).
+- [Teacher guide](docs/18-teacher-guide.md) — classes, rosters, assignments, mistake review, reports.
+- [Student guide](docs/19-student-guide.md) — conversation practice, grammar corrections, vocabulary, pronunciation practice.
 
 ## Security features (Stage 11)
 

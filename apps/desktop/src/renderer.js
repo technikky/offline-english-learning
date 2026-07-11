@@ -20,6 +20,18 @@ async function checkHealth() {
 function showLoggedIn(user) {
   document.getElementById("authScreen").classList.add("hidden");
 
+  if (user.role === "admin") {
+    document.getElementById("adminView").classList.remove("hidden");
+    document.getElementById("adminView").style.display = "flex";
+    document.getElementById("adminProfileName").textContent = user.displayName;
+    document.getElementById("adminProfileRole").textContent = user.role;
+    loadSystemHealth();
+    loadServerConfig();
+    loadAiModels();
+    loadBackups();
+    return;
+  }
+
   if (user.role === "teacher") {
     document.getElementById("teacherView").classList.remove("hidden");
     document.getElementById("teacherView").style.display = "flex";
@@ -46,6 +58,8 @@ function showLoggedOut() {
   document.getElementById("appView").style.display = "none";
   document.getElementById("teacherView").classList.add("hidden");
   document.getElementById("teacherView").style.display = "none";
+  document.getElementById("adminView").classList.add("hidden");
+  document.getElementById("adminView").style.display = "none";
   document.getElementById("authScreen").classList.remove("hidden");
   document.getElementById("email").value = "";
   document.getElementById("password").value = "";
@@ -64,6 +78,12 @@ function showLoggedOut() {
   document.getElementById("pronunciationTarget").value = "";
   document.getElementById("pronunciationResult").classList.add("hidden");
   document.getElementById("pronunciationResult").innerHTML = "";
+  document.getElementById("systemHealthTable").innerHTML = "";
+  document.getElementById("serverConfigTable").innerHTML = "";
+  document.getElementById("aiModelsBody").innerHTML = "";
+  document.getElementById("backupsBody").innerHTML = "";
+  document.getElementById("createUserError").textContent = "";
+  document.getElementById("createUserSuccess").textContent = "";
 }
 
 async function login() {
@@ -1086,6 +1106,214 @@ document.getElementById("notebookAddBtn").addEventListener("click", async () => 
 document.getElementById("notebookWordInput").addEventListener("keydown", (e) => {
   if (e.key === "Enter") document.getElementById("notebookAddBtn").click();
 });
+
+// --- Admin console (Stage 12) ---
+
+function fmtBytes(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+async function loadSystemHealth() {
+  const table = document.getElementById("systemHealthTable");
+  table.innerHTML = "<tr><td colspan='2'>Loading…</td></tr>";
+  try {
+    const res = await fetch(`${API_BASE}/admin/system-health`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const rows = [
+      ["Backend DB", data.backend.dbConnected],
+      ["Backend uptime", `${data.backend.uptimeSeconds}s`],
+      ["AI service", data.aiService.reachable],
+      ["AI model loaded", data.aiService.modelLoaded ?? "—"],
+      ["AI model path", data.aiService.modelPath ?? "—"],
+      ["AI thread count", data.aiService.threadCount ?? "—"],
+      ["LanguageTool", data.languageTool.reachable],
+    ];
+
+    table.innerHTML = "";
+    for (const [label, value] of rows) {
+      const tr = document.createElement("tr");
+      const badge =
+        typeof value === "boolean"
+          ? `<span class="badge ${value ? "ok" : "down"}">${value ? "OK" : "unreachable"}</span>`
+          : value;
+      tr.innerHTML = `<td>${label}</td><td>${badge}</td>`;
+      table.appendChild(tr);
+    }
+  } catch (err) {
+    table.innerHTML = "<tr><td colspan='2'>Could not reach the backend.</td></tr>";
+  }
+}
+
+async function loadServerConfig() {
+  const table = document.getElementById("serverConfigTable");
+  try {
+    const res = await fetch(`${API_BASE}/admin/config`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    table.innerHTML = "";
+    for (const [label, value] of [
+      ["Host", data.host],
+      ["Port", data.port],
+      ["TLS enabled", data.tlsEnabled],
+      ["Auth rate limit", `${data.rateLimitPerMinute}/minute`],
+      ["Database file", data.dbPath],
+    ]) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${label}</td><td>${value}</td>`;
+      table.appendChild(tr);
+    }
+  } catch (err) {
+    table.innerHTML = "<tr><td colspan='2'>Could not reach the backend.</td></tr>";
+  }
+}
+
+async function loadAiModels() {
+  const body = document.getElementById("aiModelsBody");
+  try {
+    const res = await fetch(`${API_BASE}/admin/ai-models`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const models = await res.json();
+    body.innerHTML = "";
+    for (const model of models) {
+      const row = document.createElement("tr");
+      const statusCell = model.isActive
+        ? `<span class="badge ok">active</span>`
+        : `<button data-filename="${model.filename}" class="select-model-btn">Select</button>`;
+      row.innerHTML = `<td>${model.filename}</td><td>${fmtBytes(model.sizeBytes)}</td><td>${
+        model.isActive ? "active" : ""
+      }</td><td>${model.isActive ? "" : statusCell}</td>`;
+      body.appendChild(row);
+    }
+    body.querySelectorAll(".select-model-btn").forEach((btn) => {
+      btn.addEventListener("click", () => selectAiModel(btn.dataset.filename));
+    });
+  } catch (err) {
+    body.innerHTML = "<tr><td colspan='4'>Could not reach the backend.</td></tr>";
+  }
+}
+
+async function selectAiModel(filename) {
+  const errorEl = document.getElementById("aiModelSelectError");
+  errorEl.textContent = "";
+  try {
+    const res = await fetch(`${API_BASE}/admin/ai-models/select`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ filename }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      errorEl.textContent = body.error || "Could not select model";
+      return;
+    }
+    errorEl.textContent = "";
+    await loadAiModels();
+  } catch (err) {
+    errorEl.textContent = "Could not reach the backend.";
+  }
+}
+
+async function loadBackups() {
+  const body = document.getElementById("backupsBody");
+  try {
+    const res = await fetch(`${API_BASE}/admin/backups`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const backups = await res.json();
+    body.innerHTML = "";
+    for (const backup of backups) {
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${backup.filename}</td><td>${fmtBytes(backup.sizeBytes)}</td><td>${new Date(
+        backup.createdAt,
+      ).toLocaleString()}</td><td><button data-filename="${backup.filename}" class="restore-backup-btn">Restore</button></td>`;
+      body.appendChild(row);
+    }
+    body.querySelectorAll(".restore-backup-btn").forEach((btn) => {
+      btn.addEventListener("click", () => restoreBackup(btn.dataset.filename));
+    });
+  } catch (err) {
+    body.innerHTML = "<tr><td colspan='4'>Could not reach the backend.</td></tr>";
+  }
+}
+
+async function createBackupNow() {
+  const errorEl = document.getElementById("backupError");
+  errorEl.textContent = "";
+  try {
+    const res = await fetch(`${API_BASE}/admin/backups`, {
+      method: "POST",
+      headers: authHeaders(),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      errorEl.textContent = body.error || "Could not create backup";
+      return;
+    }
+    await loadBackups();
+  } catch (err) {
+    errorEl.textContent = "Could not reach the backend.";
+  }
+}
+
+async function restoreBackup(filename) {
+  const errorEl = document.getElementById("backupError");
+  errorEl.textContent = "";
+  if (!confirm(`Restore "${filename}"? This overwrites all data added since that backup.`)) {
+    return;
+  }
+  try {
+    const res = await fetch(
+      `${API_BASE}/admin/backups/${encodeURIComponent(filename)}/restore`,
+      { method: "POST", headers: authHeaders() },
+    );
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      errorEl.textContent = body.error || "Could not restore backup";
+      return;
+    }
+    errorEl.textContent = "Restored. Some cached data may be stale until you log in again.";
+  } catch (err) {
+    errorEl.textContent = "Could not reach the backend.";
+  }
+}
+
+async function createAccount() {
+  const email = document.getElementById("newUserEmail").value.trim();
+  const displayName = document.getElementById("newUserName").value.trim();
+  const password = document.getElementById("newUserPassword").value;
+  const role = document.getElementById("newUserRole").value;
+  const errorEl = document.getElementById("createUserError");
+  const successEl = document.getElementById("createUserSuccess");
+  errorEl.textContent = "";
+  successEl.textContent = "";
+
+  try {
+    const res = await fetch(`${API_BASE}/admin/users`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ email, displayName, password, role }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      errorEl.textContent = body.error || "Could not create account";
+      return;
+    }
+    document.getElementById("newUserEmail").value = "";
+    document.getElementById("newUserName").value = "";
+    document.getElementById("newUserPassword").value = "";
+    successEl.textContent = `Created ${role} account for ${email}.`;
+  } catch (err) {
+    errorEl.textContent = "Could not reach the backend.";
+  }
+}
+
+document.getElementById("adminLogoutBtn").addEventListener("click", logout);
+document.getElementById("refreshHealthBtn").addEventListener("click", loadSystemHealth);
+document.getElementById("createBackupBtn").addEventListener("click", createBackupNow);
+document.getElementById("createUserBtn").addEventListener("click", createAccount);
 
 checkHealth();
 setInterval(checkHealth, 5000);

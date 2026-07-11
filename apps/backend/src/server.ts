@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import fastifyRateLimit from "@fastify/rate-limit";
+import fastifyCors from "@fastify/cors";
 import { readTlsOptions } from "./tls";
 import { ensureSchema } from "./db/client";
 import { registerHealthRoute } from "./routes/health";
@@ -30,6 +31,15 @@ async function main() {
     bodyLimit: 25 * 1024 * 1024,
     ...(https ? { https } : {}),
   });
+
+  // The desktop client's renderer loads from a file:// origin (and the
+  // Android client from its own app scheme), so every request is genuinely
+  // cross-origin from the backend's point of view -- without this, Chromium
+  // (which Electron embeds) blocks every fetch() with no server-side log at
+  // all, a real bug found and fixed in Stage 12 while building the admin
+  // console (see docs/15-stage12-plan.md). Auth here is bearer-token based,
+  // not cookies, so a permissive origin allowlist doesn't reopen CSRF.
+  await app.register(fastifyCors, { origin: true });
 
   // Global default is generous (this is a LAN app, not public internet); the
   // brute-force-relevant routes (login/refresh) set a much stricter override.

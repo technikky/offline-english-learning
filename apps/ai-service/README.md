@@ -1,6 +1,6 @@
-# AI Service (Stage 4 + 5 + 6 + 9 + 10 + 11)
+# AI Service (Stage 4 + 5 + 6 + 9 + 10 + 11 + 12)
 
-FastAPI service wrapping a local llama.cpp model for conversation practice, grammar-mistake explanations, vocabulary lookups/embeddings, and speech recognition/synthesis. See [docs/07-stage4-plan.md](../../docs/07-stage4-plan.md), [docs/08-stage5-plan.md](../../docs/08-stage5-plan.md), [docs/09-stage6-plan.md](../../docs/09-stage6-plan.md), [docs/12-stage9-plan.md](../../docs/12-stage9-plan.md), [docs/13-stage10-plan.md](../../docs/13-stage10-plan.md), and [docs/14-stage11-plan.md](../../docs/14-stage11-plan.md) for the design rationale.
+FastAPI service wrapping a local llama.cpp model for conversation practice, grammar-mistake explanations, vocabulary lookups/embeddings, and speech recognition/synthesis. See [docs/07-stage4-plan.md](../../docs/07-stage4-plan.md), [docs/08-stage5-plan.md](../../docs/08-stage5-plan.md), [docs/09-stage6-plan.md](../../docs/09-stage6-plan.md), [docs/12-stage9-plan.md](../../docs/12-stage9-plan.md), [docs/13-stage10-plan.md](../../docs/13-stage10-plan.md), [docs/14-stage11-plan.md](../../docs/14-stage11-plan.md), and [docs/15-stage12-plan.md](../../docs/15-stage12-plan.md) for the design rationale.
 
 **Concurrency note**: every route that touches the LLM or the embedding model acquires a single process-wide lock (`app/inference_lock.py`) before doing so. FastAPI's sync `def` routes run in a threadpool, so without this lock, overlapping requests (e.g. a chat reply still streaming while a vocabulary-recommendation batch fires off several `/v1/embed`/`/v1/vocabulary/explain` calls) really do hit the same llama.cpp/ONNX session concurrently — this crashed the process during Stage 6 development. Since it's a single CPU-bound model anyway, serializing access costs no real throughput.
 
@@ -34,7 +34,7 @@ GGUF file without any code changes.
 
 ## Config
 
-- `AI_MODEL_PATH` — path to the GGUF model file.
+- `AI_MODEL_PATH` — path to the GGUF model file. Overridden by `data/ai-model-config.json` if present (written by the desktop admin console's AI model management panel, Stage 12 — see `docs/15-stage12-plan.md`); picking a different model there requires restarting this process to take effect.
 - `AI_CONTEXT_SIZE` — context window size in tokens (default 4096).
 - `AI_THREADS` — llama.cpp inference thread count (default: the host's logical core count). Measured at a 55% tokens/sec speedup over a conservative `n_threads=4` default on the dev machine (16 cores) — see `scripts/benchmark.py` and `docs/13-stage10-plan.md`.
 - `EMBEDDING_CACHE_DIR` — where the ONNX embedding model is cached (default `offline-sdk/ai-models/fastembed-cache/`).

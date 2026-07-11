@@ -2,7 +2,7 @@ import json
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 
-from .model import load_model, is_model_loaded
+from .model import load_model, is_model_loaded, get_model_path, get_thread_count
 from .embeddings import embed_text, is_embedding_model_loaded
 from .speech import (
     transcribe_audio,
@@ -48,6 +48,8 @@ def health() -> dict:
         "embeddingModelLoaded": is_embedding_model_loaded(),
         "whisperLoaded": is_whisper_loaded(),
         "piperLoaded": is_piper_loaded(),
+        "modelPath": get_model_path(),
+        "threadCount": get_thread_count(),
     }
 
 

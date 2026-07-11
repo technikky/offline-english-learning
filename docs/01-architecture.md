@@ -1,5 +1,7 @@
 # System Architecture — Offline AI English Learning Support System
 
+**Status: v1.0.0 — all 12 planned stages complete.** This document describes the architecture as designed at the start of the project; it held through all 12 stages without a rearchitecture (the guiding constraint in §1's last bullet). See `docs/03-roadmap.md` for what shipped in each stage and `CHANGELOG.md` for the full history. Documented deviations from this doc's original tech choices (fastembed instead of sentence-transformers, brute-force cosine similarity instead of sqlite-vec) are called out where they happened rather than silently changed here.
+
 ## 1. Guiding constraints
 
 - Zero internet dependency after installation. No cloud API, no online auth, no CDN assets.

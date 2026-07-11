@@ -247,3 +247,44 @@ export interface PronunciationPracticeResponse {
   accuracyScore: number;
   feedback: string;
 }
+
+// Stage 12: admin system-health / config / model-management / backup DTOs.
+export interface BackupInfo {
+  filename: string;
+  sizeBytes: number;
+  createdAt: string;
+}
+
+export interface ServiceHealth {
+  name: string;
+  reachable: boolean;
+  detail?: string;
+}
+
+export interface SystemHealthResponse {
+  backend: { dbConnected: boolean; uptimeSeconds: number };
+  aiService: ServiceHealth & {
+    modelLoaded?: boolean;
+    modelPath?: string;
+    threadCount?: number;
+  };
+  languageTool: ServiceHealth;
+}
+
+export interface ServerConfigResponse {
+  port: number;
+  host: string;
+  tlsEnabled: boolean;
+  rateLimitPerMinute: number;
+  dbPath: string;
+}
+
+export interface AiModelInfo {
+  filename: string;
+  sizeBytes: number;
+  isActive: boolean;
+}
+
+export interface SelectAiModelRequest {
+  filename: string;
+}
