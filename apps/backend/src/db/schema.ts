@@ -145,3 +145,16 @@ export const assignments = sqliteTable("assignments", {
     .notNull()
     .default(sql`(current_timestamp)`),
 });
+
+export const pronunciationResults = sqliteTable("pronunciation_results", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  studentId: integer("student_id")
+    .notNull()
+    .references(() => users.id),
+  targetPhrase: text("target_phrase").notNull(),
+  transcript: text("transcript").notNull(),
+  accuracyScore: integer("accuracy_score").notNull(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});

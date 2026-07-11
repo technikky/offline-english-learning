@@ -220,3 +220,30 @@ export interface StudentAnalyticsDto {
   grammarWeaknesses: GrammarWeakness[];
   vocabularyGrowth: VocabularyGrowthPoint[];
 }
+
+export interface TranscribeRequest {
+  audioBase64: string;
+}
+
+export interface TranscribeResponse {
+  transcript: string;
+}
+
+export interface SynthesizeRequest {
+  text: string;
+}
+
+export interface SynthesizeResponse {
+  audioBase64: string;
+}
+
+export interface PronunciationPracticeRequest {
+  targetPhrase: string;
+  audioBase64: string;
+}
+
+export interface PronunciationPracticeResponse {
+  transcript: string;
+  accuracyScore: number;
+  feedback: string;
+}

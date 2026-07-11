@@ -20,3 +20,5 @@ offline-sdk/speech-models/**/*.bin
 offline-sdk/speech-models/**/*.onnx
 offline-sdk/build-tools/*/
 offline-sdk/ai-models/fastembed-cache/
+offline-sdk/ai-models/whisper-models/
+offline-sdk/ai-models/piper-voices/

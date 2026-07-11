@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.9.0 — Stage 9: Speech recognition and pronunciation
+
+- AI Service: `pywhispercpp` (Whisper `tiny.en`) for speech-to-text and `piper-tts` (`en_US-lessac-medium`) for text-to-speech — both installed cleanly via prebuilt wheels, no compilation, no PyTorch, feasibility-checked before committing to the plan (same approach as Stage 6's `fastembed`). New `POST /v1/speech/transcribe` and `POST /v1/speech/synthesize`, both behind the Stage 6 inference lock.
+- **Design correction found during development**: the plan assumed the client would send exactly-16kHz WAV so the server could skip resampling, but `pywhispercpp`'s loader hard-rejects non-16kHz audio and browsers can't reliably guarantee an exact recording rate. Fixed by resampling server-side (numpy) regardless of input rate — verified via a real TTS→STT round trip through the actual HTTP endpoints using 22050Hz source audio.
+- Backend: `pronunciation_results` schema; `POST /speech/transcribe`, `POST /speech/synthesize` (thin authenticated proxies), and `POST /pronunciation/practice` (transcribes an attempt, scores it against a target phrase via word-level Levenshtein distance — a documented v1 heuristic, not phoneme-level pronunciation scoring — and persists the result).
+- Desktop: a mic button in the conversation composer (records via `MediaRecorder`, decodes and re-encodes to WAV via the Web Audio API, transcribes, and fills the message box for the student to review before sending) and a new Pronunciation Practice panel (type a phrase, "Listen" to hear it via TTS, record an attempt, see transcript + accuracy score + feedback). Electron's `setPermissionRequestHandler` now grants microphone access, since the renderer only ever loads the app's own local page.
+- Verified end-to-end via curl against the real models: a Piper-synthesized phrase transcribed back correctly, and pronunciation scoring correctly distinguished a matching attempt (100%) from a completely different one (11%). 44 backend tests pass, including 9 new ones (scoring correctness + route-level persistence/auth, AI speech client faked in tests per the established pattern).
+
 ## v0.8.0 — Stage 8: Student analytics
 
 - Backend: one aggregation function (`getStudentAnalytics`) reused by both a student-facing and teacher-facing route — no duplicated logic. Computes total conversations/messages, practice frequency (last 30 days), an estimated practice-time proxy (span between first/last message per conversation, summed — an openly documented estimate, not tracked session time), grammar weaknesses by LanguageTool category, a vocabulary-notebook growth curve, and the Stage 4 CEFR-level heuristic (reused unchanged, not reimplemented).

@@ -61,6 +61,9 @@ function showLoggedOut() {
   document.getElementById("noClassSelected").classList.remove("hidden");
   document.getElementById("studentAnalyticsPanel").innerHTML = "Loading…";
   document.getElementById("teacherStudentAnalyticsPanel").innerHTML = "";
+  document.getElementById("pronunciationTarget").value = "";
+  document.getElementById("pronunciationResult").classList.add("hidden");
+  document.getElementById("pronunciationResult").innerHTML = "";
 }
 
 async function login() {
@@ -825,6 +828,237 @@ document.getElementById("addStudentBtn").addEventListener("click", addStudent);
 document.getElementById("createAssignmentBtn").addEventListener("click", createAssignment);
 document.getElementById("downloadCsvBtn").addEventListener("click", () => downloadReport("csv"));
 document.getElementById("downloadPdfBtn").addEventListener("click", () => downloadReport("pdf"));
+
+// ---- Speech recording + WAV encoding ----
+// MediaRecorder produces webm/opus (or whatever the browser's default is),
+// not WAV at a guaranteed sample rate, so recordings are decoded via the
+// Web Audio API and re-encoded as PCM WAV in-browser before being sent —
+// the AI service resamples server-side regardless (see docs/12-stage9-plan.md),
+// but sending a real WAV container keeps the backend contract simple either way.
+let activeRecorder = null;
+let activeStream = null;
+
+function audioBufferToWav(audioBuffer) {
+  const sampleRate = audioBuffer.sampleRate;
+  const channelData = audioBuffer.getChannelData(0);
+  const length = channelData.length;
+
+  const buffer = new ArrayBuffer(44 + length * 2);
+  const view = new DataView(buffer);
+
+  function writeString(offset, str) {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+  }
+
+  writeString(0, "RIFF");
+  view.setUint32(4, 36 + length * 2, true);
+  writeString(8, "WAVE");
+  writeString(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeString(36, "data");
+  view.setUint32(40, length * 2, true);
+
+  let offset = 44;
+  for (let i = 0; i < length; i++) {
+    const sample = Math.max(-1, Math.min(1, channelData[i]));
+    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+    offset += 2;
+  }
+
+  return buffer;
+}
+
+function arrayBufferToBase64(buffer) {
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+async function startRecording() {
+  activeStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const chunks = [];
+  activeRecorder = new MediaRecorder(activeStream);
+  activeRecorder.ondataavailable = (e) => chunks.push(e.data);
+  activeRecorder._chunks = chunks;
+  activeRecorder.start();
+}
+
+function stopRecording() {
+  return new Promise((resolve, reject) => {
+    if (!activeRecorder) {
+      reject(new Error("Not recording"));
+      return;
+    }
+    activeRecorder.onstop = async () => {
+      activeStream.getTracks().forEach((t) => t.stop());
+      try {
+        const blob = new Blob(activeRecorder._chunks, { type: activeRecorder.mimeType });
+        const arrayBuffer = await blob.arrayBuffer();
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContextClass();
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        const wavBuffer = audioBufferToWav(audioBuffer);
+        resolve(arrayBufferToBase64(wavBuffer));
+      } catch (err) {
+        reject(err);
+      } finally {
+        activeRecorder = null;
+        activeStream = null;
+      }
+    };
+    activeRecorder.stop();
+  });
+}
+
+async function playBase64Wav(audioBase64) {
+  const audio = new Audio(`data:audio/wav;base64,${audioBase64}`);
+  await audio.play();
+}
+
+// ---- Mic button in the conversation composer ----
+let micRecording = false;
+
+async function toggleMicRecording() {
+  const micBtn = document.getElementById("micBtn");
+  const input = document.getElementById("messageInput");
+
+  if (!micRecording) {
+    try {
+      await startRecording();
+      micRecording = true;
+      micBtn.classList.add("recording");
+      micBtn.textContent = "⏹";
+    } catch (err) {
+      alert("Could not access the microphone.");
+    }
+    return;
+  }
+
+  micRecording = false;
+  micBtn.classList.remove("recording");
+  micBtn.textContent = "🎤";
+  input.placeholder = "Transcribing…";
+
+  try {
+    const audioBase64 = await stopRecording();
+    const res = await fetch(`${API_BASE}/speech/transcribe`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ audioBase64 }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      input.value = data.transcript;
+    }
+  } catch (err) {
+    // recording/transcription failures are recoverable; the student can retry
+  } finally {
+    input.placeholder = "Type a message and press Enter…";
+  }
+}
+
+// ---- Pronunciation practice panel ----
+let pronunciationRecording = false;
+
+async function listenToTargetPhrase() {
+  const phrase = document.getElementById("pronunciationTarget").value.trim();
+  const errorEl = document.getElementById("pronunciationError");
+  errorEl.textContent = "";
+  if (!phrase) {
+    errorEl.textContent = "Type a phrase first.";
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/speech/synthesize`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ text: phrase }),
+    });
+    if (!res.ok) {
+      errorEl.textContent = "Could not synthesize speech.";
+      return;
+    }
+    const data = await res.json();
+    await playBase64Wav(data.audioBase64);
+  } catch (err) {
+    errorEl.textContent = "Could not reach the backend.";
+  }
+}
+
+async function togglePronunciationRecording() {
+  const recordBtn = document.getElementById("pronunciationRecordBtn");
+  const errorEl = document.getElementById("pronunciationError");
+  const resultEl = document.getElementById("pronunciationResult");
+  errorEl.textContent = "";
+
+  const phrase = document.getElementById("pronunciationTarget").value.trim();
+  if (!pronunciationRecording && !phrase) {
+    errorEl.textContent = "Type a phrase to practice first.";
+    return;
+  }
+
+  if (!pronunciationRecording) {
+    try {
+      await startRecording();
+      pronunciationRecording = true;
+      recordBtn.classList.add("recording");
+      recordBtn.textContent = "⏹ Stop";
+    } catch (err) {
+      errorEl.textContent = "Could not access the microphone.";
+    }
+    return;
+  }
+
+  pronunciationRecording = false;
+  recordBtn.classList.remove("recording");
+  recordBtn.textContent = "🎤 Record";
+  resultEl.classList.remove("hidden");
+  resultEl.textContent = "Scoring…";
+
+  try {
+    const audioBase64 = await stopRecording();
+    const res = await fetch(`${API_BASE}/pronunciation/practice`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ targetPhrase: phrase, audioBase64 }),
+    });
+    if (!res.ok) {
+      resultEl.textContent = "Could not score this attempt.";
+      return;
+    }
+    const data = await res.json();
+    resultEl.innerHTML = "";
+    const score = document.createElement("div");
+    score.className = "score";
+    score.textContent = `${data.accuracyScore}%`;
+    const transcript = document.createElement("div");
+    transcript.textContent = `You said: "${data.transcript}"`;
+    const feedback = document.createElement("div");
+    feedback.textContent = data.feedback;
+    resultEl.appendChild(score);
+    resultEl.appendChild(transcript);
+    resultEl.appendChild(feedback);
+  } catch (err) {
+    resultEl.textContent = "Could not reach the backend.";
+  }
+}
+
+document.getElementById("micBtn").addEventListener("click", toggleMicRecording);
+document.getElementById("pronunciationListenBtn").addEventListener("click", listenToTargetPhrase);
+document
+  .getElementById("pronunciationRecordBtn")
+  .addEventListener("click", togglePronunciationRecording);
 
 document.getElementById("loginBtn").addEventListener("click", login);
 document.getElementById("logoutBtn").addEventListener("click", logout);

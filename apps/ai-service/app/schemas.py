@@ -44,3 +44,19 @@ class VocabularyExplainResponse(BaseModel):
     synonyms: list[str]
     antonyms: list[str]
     cefrLevel: str
+
+
+class TranscribeRequest(BaseModel):
+    audioBase64: str
+
+
+class TranscribeResponse(BaseModel):
+    transcript: str
+
+
+class SynthesizeRequest(BaseModel):
+    text: str
+
+
+class SynthesizeResponse(BaseModel):
+    audioBase64: str

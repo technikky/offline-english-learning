@@ -25,4 +25,4 @@ See [docs/04-repo-structure.md](docs/04-repo-structure.md).
 
 ## Current stage
 
-Stage 8 — Student analytics. See [docs/11-stage8-plan.md](docs/11-stage8-plan.md) and [CHANGELOG.md](CHANGELOG.md).
+Stage 9 — Speech recognition and pronunciation. See [docs/12-stage9-plan.md](docs/12-stage9-plan.md) and [CHANGELOG.md](CHANGELOG.md).

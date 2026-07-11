@@ -11,6 +11,7 @@ import { registerAssignmentRoutes } from "./routes/assignments";
 import { registerTeacherReviewRoutes } from "./routes/teacherReview";
 import { registerReportRoutes } from "./routes/reports";
 import { registerAnalyticsRoutes } from "./routes/analytics";
+import { registerSpeechRoutes } from "./routes/speech";
 import { bootstrapAdminIfNeeded } from "./auth/bootstrap";
 
 const PORT = Number(process.env.PORT ?? 4310);
@@ -19,7 +20,8 @@ const HOST = process.env.HOST ?? "127.0.0.1";
 async function main() {
   ensureSchema();
 
-  const app = Fastify({ logger: true });
+  // Default 1MB body limit is too small for base64-encoded audio recordings.
+  const app = Fastify({ logger: true, bodyLimit: 25 * 1024 * 1024 });
 
   await bootstrapAdminIfNeeded(app.log);
 
@@ -34,6 +36,7 @@ async function main() {
   registerTeacherReviewRoutes(app);
   registerReportRoutes(app);
   registerAnalyticsRoutes(app);
+  registerSpeechRoutes(app);
 
   await app.listen({ port: PORT, host: HOST });
 }

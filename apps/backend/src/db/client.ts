@@ -113,5 +113,14 @@ export function ensureSchema(): void {
       due_date TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (current_timestamp)
     );
+
+    CREATE TABLE IF NOT EXISTS pronunciation_results (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id INTEGER NOT NULL REFERENCES users(id),
+      target_phrase TEXT NOT NULL,
+      transcript TEXT NOT NULL,
+      accuracy_score INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (current_timestamp)
+    );
   `);
 }

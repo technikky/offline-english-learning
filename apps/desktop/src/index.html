@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Offline English Learning — Stage 8</title>
+    <title>Offline English Learning — Stage 9</title>
     <style>
       * {
         box-sizing: border-box;
@@ -455,6 +455,44 @@
       #teacherStudentAnalyticsPanel {
         font-size: 12px;
       }
+
+      /* Speech: mic button + pronunciation practice */
+      .mic-btn {
+        width: auto;
+        margin-top: 0;
+        white-space: nowrap;
+        background: #334155;
+      }
+      .mic-btn.recording {
+        background: #7f1d1d;
+      }
+      #pronunciationPanel {
+        font-size: 12px;
+      }
+      #pronunciationPanel input {
+        margin-bottom: 6px;
+      }
+      .pronunciation-buttons {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+      .pronunciation-buttons button {
+        width: auto;
+        margin-top: 0;
+        white-space: nowrap;
+      }
+      #pronunciationResult {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 8px;
+        margin-top: 6px;
+      }
+      #pronunciationResult .score {
+        font-size: 20px;
+        font-weight: 700;
+      }
     </style>
   </head>
   <body>
@@ -502,12 +540,24 @@
 
         <h3>My progress</h3>
         <div id="studentAnalyticsPanel">Loading…</div>
+
+        <h3>Pronunciation practice</h3>
+        <div id="pronunciationPanel">
+          <input id="pronunciationTarget" type="text" placeholder="Type a phrase to practice…" />
+          <div class="pronunciation-buttons">
+            <button id="pronunciationListenBtn">🔊 Listen</button>
+            <button id="pronunciationRecordBtn" class="mic-btn">🎤 Record</button>
+          </div>
+          <div id="pronunciationError" class="error"></div>
+          <div id="pronunciationResult" class="hidden"></div>
+        </div>
       </div>
 
       <div id="main">
         <div id="chatLog"></div>
         <div id="wordsToLearn" class="words-to-learn hidden"></div>
         <div id="composer">
+          <button id="micBtn" class="mic-btn">🎤</button>
           <input id="messageInput" type="text" placeholder="Type a message and press Enter…" disabled />
           <button id="sendBtn" disabled>Send</button>
         </div>

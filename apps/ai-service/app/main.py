@@ -4,6 +4,12 @@ from fastapi.responses import StreamingResponse
 
 from .model import load_model, is_model_loaded
 from .embeddings import embed_text, is_embedding_model_loaded
+from .speech import (
+    transcribe_audio,
+    synthesize_speech,
+    is_whisper_loaded,
+    is_piper_loaded,
+)
 from .inference_lock import INFERENCE_LOCK
 from .prompts import (
     build_system_prompt,
@@ -20,6 +26,10 @@ from .schemas import (
     EmbedResponse,
     VocabularyExplainRequest,
     VocabularyExplainResponse,
+    TranscribeRequest,
+    TranscribeResponse,
+    SynthesizeRequest,
+    SynthesizeResponse,
 )
 
 app = FastAPI(title="English Class AI Service")
@@ -36,6 +46,8 @@ def health() -> dict:
         "status": "ok",
         "modelLoaded": is_model_loaded(),
         "embeddingModelLoaded": is_embedding_model_loaded(),
+        "whisperLoaded": is_whisper_loaded(),
+        "piperLoaded": is_piper_loaded(),
     }
 
 
@@ -108,3 +120,17 @@ def vocabulary_explain(request: VocabularyExplainRequest) -> VocabularyExplainRe
     parsed = parse_vocabulary_explain_response(raw_text)
 
     return VocabularyExplainResponse(**parsed)
+
+
+@app.post("/v1/speech/transcribe")
+def speech_transcribe(request: TranscribeRequest) -> TranscribeResponse:
+    with INFERENCE_LOCK:
+        transcript = transcribe_audio(request.audioBase64)
+    return TranscribeResponse(transcript=transcript)
+
+
+@app.post("/v1/speech/synthesize")
+def speech_synthesize(request: SynthesizeRequest) -> SynthesizeResponse:
+    with INFERENCE_LOCK:
+        audio_base64 = synthesize_speech(request.text)
+    return SynthesizeResponse(audioBase64=audio_base64)
