@@ -25,4 +25,4 @@ See [docs/04-repo-structure.md](docs/04-repo-structure.md).
 
 ## Current stage
 
-Stage 1 — Desktop foundation + offline environment + build system. See [docs/05-stage1-plan.md](docs/05-stage1-plan.md) and [CHANGELOG.md](CHANGELOG.md).
+Stage 2 — Android client. See [docs/03-roadmap.md](docs/03-roadmap.md) and [CHANGELOG.md](CHANGELOG.md).
