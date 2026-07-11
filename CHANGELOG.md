@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.7.0 — Stage 7: Teacher dashboard
+
+- Backend: `assignments` schema (scenario-based practice targets, not a full homework/grading system — see `docs/10-stage7-plan.md`). `GET /teacher/classes`, `GET /teacher/classes/:id` (roster), `POST`/`GET /teacher/classes/:id/assignments` (with a per-student completion heuristic based on matching conversations started after the assignment), `GET /teacher/classes/:id/mistakes` (grammar-mistake review across a class), `GET /teacher/classes/:id/report.csv` and `.pdf` (per-student stats: conversations, mistakes, vocabulary size, estimated CEFR level).
+- PDF export via `pdfkit` (pure JS, no native dependencies) — a small, deliberate addition alongside the CSV export.
+- Desktop: a new Teacher Dashboard view (shown instead of the student conversation UI when logged in as a teacher) — class list/creation, roster with add-student form, assignment creation with per-student completion badges, a mistake-review table, and CSV/PDF report download buttons.
+- Verified end-to-end via curl: created a class, registered a student, created a "daily" assignment, had the student complete a conversation with a real grammar mistake, confirmed the assignment flipped to "completed," the mistake appeared in the review feed, and both report formats downloaded with correct real data (PDF verified as a structurally valid 1-page document). 30 backend tests pass, including 6 new ones covering roster listing/ownership, the completion heuristic, mistake-review ownership, and CSV report shape.
+
 ## v0.6.0 — Stage 6: Vocabulary learning system
 
 - AI Service: `POST /v1/embed` (384-dim vectors via `fastembed`/ONNX `all-MiniLM-L6-v2` — no PyTorch dependency, a lighter ONNX path than raw `sentence-transformers`) and `POST /v1/vocabulary/explain` (definition, example, synonyms, antonyms, and the word's own CEFR level, same lenient marker-based parsing as grammar/explain).

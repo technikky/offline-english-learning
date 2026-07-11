@@ -128,3 +128,20 @@ export const vocabularyNotebook = sqliteTable("vocabulary_notebook", {
     .notNull()
     .default(sql`(current_timestamp)`),
 });
+
+export const assignments = sqliteTable("assignments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  classId: integer("class_id")
+    .notNull()
+    .references(() => classes.id),
+  teacherId: integer("teacher_id")
+    .notNull()
+    .references(() => users.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  scenario: text("scenario").notNull(),
+  dueDate: text("due_date").notNull(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});

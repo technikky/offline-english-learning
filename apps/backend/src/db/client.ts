@@ -102,5 +102,16 @@ export function ensureSchema(): void {
       created_at TEXT NOT NULL DEFAULT (current_timestamp),
       UNIQUE (student_id, vocabulary_id)
     );
+
+    CREATE TABLE IF NOT EXISTS assignments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      class_id INTEGER NOT NULL REFERENCES classes(id),
+      teacher_id INTEGER NOT NULL REFERENCES users(id),
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      scenario TEXT NOT NULL,
+      due_date TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (current_timestamp)
+    );
   `);
 }

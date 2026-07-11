@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Offline English Learning — Stage 6</title>
+    <title>Offline English Learning — Stage 7</title>
     <style>
       * {
         box-sizing: border-box;
@@ -306,6 +306,97 @@
       .word-chip button:disabled {
         background: #334155;
       }
+
+      /* Teacher dashboard */
+      #teacherView {
+        display: flex;
+        height: 100vh;
+      }
+      #teacherSidebar {
+        width: 260px;
+        background: #1e293b;
+        padding: 20px;
+        border-right: 1px solid #334155;
+        overflow-y: auto;
+      }
+      #teacherMain {
+        flex: 1;
+        padding: 24px;
+        overflow-y: auto;
+      }
+      .class-list-item {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 8px 10px;
+        margin-bottom: 6px;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      .class-list-item.active {
+        border-color: #4338ca;
+        background: #1e2547;
+      }
+      .panel {
+        background: #1e293b;
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+      .panel h3 {
+        margin-top: 0;
+      }
+      table.data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      table.data-table th,
+      table.data-table td {
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid #334155;
+      }
+      .badge {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 11px;
+      }
+      .badge.done {
+        background: #14532d;
+        color: #bbf7d0;
+      }
+      .badge.pending {
+        background: #451a1a;
+        color: #fecaca;
+      }
+      .inline-form {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+      .inline-form input,
+      .inline-form select {
+        width: auto;
+        flex: 1;
+        min-width: 120px;
+        margin: 0;
+      }
+      .inline-form button {
+        width: auto;
+        margin-top: 0;
+        white-space: nowrap;
+      }
+      .report-buttons {
+        display: flex;
+        gap: 8px;
+      }
+      .report-buttons button {
+        width: auto;
+        margin-top: 0;
+      }
     </style>
   </head>
   <body>
@@ -358,6 +449,90 @@
         <div id="composer">
           <input id="messageInput" type="text" placeholder="Type a message and press Enter…" disabled />
           <button id="sendBtn" disabled>Send</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="teacherView" class="hidden">
+      <div id="teacherSidebar">
+        <div class="profile-row"><span>Name</span><span id="teacherProfileName"></span></div>
+        <div class="profile-row"><span>Role</span><span id="teacherProfileRole"></span></div>
+        <button id="teacherLogoutBtn" class="secondary">Log out</button>
+
+        <h3>My classes</h3>
+        <div id="classList"></div>
+        <div class="inline-form">
+          <input id="newClassNameInput" type="text" placeholder="New class name…" />
+          <button id="createClassBtn">Create</button>
+        </div>
+        <div id="createClassError" class="error"></div>
+      </div>
+
+      <div id="teacherMain">
+        <div id="noClassSelected">Select or create a class to get started.</div>
+        <div id="classDetail" class="hidden">
+          <h2 id="classDetailName"></h2>
+
+          <div class="panel">
+            <h3>Roster</h3>
+            <table class="data-table">
+              <thead>
+                <tr><th>Name</th><th>Email</th></tr>
+              </thead>
+              <tbody id="rosterBody"></tbody>
+            </table>
+            <div class="inline-form">
+              <input id="newStudentEmail" type="email" placeholder="Student email" />
+              <input id="newStudentName" type="text" placeholder="Display name" />
+              <input id="newStudentPassword" type="password" placeholder="Initial password" />
+              <button id="addStudentBtn">Add student</button>
+            </div>
+            <div id="addStudentError" class="error"></div>
+          </div>
+
+          <div class="panel">
+            <h3>Assignments</h3>
+            <div id="assignmentsList"></div>
+            <div class="inline-form">
+              <input id="assignmentTitle" type="text" placeholder="Title" />
+              <select id="assignmentScenario">
+                <option value="free_talk">Free Talk</option>
+                <option value="role_play">Role Play</option>
+                <option value="interview">Interview Practice</option>
+                <option value="business">Business English</option>
+                <option value="travel">Travel English</option>
+                <option value="daily">Daily Conversation</option>
+                <option value="debate">Debate Practice</option>
+              </select>
+              <input id="assignmentDueDate" type="date" />
+              <button id="createAssignmentBtn">Create</button>
+            </div>
+            <input
+              id="assignmentDescription"
+              type="text"
+              placeholder="Description"
+              style="margin-top: 8px"
+            />
+            <div id="createAssignmentError" class="error"></div>
+          </div>
+
+          <div class="panel">
+            <h3>Grammar mistakes review</h3>
+            <table class="data-table">
+              <thead>
+                <tr><th>Student</th><th>Original</th><th>Corrected</th><th>Rule</th></tr>
+              </thead>
+              <tbody id="mistakesBody"></tbody>
+            </table>
+          </div>
+
+          <div class="panel">
+            <h3>Reports</h3>
+            <div class="report-buttons">
+              <button id="downloadCsvBtn">Download CSV</button>
+              <button id="downloadPdfBtn">Download PDF</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

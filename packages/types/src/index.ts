@@ -151,3 +151,45 @@ export interface SimilarWordsResponse {
 export interface RecommendationsResponse {
   words: VocabularyDto[];
 }
+
+export interface StudentSummary {
+  id: number;
+  email: string;
+  displayName: string;
+}
+
+export interface ClassDetail extends ClassSummary {
+  students: StudentSummary[];
+}
+
+export interface CreateAssignmentRequest {
+  title: string;
+  description: string;
+  scenario: Scenario;
+  dueDate: string;
+}
+
+export interface AssignmentDto {
+  id: number;
+  title: string;
+  description: string;
+  scenario: Scenario;
+  dueDate: string;
+  createdAt: string;
+}
+
+export interface AssignmentCompletionDto {
+  studentId: number;
+  displayName: string;
+  completed: boolean;
+}
+
+export interface AssignmentWithCompletion extends AssignmentDto {
+  completion: AssignmentCompletionDto[];
+}
+
+export interface MistakeReviewEntryDto extends GrammarMistakeDto {
+  studentId: number;
+  studentName: string;
+  createdAt: string;
+}

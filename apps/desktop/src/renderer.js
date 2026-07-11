@@ -2,6 +2,7 @@ const API_BASE = "http://127.0.0.1:4310";
 
 let accessToken = null;
 let currentConversationId = null;
+let currentClassId = null;
 
 async function checkHealth() {
   const el = document.getElementById("status");
@@ -18,6 +19,16 @@ async function checkHealth() {
 
 function showLoggedIn(user) {
   document.getElementById("authScreen").classList.add("hidden");
+
+  if (user.role === "teacher") {
+    document.getElementById("teacherView").classList.remove("hidden");
+    document.getElementById("teacherView").style.display = "flex";
+    document.getElementById("teacherProfileName").textContent = user.displayName;
+    document.getElementById("teacherProfileRole").textContent = user.role;
+    loadClasses();
+    return;
+  }
+
   document.getElementById("appView").classList.remove("hidden");
   document.getElementById("appView").style.display = "flex";
   document.getElementById("profileName").textContent = user.displayName;
@@ -29,8 +40,11 @@ function showLoggedIn(user) {
 function showLoggedOut() {
   accessToken = null;
   currentConversationId = null;
+  currentClassId = null;
   document.getElementById("appView").classList.add("hidden");
   document.getElementById("appView").style.display = "none";
+  document.getElementById("teacherView").classList.add("hidden");
+  document.getElementById("teacherView").style.display = "none";
   document.getElementById("authScreen").classList.remove("hidden");
   document.getElementById("email").value = "";
   document.getElementById("password").value = "";
@@ -41,6 +55,9 @@ function showLoggedOut() {
   const wordsToLearn = document.getElementById("wordsToLearn");
   wordsToLearn.innerHTML = "";
   wordsToLearn.classList.add("hidden");
+  document.getElementById("classList").innerHTML = "";
+  document.getElementById("classDetail").classList.add("hidden");
+  document.getElementById("noClassSelected").classList.remove("hidden");
 }
 
 async function login() {
@@ -443,6 +460,237 @@ async function sendMessage() {
     if (currentConversationId) loadRecommendations(currentConversationId);
   }
 }
+
+function authHeaders(extra) {
+  return { Authorization: `Bearer ${accessToken}`, ...(extra || {}) };
+}
+
+async function loadClasses() {
+  try {
+    const res = await fetch(`${API_BASE}/teacher/classes`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const classesList = await res.json();
+
+    const container = document.getElementById("classList");
+    container.innerHTML = "";
+    for (const cls of classesList) {
+      const item = document.createElement("div");
+      item.className = "class-list-item" + (cls.id === currentClassId ? " active" : "");
+      item.textContent = cls.name;
+      item.addEventListener("click", () => selectClass(cls.id));
+      container.appendChild(item);
+    }
+  } catch (err) {
+    // class list is not critical path; fail silently
+  }
+}
+
+async function createClass() {
+  const input = document.getElementById("newClassNameInput");
+  const errorEl = document.getElementById("createClassError");
+  errorEl.textContent = "";
+  const name = input.value.trim();
+  if (!name) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/teacher/classes`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      errorEl.textContent = body.error || "Could not create class";
+      return;
+    }
+    input.value = "";
+    await loadClasses();
+  } catch (err) {
+    errorEl.textContent = "Could not reach the backend.";
+  }
+}
+
+function renderRoster(students) {
+  const body = document.getElementById("rosterBody");
+  body.innerHTML = "";
+  for (const student of students) {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td>${student.displayName}</td><td>${student.email}</td>`;
+    body.appendChild(row);
+  }
+}
+
+function renderAssignments(assignmentsList) {
+  const container = document.getElementById("assignmentsList");
+  container.innerHTML = "";
+  for (const assignment of assignmentsList) {
+    const box = document.createElement("div");
+    box.style.marginBottom = "10px";
+
+    const title = document.createElement("div");
+    title.innerHTML = `<strong>${assignment.title}</strong> — ${assignment.scenario.replace("_", " ")} (due ${assignment.dueDate})`;
+    box.appendChild(title);
+
+    const desc = document.createElement("div");
+    desc.style.fontSize = "12px";
+    desc.style.opacity = "0.8";
+    desc.textContent = assignment.description;
+    box.appendChild(desc);
+
+    const badges = document.createElement("div");
+    badges.style.marginTop = "4px";
+    for (const entry of assignment.completion) {
+      const badge = document.createElement("span");
+      badge.className = "badge " + (entry.completed ? "done" : "pending");
+      badge.textContent = `${entry.displayName}: ${entry.completed ? "done" : "pending"}`;
+      badge.style.marginRight = "6px";
+      badges.appendChild(badge);
+    }
+    box.appendChild(badges);
+
+    container.appendChild(box);
+  }
+}
+
+function renderMistakes(mistakes) {
+  const body = document.getElementById("mistakesBody");
+  body.innerHTML = "";
+  for (const mistake of mistakes) {
+    const row = document.createElement("tr");
+    row.innerHTML =
+      `<td>${mistake.studentName}</td>` +
+      `<td>${mistake.originalText}</td>` +
+      `<td>${mistake.correctedText}</td>` +
+      `<td>${mistake.ruleDescription}</td>`;
+    body.appendChild(row);
+  }
+}
+
+async function selectClass(classId) {
+  currentClassId = classId;
+  await loadClasses();
+
+  document.getElementById("noClassSelected").classList.add("hidden");
+  document.getElementById("classDetail").classList.remove("hidden");
+
+  try {
+    const [detailRes, assignmentsRes, mistakesRes] = await Promise.all([
+      fetch(`${API_BASE}/teacher/classes/${classId}`, { headers: authHeaders() }),
+      fetch(`${API_BASE}/teacher/classes/${classId}/assignments`, { headers: authHeaders() }),
+      fetch(`${API_BASE}/teacher/classes/${classId}/mistakes`, { headers: authHeaders() }),
+    ]);
+
+    if (detailRes.ok) {
+      const detail = await detailRes.json();
+      document.getElementById("classDetailName").textContent = detail.name;
+      renderRoster(detail.students);
+    }
+    if (assignmentsRes.ok) {
+      renderAssignments(await assignmentsRes.json());
+    }
+    if (mistakesRes.ok) {
+      renderMistakes(await mistakesRes.json());
+    }
+  } catch (err) {
+    // leave whatever partial state loaded; user can retry by reselecting
+  }
+}
+
+async function addStudent() {
+  const email = document.getElementById("newStudentEmail").value.trim();
+  const displayName = document.getElementById("newStudentName").value.trim();
+  const password = document.getElementById("newStudentPassword").value;
+  const errorEl = document.getElementById("addStudentError");
+  errorEl.textContent = "";
+
+  if (!email || !displayName || !password) {
+    errorEl.textContent = "Email, name and password are all required.";
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/teacher/classes/${currentClassId}/students`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ email, displayName, password }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      errorEl.textContent = body.error || "Could not add student";
+      return;
+    }
+    document.getElementById("newStudentEmail").value = "";
+    document.getElementById("newStudentName").value = "";
+    document.getElementById("newStudentPassword").value = "";
+    await selectClass(currentClassId);
+  } catch (err) {
+    errorEl.textContent = "Could not reach the backend.";
+  }
+}
+
+async function createAssignment() {
+  const title = document.getElementById("assignmentTitle").value.trim();
+  const description = document.getElementById("assignmentDescription").value.trim();
+  const scenario = document.getElementById("assignmentScenario").value;
+  const dueDate = document.getElementById("assignmentDueDate").value;
+  const errorEl = document.getElementById("createAssignmentError");
+  errorEl.textContent = "";
+
+  if (!title || !description || !dueDate) {
+    errorEl.textContent = "Title, description and due date are all required.";
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/teacher/classes/${currentClassId}/assignments`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ title, description, scenario, dueDate }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      errorEl.textContent = body.error || "Could not create assignment";
+      return;
+    }
+    document.getElementById("assignmentTitle").value = "";
+    document.getElementById("assignmentDescription").value = "";
+    document.getElementById("assignmentDueDate").value = "";
+    await selectClass(currentClassId);
+  } catch (err) {
+    errorEl.textContent = "Could not reach the backend.";
+  }
+}
+
+async function downloadReport(format) {
+  try {
+    const res = await fetch(`${API_BASE}/teacher/classes/${currentClassId}/report.${format}`, {
+      headers: authHeaders(),
+    });
+    if (!res.ok) return;
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `class-report.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    // download failures aren't fatal to the session; user can retry
+  }
+}
+
+document.getElementById("teacherLogoutBtn").addEventListener("click", logout);
+document.getElementById("createClassBtn").addEventListener("click", createClass);
+document.getElementById("newClassNameInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") createClass();
+});
+document.getElementById("addStudentBtn").addEventListener("click", addStudent);
+document.getElementById("createAssignmentBtn").addEventListener("click", createAssignment);
+document.getElementById("downloadCsvBtn").addEventListener("click", () => downloadReport("csv"));
+document.getElementById("downloadPdfBtn").addEventListener("click", () => downloadReport("pdf"));
 
 document.getElementById("loginBtn").addEventListener("click", login);
 document.getElementById("logoutBtn").addEventListener("click", logout);

@@ -1,16 +1,67 @@
 import type { FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
 import type {
+  ClassDetail,
   ClassSummary,
   CreateClassRequest,
   RegisterStudentRequest,
+  StudentSummary,
 } from "@englishclass/types";
 import { db } from "../db/client";
 import { classes, classStudents, users } from "../db/schema";
 import { hashPassword } from "../auth/password";
 import { authenticate, requireRole } from "../auth/middleware";
+import { getOwnedClass } from "../teacher/ownership";
 
 export function registerTeacherRoutes(app: FastifyInstance): void {
+  app.get(
+    "/teacher/classes",
+    { preHandler: [authenticate, requireRole("teacher")] },
+    async (request) => {
+      const rows = await db
+        .select()
+        .from(classes)
+        .where(eq(classes.teacherId, request.authUser!.sub));
+
+      const summaries: ClassSummary[] = rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        teacherId: row.teacherId,
+      }));
+      return summaries;
+    },
+  );
+
+  app.get<{ Params: { id: string } }>(
+    "/teacher/classes/:id",
+    { preHandler: [authenticate, requireRole("teacher")] },
+    async (request, reply) => {
+      const classId = Number(request.params.id);
+      const classRow = await getOwnedClass(classId, request.authUser!.sub);
+      if (!classRow) return reply.code(404).send({ error: "Class not found" });
+
+      const roster = await db
+        .select({ student: users })
+        .from(classStudents)
+        .innerJoin(users, eq(classStudents.studentId, users.id))
+        .where(eq(classStudents.classId, classId));
+
+      const students: StudentSummary[] = roster.map((row) => ({
+        id: row.student.id,
+        email: row.student.email,
+        displayName: row.student.displayName,
+      }));
+
+      const detail: ClassDetail = {
+        id: classRow.id,
+        name: classRow.name,
+        teacherId: classRow.teacherId,
+        students,
+      };
+      return detail;
+    },
+  );
+
   app.post<{ Body: CreateClassRequest }>(
     "/teacher/classes",
     { preHandler: [authenticate, requireRole("teacher")] },
@@ -45,10 +96,8 @@ export function registerTeacherRoutes(app: FastifyInstance): void {
         });
       }
 
-      const classRow = await db.query.classes.findFirst({
-        where: eq(classes.id, classId),
-      });
-      if (!classRow || classRow.teacherId !== request.authUser!.sub) {
+      const classRow = await getOwnedClass(classId, request.authUser!.sub);
+      if (!classRow) {
         return reply.code(404).send({ error: "Class not found" });
       }
 
