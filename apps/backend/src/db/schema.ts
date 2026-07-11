@@ -169,3 +169,21 @@ export const pronunciationResults = sqliteTable("pronunciation_results", {
     .notNull()
     .default(sql`(current_timestamp)`),
 });
+
+// Stage 14: Grammar Learning Module. topicId references curriculum.ts's
+// static topic ids (not a DB foreign key -- the curriculum isn't a table).
+export const grammarExerciseAttempts = sqliteTable("grammar_exercise_attempts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  studentId: integer("student_id")
+    .notNull()
+    .references(() => users.id),
+  topicId: text("topic_id").notNull(),
+  exerciseType: text("exercise_type", { enum: ["multiple_choice", "fill_blank"] }).notNull(),
+  question: text("question").notNull(),
+  correctAnswer: text("correct_answer").notNull(),
+  studentAnswer: text("student_answer").notNull(),
+  isCorrect: integer("is_correct", { mode: "boolean" }).notNull(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});

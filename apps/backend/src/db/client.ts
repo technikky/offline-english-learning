@@ -141,5 +141,17 @@ export function ensureSchema(): void {
       accuracy_score INTEGER NOT NULL,
       created_at TEXT NOT NULL DEFAULT (current_timestamp)
     );
+
+    CREATE TABLE IF NOT EXISTS grammar_exercise_attempts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id INTEGER NOT NULL REFERENCES users(id),
+      topic_id TEXT NOT NULL,
+      exercise_type TEXT NOT NULL CHECK (exercise_type IN ('multiple_choice', 'fill_blank')),
+      question TEXT NOT NULL,
+      correct_answer TEXT NOT NULL,
+      student_answer TEXT NOT NULL,
+      is_correct INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (current_timestamp)
+    );
   `);
 }

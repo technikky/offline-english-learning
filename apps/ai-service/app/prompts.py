@@ -276,3 +276,88 @@ def parse_vocabulary_explain_response(raw_text: str) -> dict:
         "antonyms": parse_word_list(antonyms_raw),
         "cefrLevel": cefr_level,
     }
+
+
+# Stage 14: Grammar Learning Module exercise generation. Reuses the same
+# lenient marker-based parsing pattern as grammar/vocabulary explain above,
+# for the same reason -- a 1.5B local model isn't reliable at strict JSON.
+GRAMMAR_EXERCISE_MARKERS = ("QUESTION:", "OPTIONS:", "ANSWER:", "EXPLANATION:")
+
+
+def build_grammar_exercise_prompt(
+    topic_title: str,
+    topic_explanation: str,
+    difficulty_level: str,
+    exercise_type: str,
+) -> list[dict]:
+    difficulty_text = DIFFICULTY_INSTRUCTIONS.get(
+        difficulty_level, DIFFICULTY_INSTRUCTIONS["B1"]
+    )
+
+    if exercise_type == "multiple_choice":
+        format_instructions = (
+            "Respond in exactly this format, with nothing before or after:\n"
+            "QUESTION: <a sentence with one word or phrase blanked out as "
+            "____, testing the grammar point above>\n"
+            "OPTIONS: <exactly 4 possible answers, comma-separated, one of "
+            "which correctly fills the blank>\n"
+            "ANSWER: <the single correct option, exactly as written in "
+            "OPTIONS>\n"
+            "EXPLANATION: <one sentence explaining why that answer is "
+            "correct>"
+        )
+    else:
+        format_instructions = (
+            "Respond in exactly this format, with nothing before or after:\n"
+            "QUESTION: <a sentence with one word or short phrase blanked out "
+            "as ____, testing the grammar point above>\n"
+            "ANSWER: <the exact word or phrase that correctly fills the "
+            "blank>\n"
+            "EXPLANATION: <one sentence explaining why that answer is "
+            "correct>"
+        )
+
+    system = (
+        "You are an English grammar tutor creating a practice exercise for "
+        f"a student on this grammar topic: {topic_title}.\n"
+        f"Topic explanation: {topic_explanation}\n\n"
+        f"{difficulty_text}\n\n"
+        "Create exactly one new exercise. Make it different each time you "
+        "are asked, using varied vocabulary and sentence subjects so the "
+        "student doesn't just memorize one sentence.\n\n"
+        f"{format_instructions}"
+    )
+    return [{"role": "system", "content": system}]
+
+
+def parse_grammar_exercise_response(raw_text: str, exercise_type: str) -> dict:
+    """Falls back to a safe placeholder exercise rather than raising if
+    parsing fails outright, since a broken practice round is better handled
+    client-side than as a 500 during a study session."""
+    question_m, options_m, answer_m, explanation_m = GRAMMAR_EXERCISE_MARKERS
+
+    question = _extract_marked_section(raw_text, question_m, options_m if exercise_type == "multiple_choice" else answer_m)
+    if exercise_type == "multiple_choice":
+        options_raw = _extract_marked_section(raw_text, options_m, answer_m)
+        options = [o.strip() for o in options_raw.split(",") if o.strip()]
+    else:
+        options = []
+    answer = _extract_marked_section(raw_text, answer_m, explanation_m)
+    explanation = _extract_marked_section(raw_text, explanation_m, None)
+
+    if not question or not answer:
+        # Parsing failed outright -- return the raw text as the question so
+        # the student sees *something* meaningful rather than a blank field.
+        return {
+            "question": raw_text.strip() or "Could not generate an exercise. Please try again.",
+            "options": [],
+            "correctAnswer": "",
+            "explanation": "",
+        }
+
+    return {
+        "question": question,
+        "options": options,
+        "correctAnswer": answer,
+        "explanation": explanation,
+    }

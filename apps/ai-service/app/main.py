@@ -17,6 +17,8 @@ from .prompts import (
     parse_grammar_explain_response,
     build_vocabulary_explain_prompt,
     parse_vocabulary_explain_response,
+    build_grammar_exercise_prompt,
+    parse_grammar_exercise_response,
 )
 from .schemas import (
     ChatRequest,
@@ -30,6 +32,8 @@ from .schemas import (
     TranscribeResponse,
     SynthesizeRequest,
     SynthesizeResponse,
+    GrammarExerciseRequest,
+    GrammarExerciseResponse,
 )
 
 app = FastAPI(title="English Class AI Service")
@@ -122,6 +126,25 @@ def vocabulary_explain(request: VocabularyExplainRequest) -> VocabularyExplainRe
     parsed = parse_vocabulary_explain_response(raw_text)
 
     return VocabularyExplainResponse(**parsed)
+
+
+@app.post("/v1/grammar/exercise")
+def grammar_exercise(request: GrammarExerciseRequest) -> GrammarExerciseResponse:
+    messages = build_grammar_exercise_prompt(
+        request.topicTitle,
+        request.topicExplanation,
+        request.difficultyLevel,
+        request.exerciseType,
+    )
+
+    with INFERENCE_LOCK:
+        llm = load_model()
+        result = llm.create_chat_completion(messages=messages, max_tokens=200)
+
+    raw_text = result["choices"][0]["message"]["content"]
+    parsed = parse_grammar_exercise_response(raw_text, request.exerciseType)
+
+    return GrammarExerciseResponse(**parsed)
 
 
 @app.post("/v1/speech/transcribe")

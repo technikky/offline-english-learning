@@ -64,6 +64,7 @@ function showLoggedIn(user) {
   document.getElementById("profileEmail").textContent = user.email;
   loadNotebook();
   loadStudentAnalytics();
+  loadGrammarTopics();
 }
 
 function showLoggedOut() {
@@ -100,6 +101,10 @@ function showLoggedOut() {
   document.getElementById("backupsBody").innerHTML = "";
   document.getElementById("createUserError").textContent = "";
   document.getElementById("createUserSuccess").textContent = "";
+  document.getElementById("grammarTopicList").innerHTML = "";
+  document.getElementById("grammarLessonDetail").classList.add("hidden");
+  document.getElementById("grammarExerciseArea").innerHTML = "";
+  showChatTab();
 }
 
 async function login() {
@@ -1122,6 +1127,201 @@ document.getElementById("notebookAddBtn").addEventListener("click", async () => 
 document.getElementById("notebookWordInput").addEventListener("keydown", (e) => {
   if (e.key === "Enter") document.getElementById("notebookAddBtn").click();
 });
+
+// --- Grammar Learning Module (Stage 14) ---
+
+let currentGrammarTopicId = null;
+let currentGrammarExercise = null; // { exerciseType, question, options, explanation, correctAnswer }
+
+const GRAMMAR_LEVEL_LABELS = {
+  beginner: "Beginner",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
+};
+
+function showChatTab() {
+  document.getElementById("tabConversationBtn").classList.add("active");
+  document.getElementById("tabGrammarBtn").classList.remove("active");
+  document.getElementById("chatPanel").classList.remove("hidden");
+  document.getElementById("grammarPanel").classList.add("hidden");
+}
+
+function showGrammarTab() {
+  document.getElementById("tabConversationBtn").classList.remove("active");
+  document.getElementById("tabGrammarBtn").classList.add("active");
+  document.getElementById("chatPanel").classList.add("hidden");
+  document.getElementById("grammarPanel").classList.remove("hidden");
+}
+
+async function loadGrammarTopics() {
+  const container = document.getElementById("grammarTopicList");
+  try {
+    const [topicsRes, progressRes] = await Promise.all([
+      fetch(`${API_BASE}/grammar/topics`, { headers: authHeaders() }),
+      fetch(`${API_BASE}/grammar/progress`, { headers: authHeaders() }),
+    ]);
+    if (!topicsRes.ok) return;
+    const topics = await topicsRes.json();
+    const progress = progressRes.ok ? await progressRes.json() : { topics: [] };
+    const progressByTopic = new Map(progress.topics.map((t) => [t.topicId, t]));
+
+    container.innerHTML = "";
+    for (const topic of topics) {
+      const p = progressByTopic.get(topic.id);
+      const accuracy = p ? p.accuracy : 0;
+      const card = document.createElement("div");
+      card.className = "grammar-topic-card";
+      card.innerHTML = `
+        <span class="badge">${GRAMMAR_LEVEL_LABELS[topic.level] || topic.level}</span>
+        <h4>${topic.title}</h4>
+        <div style="font-size: 12px; opacity: 0.75">${topic.cefrLevel}${
+          p && p.attempts > 0 ? ` · ${p.attempts} attempt${p.attempts === 1 ? "" : "s"}, ${accuracy}% correct` : " · not started"
+        }</div>
+        <div class="topic-progress-bar"><div class="topic-progress-fill" style="width: ${accuracy}%"></div></div>
+      `;
+      card.addEventListener("click", () => openGrammarTopic(topic.id));
+      container.appendChild(card);
+    }
+  } catch (err) {
+    container.innerHTML = "Could not reach the backend.";
+  }
+}
+
+async function openGrammarTopic(topicId) {
+  try {
+    const res = await fetch(`${API_BASE}/grammar/topics/${topicId}`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const topic = await res.json();
+
+    currentGrammarTopicId = topicId;
+    document.getElementById("grammarTopicList").classList.add("hidden");
+    document.getElementById("grammarLessonDetail").classList.remove("hidden");
+    document.getElementById("grammarLessonTitle").textContent = `${topic.title} (${topic.cefrLevel})`;
+    document.getElementById("grammarLessonExplanation").textContent = topic.explanation;
+
+    const examplesList = document.getElementById("grammarLessonExamples");
+    examplesList.innerHTML = "";
+    for (const example of topic.examples) {
+      const li = document.createElement("li");
+      li.textContent = example;
+      examplesList.appendChild(li);
+    }
+
+    document.getElementById("grammarExerciseArea").innerHTML = "";
+    document.getElementById("grammarExerciseError").textContent = "";
+    currentGrammarExercise = null;
+  } catch (err) {
+    // topic list stays visible; nothing to show
+  }
+}
+
+function closeGrammarTopic() {
+  document.getElementById("grammarTopicList").classList.remove("hidden");
+  document.getElementById("grammarLessonDetail").classList.add("hidden");
+  currentGrammarTopicId = null;
+  loadGrammarTopics();
+}
+
+async function generateGrammarExercise() {
+  const errorEl = document.getElementById("grammarExerciseError");
+  const area = document.getElementById("grammarExerciseArea");
+  errorEl.textContent = "";
+  area.innerHTML = "Generating a new exercise…";
+
+  const exerciseType = document.getElementById("grammarExerciseType").value;
+
+  try {
+    const res = await fetch(`${API_BASE}/grammar/topics/${currentGrammarTopicId}/exercise`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ exerciseType }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      area.innerHTML = "";
+      errorEl.textContent = body.error || "Could not generate an exercise";
+      return;
+    }
+    currentGrammarExercise = await res.json();
+    renderGrammarExercise();
+  } catch (err) {
+    area.innerHTML = "";
+    errorEl.textContent = "Could not reach the backend.";
+  }
+}
+
+function renderGrammarExercise() {
+  const area = document.getElementById("grammarExerciseArea");
+  const exercise = currentGrammarExercise;
+  area.innerHTML = "";
+
+  const questionEl = document.createElement("p");
+  questionEl.textContent = exercise.question;
+  area.appendChild(questionEl);
+
+  if (exercise.exerciseType === "multiple_choice") {
+    for (const option of exercise.options) {
+      const btn = document.createElement("button");
+      btn.className = "grammar-exercise-option";
+      btn.textContent = option;
+      btn.addEventListener("click", () => submitGrammarExercise(option, btn));
+      area.appendChild(btn);
+    }
+  } else {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "Type the missing word or phrase…";
+    input.id = "grammarFillBlankInput";
+    const submitBtn = document.createElement("button");
+    submitBtn.textContent = "Submit";
+    submitBtn.addEventListener("click", () => submitGrammarExercise(input.value, submitBtn));
+    area.appendChild(input);
+    area.appendChild(submitBtn);
+  }
+}
+
+async function submitGrammarExercise(studentAnswer, clickedButton) {
+  const exercise = currentGrammarExercise;
+  if (!exercise || !studentAnswer || !studentAnswer.trim()) return;
+
+  try {
+    const res = await fetch(
+      `${API_BASE}/grammar/topics/${currentGrammarTopicId}/exercise/submit`,
+      {
+        method: "POST",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          exerciseType: exercise.exerciseType,
+          question: exercise.question,
+          correctAnswer: exercise.correctAnswer,
+          studentAnswer,
+        }),
+      },
+    );
+    if (!res.ok) return;
+    const result = await res.json();
+
+    document
+      .querySelectorAll(".grammar-exercise-option")
+      .forEach((btn) => (btn.disabled = true));
+    if (clickedButton && clickedButton.classList.contains("grammar-exercise-option")) {
+      clickedButton.classList.add(result.isCorrect ? "correct" : "incorrect");
+    }
+
+    const feedback = document.createElement("p");
+    feedback.textContent = result.isCorrect
+      ? `Correct! ${exercise.explanation}`
+      : `Not quite. The correct answer was "${result.correctAnswer}". ${exercise.explanation}`;
+    document.getElementById("grammarExerciseArea").appendChild(feedback);
+  } catch (err) {
+    document.getElementById("grammarExerciseError").textContent = "Could not reach the backend.";
+  }
+}
+
+document.getElementById("tabConversationBtn").addEventListener("click", showChatTab);
+document.getElementById("tabGrammarBtn").addEventListener("click", showGrammarTab);
+document.getElementById("grammarBackBtn").addEventListener("click", closeGrammarTopic);
+document.getElementById("grammarNewExerciseBtn").addEventListener("click", generateGrammarExercise);
 
 // --- Admin console (Stage 12) ---
 

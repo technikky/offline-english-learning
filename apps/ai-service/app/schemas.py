@@ -60,3 +60,34 @@ class SynthesizeRequest(BaseModel):
 
 class SynthesizeResponse(BaseModel):
     audioBase64: str
+
+
+class GrammarExerciseRequest(BaseModel):
+    topicTitle: str
+    topicExplanation: str
+    difficultyLevel: str = "B1"
+    exerciseType: Literal["multiple_choice", "fill_blank"] = "multiple_choice"
+
+
+class GrammarExerciseResponse(BaseModel):
+    question: str
+    options: list[str]
+    correctAnswer: str
+    explanation: str
+
+
+class ReadingComprehensionRequest(BaseModel):
+    passageContent: str
+    cefrLevel: str = "B1"
+
+
+class ComprehensionQuestionModel(BaseModel):
+    question: str
+    options: list[str]
+    correctAnswer: str
+
+
+class ReadingComprehensionResponse(BaseModel):
+    summary: str
+    vocabularyWords: list[str]
+    questions: list[ComprehensionQuestionModel]

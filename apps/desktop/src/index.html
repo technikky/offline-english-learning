@@ -108,6 +108,87 @@
         display: flex;
         flex-direction: column;
         padding: 20px;
+        overflow: hidden;
+      }
+      .main-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .main-tab {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 8px 8px 0 0;
+        padding: 8px 16px;
+        cursor: pointer;
+        opacity: 0.7;
+      }
+      .main-tab.active {
+        background: #0f172a;
+        border-color: #4338ca;
+        opacity: 1;
+      }
+      #chatPanel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      #grammarPanel {
+        flex: 1;
+        overflow-y: auto;
+        min-height: 0;
+      }
+      .grammar-topic-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 12px;
+      }
+      .grammar-topic-card {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 14px;
+        cursor: pointer;
+      }
+      .grammar-topic-card:hover {
+        border-color: #4338ca;
+      }
+      .grammar-topic-card h4 {
+        margin: 0 0 6px 0;
+      }
+      .grammar-topic-card .topic-progress-bar {
+        height: 6px;
+        background: #0f172a;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 8px;
+      }
+      .grammar-topic-card .topic-progress-fill {
+        height: 100%;
+        background: #22c55e;
+      }
+      .grammar-exercise-option {
+        display: block;
+        width: 100%;
+        text-align: left;
+        margin: 4px 0;
+        padding: 8px 10px;
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      .grammar-exercise-option.selected {
+        border-color: #4338ca;
+      }
+      .grammar-exercise-option.correct {
+        border-color: #22c55e;
+        background: #14532d;
+      }
+      .grammar-exercise-option.incorrect {
+        border-color: #dc2626;
+        background: #451a1a;
       }
       #chatLog {
         flex: 1;
@@ -601,12 +682,43 @@
       </div>
 
       <div id="main">
-        <div id="chatLog"></div>
-        <div id="wordsToLearn" class="words-to-learn hidden"></div>
-        <div id="composer">
-          <button id="micBtn" class="mic-btn">🎤</button>
-          <input id="messageInput" type="text" placeholder="Type a message and press Enter…" disabled />
-          <button id="sendBtn" disabled>Send</button>
+        <div id="mainTabs" class="main-tabs">
+          <button id="tabConversationBtn" class="main-tab active">💬 Conversation</button>
+          <button id="tabGrammarBtn" class="main-tab">📘 Grammar</button>
+        </div>
+
+        <div id="chatPanel">
+          <div id="chatLog"></div>
+          <div id="wordsToLearn" class="words-to-learn hidden"></div>
+          <div id="composer">
+            <button id="micBtn" class="mic-btn">🎤</button>
+            <input id="messageInput" type="text" placeholder="Type a message and press Enter…" disabled />
+            <button id="sendBtn" disabled>Send</button>
+          </div>
+        </div>
+
+        <div id="grammarPanel" class="hidden">
+          <div id="grammarTopicList" class="grammar-topic-list"></div>
+          <div id="grammarLessonDetail" class="hidden">
+            <button id="grammarBackBtn" class="secondary">← Back to topics</button>
+            <h2 id="grammarLessonTitle"></h2>
+            <p id="grammarLessonExplanation"></p>
+            <h4>Examples</h4>
+            <ul id="grammarLessonExamples"></ul>
+
+            <div class="panel">
+              <h3>Practice</h3>
+              <div class="inline-form">
+                <select id="grammarExerciseType">
+                  <option value="multiple_choice">Multiple Choice</option>
+                  <option value="fill_blank">Fill in the Blank</option>
+                </select>
+                <button id="grammarNewExerciseBtn">New exercise</button>
+              </div>
+              <div id="grammarExerciseArea"></div>
+              <div id="grammarExerciseError" class="error"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

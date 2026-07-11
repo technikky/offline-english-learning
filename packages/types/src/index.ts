@@ -347,3 +347,101 @@ export interface AiModelInfo {
 export interface SelectAiModelRequest {
   filename: string;
 }
+
+// Stage 14: Grammar Learning Module.
+export type GrammarLevel = "beginner" | "intermediate" | "advanced";
+export type GrammarExerciseType = "multiple_choice" | "fill_blank";
+
+export interface GrammarTopicSummary {
+  id: string;
+  level: GrammarLevel;
+  title: string;
+  cefrLevel: CefrLevel;
+}
+
+export interface GrammarTopicDetail extends GrammarTopicSummary {
+  explanation: string;
+  examples: string[];
+}
+
+export interface GrammarExerciseDto {
+  exerciseType: GrammarExerciseType;
+  question: string;
+  options: string[]; // empty for fill_blank
+  explanation: string;
+  // Held client-side (not displayed) until after submission, then echoed
+  // back to the submit route -- no server-side session state needed for a
+  // single-player local app.
+  correctAnswer: string;
+}
+
+export interface SubmitGrammarExerciseRequest {
+  exerciseType: GrammarExerciseType;
+  question: string;
+  correctAnswer: string;
+  studentAnswer: string;
+}
+
+export interface SubmitGrammarExerciseResponse {
+  isCorrect: boolean;
+  correctAnswer: string;
+}
+
+export interface GrammarTopicProgress {
+  topicId: string;
+  title: string;
+  level: GrammarLevel;
+  attempts: number;
+  correct: number;
+  accuracy: number; // 0-100, 0 when no attempts yet
+}
+
+export interface GrammarProgressResponse {
+  topics: GrammarTopicProgress[];
+  overallAccuracy: number;
+  totalAttempts: number;
+}
+
+// Stage 15: Reading Module.
+export interface ReadingPassageSummary {
+  id: string;
+  title: string;
+  cefrLevel: CefrLevel;
+  estimatedReadingMinutes: number;
+}
+
+export interface ComprehensionQuestion {
+  question: string;
+  options: string[];
+  correctAnswer: string;
+}
+
+export interface ReadingPassageDetail extends ReadingPassageSummary {
+  content: string;
+  summary: string;
+  vocabularyWords: string[];
+  questions: ComprehensionQuestion[];
+}
+
+export interface SubmitReadingRequest {
+  answers: string[]; // one per question, in question order
+}
+
+export interface SubmitReadingResponse {
+  score: number; // 0-100
+  correctCount: number;
+  totalQuestions: number;
+}
+
+export interface ReadingProgressEntry {
+  passageId: string;
+  title: string;
+  cefrLevel: CefrLevel;
+  bestScore: number;
+  attempts: number;
+}
+
+export interface ReadingProgressResponse {
+  passages: ReadingProgressEntry[];
+  overallAverageScore: number;
+}

@@ -9,6 +9,7 @@ import { registerAdminRoutes } from "./routes/admin";
 import { registerTeacherRoutes } from "./routes/teacher";
 import { registerConversationRoutes } from "./routes/conversations";
 import { registerGrammarRoutes } from "./routes/grammar";
+import { registerGrammarLessonRoutes } from "./routes/grammarLessons";
 import { registerVocabularyRoutes } from "./routes/vocabulary";
 import { registerAssignmentRoutes } from "./routes/assignments";
 import { registerTeacherReviewRoutes } from "./routes/teacherReview";
@@ -56,6 +57,7 @@ async function main() {
   registerTeacherRoutes(app);
   registerConversationRoutes(app);
   registerGrammarRoutes(app);
+  registerGrammarLessonRoutes(app);
   registerVocabularyRoutes(app);
   registerAssignmentRoutes(app);
   registerTeacherReviewRoutes(app);
