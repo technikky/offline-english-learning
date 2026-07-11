@@ -146,6 +146,17 @@ export const assignments = sqliteTable("assignments", {
     .default(sql`(current_timestamp)`),
 });
 
+export const auditLogs = sqliteTable("audit_logs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").references(() => users.id),
+  action: text("action").notNull(),
+  detail: text("detail"),
+  ipAddress: text("ip_address"),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
+
 export const pronunciationResults = sqliteTable("pronunciation_results", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   studentId: integer("student_id")

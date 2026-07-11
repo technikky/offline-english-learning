@@ -1,4 +1,6 @@
 import Fastify from "fastify";
+import fastifyRateLimit from "@fastify/rate-limit";
+import { readTlsOptions } from "./tls";
 import { ensureSchema } from "./db/client";
 import { registerHealthRoute } from "./routes/health";
 import { registerAuthRoutes } from "./routes/auth";
@@ -20,8 +22,21 @@ const HOST = process.env.HOST ?? "127.0.0.1";
 async function main() {
   ensureSchema();
 
+  const https = readTlsOptions();
+
   // Default 1MB body limit is too small for base64-encoded audio recordings.
-  const app = Fastify({ logger: true, bodyLimit: 25 * 1024 * 1024 });
+  const app = Fastify({
+    logger: true,
+    bodyLimit: 25 * 1024 * 1024,
+    ...(https ? { https } : {}),
+  });
+
+  // Global default is generous (this is a LAN app, not public internet); the
+  // brute-force-relevant routes (login/refresh) set a much stricter override.
+  await app.register(fastifyRateLimit, {
+    max: 300,
+    timeWindow: "1 minute",
+  });
 
   await bootstrapAdminIfNeeded(app.log);
 

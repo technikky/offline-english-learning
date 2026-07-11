@@ -25,4 +25,11 @@ See [docs/04-repo-structure.md](docs/04-repo-structure.md).
 
 ## Current stage
 
-Stage 10 — Deployment optimization. See [docs/13-stage10-plan.md](docs/13-stage10-plan.md) and [CHANGELOG.md](CHANGELOG.md).
+Stage 11 — Testing and security improvements. See [docs/14-stage11-plan.md](docs/14-stage11-plan.md) and [CHANGELOG.md](CHANGELOG.md).
+
+## Security features (Stage 11)
+
+- **Rate limiting**: `/auth/login` and `/auth/refresh` are limited to 10 requests/minute/IP.
+- **TLS**: opt-in via `TLS_ENABLED=true` (run `node scripts/generate-tls-cert.js` first to generate a self-signed cert into `data/tls/`). Off by default so the plain-HTTP dev workflow is unchanged.
+- **Audit logging**: login/logout/admin actions/backups are recorded in the `audit_logs` table.
+- **Backup/restore**: admin-only `POST /admin/backups`, `GET /admin/backups`, `POST /admin/backups/:filename/restore` — see [docs/14-stage11-plan.md](docs/14-stage11-plan.md) for the mechanism.

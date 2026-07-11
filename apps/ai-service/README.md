@@ -1,6 +1,6 @@
-# AI Service (Stage 4 + 5 + 6 + 9 + 10)
+# AI Service (Stage 4 + 5 + 6 + 9 + 10 + 11)
 
-FastAPI service wrapping a local llama.cpp model for conversation practice, grammar-mistake explanations, vocabulary lookups/embeddings, and speech recognition/synthesis. See [docs/07-stage4-plan.md](../../docs/07-stage4-plan.md), [docs/08-stage5-plan.md](../../docs/08-stage5-plan.md), [docs/09-stage6-plan.md](../../docs/09-stage6-plan.md), [docs/12-stage9-plan.md](../../docs/12-stage9-plan.md), and [docs/13-stage10-plan.md](../../docs/13-stage10-plan.md) for the design rationale.
+FastAPI service wrapping a local llama.cpp model for conversation practice, grammar-mistake explanations, vocabulary lookups/embeddings, and speech recognition/synthesis. See [docs/07-stage4-plan.md](../../docs/07-stage4-plan.md), [docs/08-stage5-plan.md](../../docs/08-stage5-plan.md), [docs/09-stage6-plan.md](../../docs/09-stage6-plan.md), [docs/12-stage9-plan.md](../../docs/12-stage9-plan.md), [docs/13-stage10-plan.md](../../docs/13-stage10-plan.md), and [docs/14-stage11-plan.md](../../docs/14-stage11-plan.md) for the design rationale.
 
 **Concurrency note**: every route that touches the LLM or the embedding model acquires a single process-wide lock (`app/inference_lock.py`) before doing so. FastAPI's sync `def` routes run in a threadpool, so without this lock, overlapping requests (e.g. a chat reply still streaming while a vocabulary-recommendation batch fires off several `/v1/embed`/`/v1/vocabulary/explain` calls) really do hit the same llama.cpp/ONNX session concurrently — this crashed the process during Stage 6 development. Since it's a single CPU-bound model anyway, serializing access costs no real throughput.
 
@@ -40,3 +40,12 @@ GGUF file without any code changes.
 - `EMBEDDING_CACHE_DIR` — where the ONNX embedding model is cached (default `offline-sdk/ai-models/fastembed-cache/`).
 - `WHISPER_MODEL` — Whisper model size (default `tiny.en`).
 - `PIPER_VOICE_PATH` — path to the Piper `.onnx` voice file (default `offline-sdk/ai-models/piper-voices/en_US-lessac-medium.onnx`).
+
+## Tests
+
+`app/prompts.py`'s lenient marker-based response parsers are pure functions with no model dependency, unlike the rest of the service — the natural place for automated tests (everything else needs a real GGUF/ONNX/Whisper/Piper asset loaded, which is instead verified via manual curl calls each stage).
+
+```
+.venv/Scripts/pip install -r requirements.txt   # includes pytest
+.venv/Scripts/python -m pytest tests/
+```

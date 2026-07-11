@@ -18,6 +18,9 @@ import {
   signAccessToken,
 } from "../auth/tokens";
 import { authenticate } from "../auth/middleware";
+import { recordAuditEvent } from "../audit/log";
+
+const loginRateLimit = { rateLimit: { max: 10, timeWindow: "1 minute" } };
 
 function toProfile(user: typeof users.$inferSelect): UserProfile {
   return {
@@ -30,39 +33,66 @@ function toProfile(user: typeof users.$inferSelect): UserProfile {
 }
 
 export function registerAuthRoutes(app: FastifyInstance): void {
-  app.post<{ Body: LoginRequest }>("/auth/login", async (request, reply) => {
-    const { email, password } = request.body;
+  app.post<{ Body: LoginRequest }>(
+    "/auth/login",
+    { config: loginRateLimit },
+    async (request, reply) => {
+      const { email, password } = request.body;
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.email, email),
-    });
+      const user = await db.query.users.findFirst({
+        where: eq(users.email, email),
+      });
 
-    if (!user || !(await verifyPassword(user.passwordHash, password))) {
-      return reply.code(401).send({ error: "Invalid email or password" });
-    }
+      if (!user || !(await verifyPassword(user.passwordHash, password))) {
+        await recordAuditEvent({
+          userId: user?.id ?? null,
+          action: "login_failure",
+          detail: `email=${email}`,
+          ipAddress: request.ip,
+        });
+        return reply.code(401).send({ error: "Invalid email or password" });
+      }
 
-    const accessToken = signAccessToken({ sub: user.id, role: user.role });
-    const refreshToken = await issueRefreshToken(user.id);
+      const accessToken = signAccessToken({ sub: user.id, role: user.role });
+      const refreshToken = await issueRefreshToken(user.id);
 
-    const response: LoginResponse = {
-      accessToken,
-      refreshToken,
-      expiresInSeconds: accessTokenTtlSeconds,
-      user: toProfile(user),
-    };
-    return response;
-  });
+      await recordAuditEvent({
+        userId: user.id,
+        action: "login_success",
+        detail: null,
+        ipAddress: request.ip,
+      });
 
-  app.post<{ Body: RefreshRequest }>("/auth/refresh", async (request, reply) => {
-    const rotated = await rotateRefreshToken(request.body.refreshToken);
-    if (!rotated) {
-      return reply.code(401).send({ error: "Invalid or expired refresh token" });
-    }
-    return { ...rotated, expiresInSeconds: accessTokenTtlSeconds };
-  });
+      const response: LoginResponse = {
+        accessToken,
+        refreshToken,
+        expiresInSeconds: accessTokenTtlSeconds,
+        user: toProfile(user),
+      };
+      return response;
+    },
+  );
+
+  app.post<{ Body: RefreshRequest }>(
+    "/auth/refresh",
+    { config: loginRateLimit },
+    async (request, reply) => {
+      const rotated = await rotateRefreshToken(request.body.refreshToken);
+      if (!rotated) {
+        return reply.code(401).send({ error: "Invalid or expired refresh token" });
+      }
+      return { ...rotated, expiresInSeconds: accessTokenTtlSeconds };
+    },
+  );
 
   app.post<{ Body: LogoutRequest }>("/auth/logout", async (request) => {
     await revokeRefreshToken(request.body.refreshToken);
+    await recordAuditEvent({
+      userId: request.authUser?.sub ?? null,
+      action: "logout",
+      detail: null,
+      ipAddress: request.ip,
+    });
     return { ok: true };
   });
 

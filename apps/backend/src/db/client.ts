@@ -4,14 +4,24 @@ import path from "node:path";
 import fs from "node:fs";
 import * as schema from "./schema";
 
-const dataDir = path.resolve(__dirname, "../../../../data");
+export const dataDir = path.resolve(__dirname, "../../../../data");
 fs.mkdirSync(dataDir, { recursive: true });
 
-const dbPath = process.env.DB_PATH ?? path.join(dataDir, "app.db");
-const sqlite = new Database(dbPath);
+export const dbPath = process.env.DB_PATH ?? path.join(dataDir, "app.db");
+
+export let sqlite = new Database(dbPath);
 sqlite.pragma("journal_mode = WAL");
 
-export const db = drizzle(sqlite, { schema });
+export let db = drizzle(sqlite, { schema });
+
+// Restore needs to swap the live connection to the just-restored file without
+// requiring a full process restart. Safe because every route module accesses
+// `db`/`sqlite` through this module's exports rather than a destructured copy.
+export function reopenConnection(): void {
+  sqlite = new Database(dbPath);
+  sqlite.pragma("journal_mode = WAL");
+  db = drizzle(sqlite, { schema });
+}
 
 export function ensureSchema(): void {
   sqlite.exec(`
@@ -111,6 +121,15 @@ export function ensureSchema(): void {
       description TEXT NOT NULL,
       scenario TEXT NOT NULL,
       due_date TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (current_timestamp)
+    );
+
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER REFERENCES users(id),
+      action TEXT NOT NULL,
+      detail TEXT,
+      ip_address TEXT,
       created_at TEXT NOT NULL DEFAULT (current_timestamp)
     );
 
