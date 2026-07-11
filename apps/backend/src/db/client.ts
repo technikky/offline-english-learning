@@ -68,5 +68,18 @@ export function ensureSchema(): void {
       content TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (current_timestamp)
     );
+
+    CREATE TABLE IF NOT EXISTS grammar_mistakes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      message_id INTEGER NOT NULL REFERENCES messages(id),
+      original_text TEXT NOT NULL,
+      corrected_text TEXT NOT NULL,
+      rule_id TEXT NOT NULL,
+      rule_description TEXT NOT NULL,
+      category TEXT NOT NULL,
+      explanation TEXT,
+      example TEXT,
+      created_at TEXT NOT NULL DEFAULT (current_timestamp)
+    );
   `);
 }

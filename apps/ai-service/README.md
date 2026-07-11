@@ -1,6 +1,6 @@
-# AI Service (Stage 4)
+# AI Service (Stage 4 + 5)
 
-FastAPI service wrapping a local llama.cpp model for conversation practice. See [docs/07-stage4-plan.md](../../docs/07-stage4-plan.md) for the design rationale.
+FastAPI service wrapping a local llama.cpp model for conversation practice and grammar-mistake explanations. See [docs/07-stage4-plan.md](../../docs/07-stage4-plan.md) and [docs/08-stage5-plan.md](../../docs/08-stage5-plan.md) for the design rationale.
 
 ## Setup
 
@@ -24,6 +24,7 @@ GGUF file without any code changes.
 
 - `GET /health` — `{ "status": "ok", "modelLoaded": true }`
 - `POST /v1/chat` — body `{ messages: [{role, content}], scenario, difficultyLevel }`, streams newline-delimited JSON: one `{"token": "..."}` line per generated token, then a final `{"done": true, "fullText": "..."}` line.
+- `POST /v1/grammar/explain` — body `{ originalText, correctedText, ruleDescription, difficultyLevel }`, non-streaming (a short explanation doesn't need token-by-token delivery). Returns `{ explanation, example }`. Parses the model's `EXPLANATION:`/`EXAMPLE:`-marked output leniently rather than requiring strict JSON, since small local models aren't reliable at that.
 
 ## Config
 

@@ -3,11 +3,26 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 echo "=== Offline English Learning System : start-dev ==="
-echo "Starting AI service..."
+echo "Starting LanguageTool server..."
 
+java -cp offline-sdk/build-tools/LanguageTool-6.5/languagetool-server.jar org.languagetool.server.HTTPServer --port 8081 &
+LT_PID=$!
+trap 'kill $LT_PID 2>/dev/null || true; kill $AI_PID 2>/dev/null || true; kill $BACKEND_PID 2>/dev/null || true' EXIT
+
+echo "Waiting for LanguageTool health check on http://127.0.0.1:8081/v2/languages ..."
+tries=0
+until curl -s http://127.0.0.1:8081/v2/languages >/dev/null 2>&1; do
+  tries=$((tries + 1))
+  if [ "$tries" -gt 60 ]; then
+    echo "LanguageTool did not become healthy in time. Aborting."
+    exit 1
+  fi
+  sleep 1
+done
+
+echo "LanguageTool is healthy. Starting AI service..."
 (cd apps/ai-service && .venv/Scripts/python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8100) &
 AI_PID=$!
-trap 'kill $AI_PID 2>/dev/null || true; kill $BACKEND_PID 2>/dev/null || true' EXIT
 
 echo "Waiting for AI service health check on http://127.0.0.1:8100/health ..."
 tries=0

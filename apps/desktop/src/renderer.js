@@ -79,6 +79,98 @@ function appendBubble(role, text) {
   return bubble;
 }
 
+async function explainMistake(mistakeId, box) {
+  box.textContent = "Explaining…";
+  try {
+    const res = await fetch(`${API_BASE}/grammar/explain`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ mistakeId }),
+    });
+
+    if (!res.ok) {
+      box.textContent = "Could not get an explanation.";
+      return;
+    }
+
+    const data = await res.json();
+    box.innerHTML = "";
+    const explanation = document.createElement("div");
+    explanation.textContent = data.explanation;
+    box.appendChild(explanation);
+    if (data.example) {
+      const example = document.createElement("div");
+      example.className = "example";
+      example.textContent = data.example;
+      box.appendChild(example);
+    }
+  } catch (err) {
+    box.textContent = "Could not reach the AI service.";
+  }
+}
+
+function renderCorrections(mistakes) {
+  if (!mistakes || mistakes.length === 0) return null;
+
+  const container = document.createElement("div");
+  container.className = "corrections";
+
+  for (const mistake of mistakes) {
+    const item = document.createElement("div");
+    item.className = "correction-item";
+
+    const row = document.createElement("div");
+    row.className = "correction-row";
+
+    const text = document.createElement("span");
+    text.className = "correction-text";
+    text.innerHTML =
+      `<span class="strike">${mistake.originalText}</span>` +
+      `<span class="arrow">→</span>` +
+      `<span class="fix">${mistake.correctedText}</span>`;
+
+    const explainBtn = document.createElement("button");
+    explainBtn.className = "explain-btn";
+    explainBtn.textContent = "Explain";
+
+    row.appendChild(text);
+    row.appendChild(explainBtn);
+    item.appendChild(row);
+
+    const explanationBox = document.createElement("div");
+    explanationBox.className = "hidden explanation-box";
+
+    if (mistake.explanation) {
+      explanationBox.classList.remove("hidden");
+      const explanation = document.createElement("div");
+      explanation.textContent = mistake.explanation;
+      explanationBox.appendChild(explanation);
+      if (mistake.example) {
+        const example = document.createElement("div");
+        example.className = "example";
+        example.textContent = mistake.example;
+        explanationBox.appendChild(example);
+      }
+    }
+
+    explainBtn.addEventListener("click", () => {
+      const isHidden = explanationBox.classList.contains("hidden");
+      explanationBox.classList.toggle("hidden");
+      if (isHidden && !mistake.explanation) {
+        explainMistake(mistake.id, explanationBox);
+      }
+    });
+
+    item.appendChild(explanationBox);
+    container.appendChild(item);
+  }
+
+  return container;
+}
+
 async function startConversation() {
   const scenario = document.getElementById("scenarioSelect").value;
   const errorEl = document.getElementById("conversationError");
@@ -156,7 +248,12 @@ async function sendMessage() {
 
         try {
           const parsed = JSON.parse(line);
-          if (parsed.token) {
+          if (parsed.grammarMistakes) {
+            const corrections = renderCorrections(parsed.grammarMistakes);
+            if (corrections) {
+              document.getElementById("chatLog").insertBefore(corrections, assistantBubble);
+            }
+          } else if (parsed.token) {
             displayedText += parsed.token;
             assistantBubble.textContent = displayedText;
             document.getElementById("chatLog").scrollTop = document.getElementById("chatLog").scrollHeight;

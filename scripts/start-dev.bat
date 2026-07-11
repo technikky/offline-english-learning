@@ -3,8 +3,23 @@ setlocal
 cd /d "%~dp0.."
 
 echo === Offline English Learning System : start-dev ===
-echo Starting AI service...
+echo Starting LanguageTool server...
 
+start "englishclass-languagetool" cmd /c "java -cp offline-sdk\build-tools\LanguageTool-6.5\languagetool-server.jar org.languagetool.server.HTTPServer --port 8081"
+
+echo Waiting for LanguageTool health check on http://127.0.0.1:8081/v2/languages ...
+set /a tries=0
+:waitloop_lt
+set /a tries+=1
+if %tries% GTR 60 (
+  echo LanguageTool did not become healthy in time. Aborting.
+  exit /b 1
+)
+timeout /t 1 /nobreak >nul
+curl -s http://127.0.0.1:8081/v2/languages >nul 2>&1
+if errorlevel 1 goto waitloop_lt
+
+echo LanguageTool is healthy. Starting AI service...
 start "englishclass-ai-service" cmd /c "cd apps\ai-service && .venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8100"
 
 echo Waiting for AI service health check on http://127.0.0.1:8100/health ...

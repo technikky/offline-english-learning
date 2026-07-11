@@ -8,10 +8,11 @@ import type {
   SendMessageRequest,
 } from "@englishclass/types";
 import { db } from "../db/client";
-import { conversations, messages } from "../db/schema";
+import { conversations, grammarMistakes, messages } from "../db/schema";
 import { authenticate } from "../auth/middleware";
 import { estimateDifficultyLevel } from "../conversations/difficulty";
 import { requestAiChatStream, type AiChatMessage } from "../conversations/aiClient";
+import { checkAndPersistGrammar } from "../grammar/checkAndPersist";
 
 const VALID_SCENARIOS: Scenario[] = [
   "free_talk",
@@ -66,6 +67,15 @@ export function registerConversationRoutes(app: FastifyInstance): void {
         .where(eq(messages.conversationId, conversationId))
         .orderBy(asc(messages.createdAt));
 
+      const mistakesByMessageId = new Map<number, (typeof grammarMistakes.$inferSelect)[]>();
+      for (const message of history) {
+        const rows = await db
+          .select()
+          .from(grammarMistakes)
+          .where(eq(grammarMistakes.messageId, message.id));
+        if (rows.length > 0) mistakesByMessageId.set(message.id, rows);
+      }
+
       const detail: ConversationDetail = {
         id: conversation.id,
         scenario: conversation.scenario as Scenario,
@@ -75,6 +85,16 @@ export function registerConversationRoutes(app: FastifyInstance): void {
           role: m.role,
           content: m.content,
           createdAt: m.createdAt,
+          grammarMistakes: mistakesByMessageId.get(m.id)?.map((row) => ({
+            id: row.id,
+            originalText: row.originalText,
+            correctedText: row.correctedText,
+            ruleId: row.ruleId,
+            ruleDescription: row.ruleDescription,
+            category: row.category,
+            explanation: row.explanation,
+            example: row.example,
+          })),
         })),
       };
       return detail;
@@ -99,11 +119,16 @@ export function registerConversationRoutes(app: FastifyInstance): void {
         return reply.code(404).send({ error: "Conversation not found" });
       }
 
-      await db.insert(messages).values({
-        conversationId,
-        role: "user",
-        content,
-      });
+      const [userMessage] = await db
+        .insert(messages)
+        .values({
+          conversationId,
+          role: "user",
+          content,
+        })
+        .returning();
+
+      const persistedMistakes = await checkAndPersistGrammar(userMessage.id, content);
 
       const history = await db
         .select()
@@ -130,6 +155,7 @@ export function registerConversationRoutes(app: FastifyInstance): void {
 
       reply.hijack();
       reply.raw.writeHead(200, { "Content-Type": "application/x-ndjson" });
+      reply.raw.write(JSON.stringify({ grammarMistakes: persistedMistakes }) + "\n");
 
       const reader = aiResponse.body.getReader();
       const decoder = new TextDecoder();

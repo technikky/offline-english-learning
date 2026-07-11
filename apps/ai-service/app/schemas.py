@@ -11,3 +11,15 @@ class ChatRequest(BaseModel):
     messages: list[ChatMessage]
     scenario: str = "free_talk"
     difficultyLevel: str = "B1"
+
+
+class GrammarExplainRequest(BaseModel):
+    originalText: str
+    correctedText: str
+    ruleDescription: str
+    difficultyLevel: str = "B1"
+
+
+class GrammarExplainResponse(BaseModel):
+    explanation: str
+    example: str

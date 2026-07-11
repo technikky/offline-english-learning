@@ -81,3 +81,20 @@ export const messages = sqliteTable("messages", {
     .notNull()
     .default(sql`(current_timestamp)`),
 });
+
+export const grammarMistakes = sqliteTable("grammar_mistakes", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  messageId: integer("message_id")
+    .notNull()
+    .references(() => messages.id),
+  originalText: text("original_text").notNull(),
+  correctedText: text("corrected_text").notNull(),
+  ruleId: text("rule_id").notNull(),
+  ruleDescription: text("rule_description").notNull(),
+  category: text("category").notNull(),
+  explanation: text("explanation"),
+  example: text("example"),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});

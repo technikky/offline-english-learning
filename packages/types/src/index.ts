@@ -90,6 +90,7 @@ export interface MessageDto {
   role: "user" | "assistant";
   content: string;
   createdAt: string;
+  grammarMistakes?: GrammarMistakeDto[];
 }
 
 export interface ConversationDetail extends ConversationSummary {
@@ -98,4 +99,24 @@ export interface ConversationDetail extends ConversationSummary {
 
 export interface SendMessageRequest {
   content: string;
+}
+
+export interface GrammarMistakeDto {
+  id: number;
+  originalText: string;
+  correctedText: string;
+  ruleId: string;
+  ruleDescription: string;
+  category: string;
+  explanation: string | null;
+  example: string | null;
+}
+
+export interface ExplainMistakeRequest {
+  mistakeId: number;
+}
+
+export interface ExplainMistakeResponse {
+  explanation: string;
+  example: string;
 }

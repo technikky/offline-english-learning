@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Offline English Learning — Stage 4</title>
+    <title>Offline English Learning — Stage 5</title>
     <style>
       * {
         box-sizing: border-box;
@@ -151,6 +151,62 @@
       }
       h3 {
         margin-top: 0;
+      }
+
+      .corrections {
+        max-width: 70%;
+        margin: 2px 0 6px auto;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .correction-item {
+        background: #451a1a;
+        border: 1px solid #7f1d1d;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+      .correction-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .correction-text {
+        color: #fecaca;
+      }
+      .correction-text .strike {
+        text-decoration: line-through;
+        opacity: 0.7;
+      }
+      .correction-text .arrow {
+        margin: 0 4px;
+        opacity: 0.7;
+      }
+      .correction-text .fix {
+        color: #bbf7d0;
+        font-weight: 600;
+      }
+      .explain-btn {
+        width: auto;
+        margin-top: 0;
+        padding: 3px 8px;
+        font-size: 11px;
+        background: #334155;
+        white-space: nowrap;
+      }
+      .explanation-box {
+        margin-top: 6px;
+        padding-top: 6px;
+        border-top: 1px solid #7f1d1d;
+        color: #e2e8f0;
+        line-height: 1.4;
+      }
+      .explanation-box .example {
+        margin-top: 4px;
+        font-style: italic;
+        opacity: 0.85;
       }
     </style>
   </head>

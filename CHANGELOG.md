@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.5.0 — Stage 5: Grammar correction engine
+
+- Vendored LanguageTool 6.5 (fully offline, rule-based grammar checker) under `offline-sdk/build-tools/` (gitignored). Detects tenses, subject-verb agreement, articles, prepositions, punctuation, and more, with stable rule IDs/categories for later analytics.
+- Backend: `grammar_mistakes` schema; `POST /conversations/:id/messages` now runs the student's message through LanguageTool and sends detected mistakes as the first line of the same NDJSON stream (no extra round trip), persisting them tied to the message. `GET /conversations/:id` returns mistakes per message too, so a reload doesn't lose corrections.
+- New `POST /grammar/explain` route — the "explain this mistake" AI Tutor entry point from the original requirements. Calls the AI Service, caches the explanation/example on first request so re-opening a correction doesn't re-run inference.
+- AI Service: new non-streaming `POST /v1/grammar/explain` endpoint generating a beginner-friendly, step-by-step explanation and example, difficulty-aware.
+- Desktop: inline correction UI under user chat bubbles ("original → corrected") with a per-mistake "Explain" button that expands to show the AI-generated explanation and example.
+- Verified end-to-end via curl: a message with deliberate mistakes ("...buy a apple...") gets a real LanguageTool-detected correction (`a` → `an`, rule `EN_A_VS_AN`) streamed back immediately, and "explain" returns a real LLM-generated explanation that's cached on the mistake row. 16 backend tests pass, including 5 new ones for grammar-check persistence and the explain route's caching/ownership behavior (LanguageTool and the AI service are faked in tests, per the same reasoning as Stage 4's streaming-path testing decision).
+
 ## v0.4.0 — Stage 4: AI conversation engine
 
 - New AI Service (`apps/ai-service`, Python + FastAPI) wrapping a local llama.cpp model (`llama-cpp-python`). Streams token-by-token NDJSON responses from `POST /v1/chat`, with a system prompt assembled server-side from a scenario preset + CEFR difficulty level.
