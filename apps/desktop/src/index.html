@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Offline English Learning — Stage 1</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+      }
+      .card {
+        background: #1e293b;
+        border-radius: 12px;
+        padding: 32px 40px;
+        min-width: 360px;
+        text-align: center;
+      }
+      .status {
+        font-size: 14px;
+        margin-top: 16px;
+        padding: 8px 12px;
+        border-radius: 8px;
+      }
+      .ok {
+        background: #14532d;
+        color: #bbf7d0;
+      }
+      .fail {
+        background: #7f1d1d;
+        color: #fecaca;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>Offline AI English Learning System</h2>
+      <p>Stage 1: Desktop foundation</p>
+      <div id="status" class="status">Checking backend…</div>
+    </div>
+    <script src="renderer.js"></script>
+  </body>
+</html>

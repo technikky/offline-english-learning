@@ -1,0 +1,12 @@
+{
+  "name": "englishclass",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "dev:backend": "pnpm --filter @englishclass/backend dev",
+    "dev:desktop": "pnpm --filter @englishclass/desktop dev",
+    "build": "pnpm --filter @englishclass/types build && pnpm --filter @englishclass/backend build && pnpm --filter @englishclass/desktop build",
+    "test": "pnpm -r test"
+  }
+}

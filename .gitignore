@@ -1,0 +1,14 @@
+node_modules/
+dist/
+release/
+data/
+*.log
+.DS_Store
+Thumbs.db
+
+# Vendored offline binaries are large and platform-specific; restored by
+# offline-sdk/node/README.md's vendoring script, not committed as blobs.
+offline-sdk/node/*/
+offline-sdk/ai-models/*.gguf
+offline-sdk/speech-models/**/*.bin
+offline-sdk/speech-models/**/*.onnx
