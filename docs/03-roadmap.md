@@ -66,6 +66,18 @@ Each stage ends with: tests passing, docs updated, a commit with the message pat
 - Full documentation set finalized (install guide, admin guide, teacher guide, student guide, architecture doc).
 - Final packaging, changelog compiled, tag: `v1.0.0`.
 
+## Backlog from "project requirements.docx"
+
+A second source document (`project requirements.docx`) surfaced after this roadmap was written, describing a larger-scale vision: reading practice, listening practice, writing practice, an automatic quiz generator, a homework system, multi-school/license management, and enterprise-tier GPU server hardware. Its suggested tech stack (web frontend, PostgreSQL, Redis, Docker) was evaluated and **not adopted** — the Electron/Flutter/SQLite architecture in [01-architecture.md](01-architecture.md) and [02-technology-selection.md](02-technology-selection.md) remains the decision, since it better fits the offline/modest-hardware/small-team constraints this project is optimizing for.
+
+The additional *feature* scope (not the stack) is a legitimate backlog for post-v1.0 phases and slots into the existing module boundaries without architecture changes:
+
+- Reading/Listening/Writing practice → new modules following the same service+repository+route pattern as Grammar/Vocabulary (Stage 5/6 pattern), targeted for a Stage 13+ ("Phase 2") extension.
+- Quiz generator + Homework system → builds on Analytics (Stage 8) and Teacher Dashboard (Stage 7) data; targeted alongside the above.
+- Multi-school/license management → only relevant if/when this deploys across multiple institutions from one instance; the current single-school-per-server topology (see architecture doc §4) would need a `Schools` tenancy table added, which is a additive schema change, not a rearchitecture.
+
+None of this changes Stage 1–12 as planned; it's tracked here so it isn't lost.
+
 ## Notes on ordering deviations from the brief's suggested order
 
 - Auth (Stage 3) is placed before AI conversation (Stage 4) rather than in parallel with Stage 1/2, because every later stage's data model (conversations, mistakes, vocabulary) is owned by a user — building AI features against unauthenticated stub users would require rework.
