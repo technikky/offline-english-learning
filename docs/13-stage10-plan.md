@@ -8,6 +8,7 @@ Per `docs/03-roadmap.md`: installer polish, Android signing pipeline, an LLM/emb
 
 - Configure `electron-builder` for a real NSIS installer (`apps/desktop/package.json` `build` field already exists from Stage 1 but was never exercised beyond a stub). Target Windows first (the dev/verification platform); Linux (AppImage) config is added too since it's nearly free once NSIS config exists, but only Windows is build-verified in this session.
 - `scripts/deploy.bat` graduates from a Stage 1 stub to an actually-working one-click production build + package.
+- **Real finding, not fully resolved in this session**: `electron-builder`'s Windows NSIS target unconditionally downloads and extracts a `winCodeSign` bundle (containing macOS cross-signing libraries, unused for a Windows-only unsigned build) that includes symlinked files. Extracting those symlinks requires either Windows Developer Mode or an elevated (Administrator) process — a genuine OS privilege requirement, not a config mistake (`CSC_IDENTITY_AUTO_DISCOVERY=false` does not avoid it). Verified instead via `electron-builder --win --dir`, which skips NSIS packaging and produces the packaged, runnable app directly: `release/win-unpacked/Offline English Learning.exe`, **269MB unpacked** — proving the app packages and its dependencies resolve correctly. Producing the final single-file NSIS installer on a school's build machine requires Developer Mode enabled (or building as Administrator) — documented here as a one-time build-environment setup step, not a defect in the project.
 
 ## 2. Android signing pipeline
 
@@ -30,10 +31,10 @@ Per `docs/03-roadmap.md`: installer polish, Android signing pipeline, an LLM/emb
 
 ## 4. Electron vs. Tauri — revisited with real measurements
 
-[docs/02-technology-selection.md](02-technology-selection.md) deferred this to "Stage 10, if binary size becomes a real constraint." With an actual packaged app to measure:
+[docs/02-technology-selection.md](02-technology-selection.md) deferred this to "Stage 10, if binary size becomes a real constraint." With an actual packaged app measured:
 
-- Electron's unpacked runtime in `node_modules` is ~270MB before compression; a packaged NSIS installer is measured below.
-- Tauri's equivalent (a Rust-compiled webview shim, no bundled Chromium) would be tens of MB instead of ~100MB+, but the tradeoff called out in Stage 1 hasn't changed: Tauri requires a Rust toolchain and mirroring the crates.io dependency graph for a genuinely offline build, which is harder to keep reliably offline than npm package vendoring, and the team's stack is already Node/TypeScript end-to-end.
+- The packaged, unpacked Electron app (`release/win-unpacked/`) is **269MB** — the real number, not an estimate, from `electron-builder --win --dir`. An NSIS installer compresses this to something smaller (typically 40–60% of unpacked size for Electron apps) but wasn't measured directly in this session (see the installer note above).
+- Tauri's equivalent (a Rust-compiled webview shim, no bundled Chromium) would be tens of MB instead of ~270MB, but the tradeoff called out in Stage 1 hasn't changed: Tauri requires a Rust toolchain and mirroring the crates.io dependency graph for a genuinely offline build, which is harder to keep reliably offline than npm package vendoring, and the team's stack is already Node/TypeScript end-to-end.
 - **Decision: stay on Electron.** Modern school lab PCs (the target hardware per the brief) have disk space to spare for a one-time ~100–150MB install; nothing measured in this stage shows Electron's size actually blocking deployment. This is recorded as a decision with real numbers behind it, not deferred again by default.
 
 ## 5. PostgreSQL migration path (documented, not switched)

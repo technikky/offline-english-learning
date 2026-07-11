@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.10.0 — Stage 10: Deployment optimization
+
+- **Electron installer**: NSIS (Windows) and AppImage (Linux, config-only) configured. Real finding: building the final single-file NSIS installer requires Windows Developer Mode or Administrator privileges (electron-builder needs symlink-creation rights to extract cross-signing tools, even for an unsigned Windows-only build) — documented as a one-time build-machine setup step in `docs/13-stage10-plan.md`, not a project defect. Verified instead via `electron-builder --win --dir`: a real, complete packaged app (`Offline English Learning.exe`, 269MB unpacked).
+- **Android release signing**: a school/dev-deployment keystore (gitignored, `apps/android/keystore/README.md`) wired into `build.gradle` via `key.properties`. Built and verified a real signed release APK (`apksigner verify` confirms the certificate).
+- **AI service performance**: llama.cpp thread count made explicit and configurable (`AI_THREADS`, defaults to logical core count). Benchmarked a real **55% tokens/sec speedup** (10.65 → 16.51 tok/s on 16 cores) from thread tuning alone — measured, not assumed, via `apps/ai-service/scripts/benchmark.py`. Documented that the caching layers that actually benefit (`/v1/vocabulary/explain`, `/v1/grammar/explain`) were already built in Stages 5–6, so no new cache was added.
+- **Electron vs. Tauri, revisited with real numbers**: 269MB unpacked Electron vs. an estimated tens-of-MB Tauri equivalent — decision recorded to stay on Electron (Rust/crates.io offline vendoring is a harder problem than npm vendoring, and school hardware has disk space to spare).
+- **PostgreSQL migration path documented, not switched**: concrete column-type translation guide (`sqliteTable`→`pgTable`, `blob`→`bytea`/`pgvector`, autoincrement→`serial`) and a migration script skeleton, explicitly deferred until a real multi-school/district deployment needs it.
+- No new product features or backend tests this stage — infrastructure/ops work, verified by real builds and measurements rather than unit tests.
+
 ## v0.9.0 — Stage 9: Speech recognition and pronunciation
 
 - AI Service: `pywhispercpp` (Whisper `tiny.en`) for speech-to-text and `piper-tts` (`en_US-lessac-medium`) for text-to-speech — both installed cleanly via prebuilt wheels, no compilation, no PyTorch, feasibility-checked before committing to the plan (same approach as Stage 6's `fastembed`). New `POST /v1/speech/transcribe` and `POST /v1/speech/synthesize`, both behind the Stage 6 inference lock.

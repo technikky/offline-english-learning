@@ -25,4 +25,4 @@ See [docs/04-repo-structure.md](docs/04-repo-structure.md).
 
 ## Current stage
 
-Stage 9 — Speech recognition and pronunciation. See [docs/12-stage9-plan.md](docs/12-stage9-plan.md) and [CHANGELOG.md](CHANGELOG.md).
+Stage 10 — Deployment optimization. See [docs/13-stage10-plan.md](docs/13-stage10-plan.md) and [CHANGELOG.md](CHANGELOG.md).
