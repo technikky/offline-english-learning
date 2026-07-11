@@ -35,6 +35,7 @@ function showLoggedIn(user) {
   document.getElementById("profileRole").textContent = user.role;
   document.getElementById("profileEmail").textContent = user.email;
   loadNotebook();
+  loadStudentAnalytics();
 }
 
 function showLoggedOut() {
@@ -58,6 +59,8 @@ function showLoggedOut() {
   document.getElementById("classList").innerHTML = "";
   document.getElementById("classDetail").classList.add("hidden");
   document.getElementById("noClassSelected").classList.remove("hidden");
+  document.getElementById("studentAnalyticsPanel").innerHTML = "Loading…";
+  document.getElementById("teacherStudentAnalyticsPanel").innerHTML = "";
 }
 
 async function login() {
@@ -515,8 +518,136 @@ function renderRoster(students) {
   body.innerHTML = "";
   for (const student of students) {
     const row = document.createElement("tr");
+    row.style.cursor = "pointer";
     row.innerHTML = `<td>${student.displayName}</td><td>${student.email}</td>`;
+    row.addEventListener("click", () => loadTeacherStudentAnalytics(student.id));
     body.appendChild(row);
+  }
+}
+
+function renderAnalytics(container, data) {
+  container.innerHTML = "";
+
+  const stats = document.createElement("div");
+  stats.className = "analytics-stats";
+  const statEntries = [
+    ["Level", data.estimatedLevel],
+    ["Conversations", data.totalConversations],
+    ["Messages", data.totalMessages],
+    ["Practice (min, est.)", data.estimatedPracticeMinutes],
+  ];
+  for (const [label, value] of statEntries) {
+    const box = document.createElement("div");
+    box.className = "analytics-stat";
+    box.innerHTML = `<span class="value">${value}</span><span class="label">${label}</span>`;
+    stats.appendChild(box);
+  }
+  container.appendChild(stats);
+
+  const freqLabel = document.createElement("div");
+  freqLabel.style.fontSize = "12px";
+  freqLabel.style.opacity = "0.75";
+  freqLabel.textContent = "Practice frequency (last 30 days):";
+  container.appendChild(freqLabel);
+
+  const freqBars = document.createElement("div");
+  freqBars.className = "freq-bars";
+  const maxCount = Math.max(1, ...data.practiceFrequency.map((p) => p.count));
+  if (data.practiceFrequency.length === 0) {
+    const empty = document.createElement("div");
+    empty.style.fontSize = "12px";
+    empty.style.opacity = "0.6";
+    empty.textContent = "No activity yet.";
+    freqBars.appendChild(empty);
+  } else {
+    for (const point of data.practiceFrequency) {
+      const bar = document.createElement("div");
+      bar.className = "freq-bar";
+      bar.style.height = `${(point.count / maxCount) * 100}%`;
+      bar.title = `${point.date}: ${point.count}`;
+      freqBars.appendChild(bar);
+    }
+  }
+  container.appendChild(freqBars);
+
+  const weaknessLabel = document.createElement("div");
+  weaknessLabel.style.fontSize = "12px";
+  weaknessLabel.style.opacity = "0.75";
+  weaknessLabel.textContent = "Grammar weaknesses:";
+  container.appendChild(weaknessLabel);
+
+  if (data.grammarWeaknesses.length === 0) {
+    const empty = document.createElement("div");
+    empty.style.fontSize = "12px";
+    empty.style.opacity = "0.6";
+    empty.textContent = "No mistakes recorded yet.";
+    container.appendChild(empty);
+  } else {
+    const maxWeakness = Math.max(...data.grammarWeaknesses.map((w) => w.count));
+    for (const weakness of data.grammarWeaknesses) {
+      const row = document.createElement("div");
+      row.className = "weakness-row";
+      row.innerHTML = `<span>${weakness.category}</span><span>${weakness.count}</span>`;
+      container.appendChild(row);
+
+      const barBg = document.createElement("div");
+      barBg.className = "weakness-bar-bg";
+      const barFill = document.createElement("div");
+      barFill.className = "weakness-bar-fill";
+      barFill.style.width = `${(weakness.count / maxWeakness) * 100}%`;
+      barBg.appendChild(barFill);
+      container.appendChild(barBg);
+    }
+  }
+
+  const vocabLabel = document.createElement("div");
+  vocabLabel.style.fontSize = "12px";
+  vocabLabel.style.opacity = "0.75";
+  vocabLabel.style.marginTop = "8px";
+  const totalVocab =
+    data.vocabularyGrowth.length > 0
+      ? data.vocabularyGrowth[data.vocabularyGrowth.length - 1].cumulativeCount
+      : 0;
+  vocabLabel.textContent = `Vocabulary notebook size: ${totalVocab}`;
+  container.appendChild(vocabLabel);
+}
+
+async function loadStudentAnalytics() {
+  const container = document.getElementById("studentAnalyticsPanel");
+  try {
+    const res = await fetch(`${API_BASE}/analytics/me`, { headers: authHeaders() });
+    if (!res.ok) {
+      container.textContent = "Could not load progress.";
+      return;
+    }
+    renderAnalytics(container, await res.json());
+  } catch (err) {
+    container.textContent = "Could not reach the backend.";
+  }
+}
+
+async function loadTeacherStudentAnalytics(studentId) {
+  const container = document.getElementById("teacherStudentAnalyticsPanel");
+  container.classList.remove("hidden");
+  container.innerHTML = "Loading…";
+  try {
+    const res = await fetch(`${API_BASE}/analytics/students/${studentId}`, {
+      headers: authHeaders(),
+    });
+    if (!res.ok) {
+      container.textContent = "Could not load this student's progress.";
+      return;
+    }
+    const data = await res.json();
+    const heading = document.createElement("h4");
+    heading.textContent = `${data.displayName}'s progress`;
+    container.innerHTML = "";
+    container.appendChild(heading);
+    const body = document.createElement("div");
+    container.appendChild(body);
+    renderAnalytics(body, data);
+  } catch (err) {
+    container.textContent = "Could not reach the backend.";
   }
 }
 
@@ -572,6 +703,9 @@ async function selectClass(classId) {
 
   document.getElementById("noClassSelected").classList.add("hidden");
   document.getElementById("classDetail").classList.remove("hidden");
+  const analyticsPanel = document.getElementById("teacherStudentAnalyticsPanel");
+  analyticsPanel.classList.add("hidden");
+  analyticsPanel.innerHTML = "";
 
   try {
     const [detailRes, assignmentsRes, mistakesRes] = await Promise.all([

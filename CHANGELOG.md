@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.8.0 — Stage 8: Student analytics
+
+- Backend: one aggregation function (`getStudentAnalytics`) reused by both a student-facing and teacher-facing route — no duplicated logic. Computes total conversations/messages, practice frequency (last 30 days), an estimated practice-time proxy (span between first/last message per conversation, summed — an openly documented estimate, not tracked session time), grammar weaknesses by LanguageTool category, a vocabulary-notebook growth curve, and the Stage 4 CEFR-level heuristic (reused unchanged, not reimplemented).
+- `GET /analytics/me` (any authenticated user, their own data) and `GET /analytics/students/:id` (teacher-only, ownership-checked via class membership).
+- Desktop: a "My progress" panel in the student sidebar (stat tiles, a CSS-bar practice-frequency strip, a grammar-weakness breakdown, vocabulary count) — no charting library added, consistent with Stage 6's same call on `sqlite-vec`. Teacher roster rows are now clickable, opening the same rendering code inline to show that student's analytics.
+- Verified end-to-end via curl: generated real conversation/mistake/vocabulary activity for a student, confirmed `/analytics/me` and the teacher's `/analytics/students/:id` for the same student return identical numbers, and confirmed a teacher is denied access to a student outside their classes. 35 backend tests pass, including 5 new ones covering aggregation correctness and ownership.
+
 ## v0.7.0 — Stage 7: Teacher dashboard
 
 - Backend: `assignments` schema (scenario-based practice targets, not a full homework/grading system — see `docs/10-stage7-plan.md`). `GET /teacher/classes`, `GET /teacher/classes/:id` (roster), `POST`/`GET /teacher/classes/:id/assignments` (with a per-student completion heuristic based on matching conversations started after the assignment), `GET /teacher/classes/:id/mistakes` (grammar-mistake review across a class), `GET /teacher/classes/:id/report.csv` and `.pdf` (per-student stats: conversations, mistakes, vocabulary size, estimated CEFR level).

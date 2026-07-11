@@ -10,6 +10,7 @@ import { registerVocabularyRoutes } from "./routes/vocabulary";
 import { registerAssignmentRoutes } from "./routes/assignments";
 import { registerTeacherReviewRoutes } from "./routes/teacherReview";
 import { registerReportRoutes } from "./routes/reports";
+import { registerAnalyticsRoutes } from "./routes/analytics";
 import { bootstrapAdminIfNeeded } from "./auth/bootstrap";
 
 const PORT = Number(process.env.PORT ?? 4310);
@@ -32,6 +33,7 @@ async function main() {
   registerAssignmentRoutes(app);
   registerTeacherReviewRoutes(app);
   registerReportRoutes(app);
+  registerAnalyticsRoutes(app);
 
   await app.listen({ port: PORT, host: HOST });
 }

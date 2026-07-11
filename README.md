@@ -25,4 +25,4 @@ See [docs/04-repo-structure.md](docs/04-repo-structure.md).
 
 ## Current stage
 
-Stage 7 — Teacher dashboard. See [docs/10-stage7-plan.md](docs/10-stage7-plan.md) and [CHANGELOG.md](CHANGELOG.md).
+Stage 8 — Student analytics. See [docs/11-stage8-plan.md](docs/11-stage8-plan.md) and [CHANGELOG.md](CHANGELOG.md).

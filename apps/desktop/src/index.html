@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Offline English Learning — Stage 7</title>
+    <title>Offline English Learning — Stage 8</title>
     <style>
       * {
         box-sizing: border-box;
@@ -397,6 +397,64 @@
         width: auto;
         margin-top: 0;
       }
+
+      /* Analytics / progress */
+      .analytics-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        font-size: 12px;
+        margin-bottom: 10px;
+      }
+      .analytics-stat {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 8px;
+        text-align: center;
+      }
+      .analytics-stat .value {
+        font-size: 18px;
+        font-weight: 700;
+        display: block;
+      }
+      .analytics-stat .label {
+        opacity: 0.75;
+      }
+      .freq-bars {
+        display: flex;
+        align-items: flex-end;
+        gap: 3px;
+        height: 50px;
+        margin-bottom: 8px;
+      }
+      .freq-bar {
+        flex: 1;
+        background: #4338ca;
+        border-radius: 2px 2px 0 0;
+        min-height: 2px;
+      }
+      .weakness-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        margin: 3px 0;
+      }
+      .weakness-bar-bg {
+        background: #0f172a;
+        border-radius: 4px;
+        height: 8px;
+        margin-top: 2px;
+        overflow: hidden;
+      }
+      .weakness-bar-fill {
+        background: #7f1d1d;
+        height: 100%;
+      }
+      #studentAnalyticsPanel,
+      #teacherStudentAnalyticsPanel {
+        font-size: 12px;
+      }
     </style>
   </head>
   <body>
@@ -441,6 +499,9 @@
         </div>
         <div id="notebookError" class="error"></div>
         <div id="notebookList"></div>
+
+        <h3>My progress</h3>
+        <div id="studentAnalyticsPanel">Loading…</div>
       </div>
 
       <div id="main">
@@ -475,6 +536,9 @@
 
           <div class="panel">
             <h3>Roster</h3>
+            <p style="font-size: 12px; opacity: 0.75; margin-top: -6px">
+              Click a student to view their progress.
+            </p>
             <table class="data-table">
               <thead>
                 <tr><th>Name</th><th>Email</th></tr>
@@ -488,6 +552,7 @@
               <button id="addStudentBtn">Add student</button>
             </div>
             <div id="addStudentError" class="error"></div>
+            <div id="teacherStudentAnalyticsPanel" class="hidden"></div>
           </div>
 
           <div class="panel">

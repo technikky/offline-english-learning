@@ -193,3 +193,30 @@ export interface MistakeReviewEntryDto extends GrammarMistakeDto {
   studentName: string;
   createdAt: string;
 }
+
+export interface FrequencyPoint {
+  date: string;
+  count: number;
+}
+
+export interface VocabularyGrowthPoint {
+  date: string;
+  cumulativeCount: number;
+}
+
+export interface GrammarWeakness {
+  category: string;
+  count: number;
+}
+
+export interface StudentAnalyticsDto {
+  studentId: number;
+  displayName: string;
+  totalConversations: number;
+  totalMessages: number;
+  estimatedLevel: CefrLevel;
+  estimatedPracticeMinutes: number;
+  practiceFrequency: FrequencyPoint[];
+  grammarWeaknesses: GrammarWeakness[];
+  vocabularyGrowth: VocabularyGrowthPoint[];
+}
