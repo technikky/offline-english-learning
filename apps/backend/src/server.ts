@@ -4,6 +4,7 @@ import { registerHealthRoute } from "./routes/health";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerAdminRoutes } from "./routes/admin";
 import { registerTeacherRoutes } from "./routes/teacher";
+import { registerConversationRoutes } from "./routes/conversations";
 import { bootstrapAdminIfNeeded } from "./auth/bootstrap";
 
 const PORT = Number(process.env.PORT ?? 4310);
@@ -20,6 +21,7 @@ async function main() {
   registerAuthRoutes(app);
   registerAdminRoutes(app);
   registerTeacherRoutes(app);
+  registerConversationRoutes(app);
 
   await app.listen({ port: PORT, host: HOST });
 }

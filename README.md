@@ -25,4 +25,4 @@ See [docs/04-repo-structure.md](docs/04-repo-structure.md).
 
 ## Current stage
 
-Stage 3 — Authentication and user management. See [docs/06-stage3-plan.md](docs/06-stage3-plan.md) and [CHANGELOG.md](CHANGELOG.md).
+Stage 4 — AI conversation engine. See [docs/07-stage4-plan.md](docs/07-stage4-plan.md) and [CHANGELOG.md](CHANGELOG.md).

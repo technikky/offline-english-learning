@@ -2,17 +2,24 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Offline English Learning — Stage 3</title>
+    <title>Offline English Learning — Stage 4</title>
     <style>
+      * {
+        box-sizing: border-box;
+      }
       body {
         font-family: system-ui, sans-serif;
         background: #0f172a;
         color: #e2e8f0;
+        margin: 0;
+        height: 100vh;
+        overflow: hidden;
+      }
+      .center-screen {
         display: flex;
         align-items: center;
         justify-content: center;
         height: 100vh;
-        margin: 0;
       }
       .card {
         background: #1e293b;
@@ -35,10 +42,10 @@
         background: #7f1d1d;
         color: #fecaca;
       }
-      input {
+      input,
+      select {
         display: block;
         width: 100%;
-        box-sizing: border-box;
         margin: 8px 0;
         padding: 10px 12px;
         border-radius: 8px;
@@ -64,6 +71,10 @@
       button.secondary {
         background: #334155;
       }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
       .error {
         color: #fca5a5;
         font-size: 13px;
@@ -79,27 +90,115 @@
         margin: 4px 0;
         font-size: 14px;
       }
+
+      /* App shell (shown after login) */
+      #appView {
+        display: flex;
+        height: 100vh;
+      }
+      #sidebar {
+        width: 280px;
+        background: #1e293b;
+        padding: 20px;
+        border-right: 1px solid #334155;
+        overflow-y: auto;
+      }
+      #main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+      }
+      #chatLog {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px;
+        background: #0f172a;
+        border-radius: 8px;
+        border: 1px solid #334155;
+      }
+      .bubble {
+        max-width: 70%;
+        padding: 10px 14px;
+        border-radius: 12px;
+        margin: 6px 0;
+        font-size: 14px;
+        line-height: 1.4;
+        white-space: pre-wrap;
+      }
+      .bubble.user {
+        background: #4338ca;
+        margin-left: auto;
+        border-bottom-right-radius: 2px;
+      }
+      .bubble.assistant {
+        background: #334155;
+        margin-right: auto;
+        border-bottom-left-radius: 2px;
+      }
+      #composer {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      #composer input {
+        margin: 0;
+      }
+      #composer button {
+        width: auto;
+        white-space: nowrap;
+        margin-top: 0;
+      }
+      h3 {
+        margin-top: 0;
+      }
     </style>
   </head>
   <body>
-    <div class="card">
-      <h2>Offline AI English Learning System</h2>
-      <div id="status" class="status">Checking backend…</div>
+    <div id="authScreen" class="center-screen">
+      <div class="card">
+        <h2>Offline AI English Learning System</h2>
+        <div id="status" class="status">Checking backend…</div>
 
-      <div id="loginView">
-        <input id="email" type="email" placeholder="Email" autocomplete="username" />
-        <input id="password" type="password" placeholder="Password" autocomplete="current-password" />
-        <button id="loginBtn">Log in</button>
-        <div id="loginError" class="error"></div>
+        <div id="loginView">
+          <input id="email" type="email" placeholder="Email" autocomplete="username" />
+          <input id="password" type="password" placeholder="Password" autocomplete="current-password" />
+          <button id="loginBtn">Log in</button>
+          <div id="loginError" class="error"></div>
+        </div>
       </div>
+    </div>
 
-      <div id="profileView" class="hidden">
+    <div id="appView" class="hidden">
+      <div id="sidebar">
         <div class="profile-row"><span>Name</span><span id="profileName"></span></div>
         <div class="profile-row"><span>Role</span><span id="profileRole"></span></div>
         <div class="profile-row"><span>Email</span><span id="profileEmail"></span></div>
         <button id="logoutBtn" class="secondary">Log out</button>
+
+        <h3>New conversation</h3>
+        <select id="scenarioSelect">
+          <option value="free_talk">Free Talk</option>
+          <option value="role_play">Role Play</option>
+          <option value="interview">Interview Practice</option>
+          <option value="business">Business English</option>
+          <option value="travel">Travel English</option>
+          <option value="daily">Daily Conversation</option>
+          <option value="debate">Debate Practice</option>
+        </select>
+        <button id="startConversationBtn">Start conversation</button>
+        <div id="conversationError" class="error"></div>
+      </div>
+
+      <div id="main">
+        <div id="chatLog"></div>
+        <div id="composer">
+          <input id="messageInput" type="text" placeholder="Type a message and press Enter…" disabled />
+          <button id="sendBtn" disabled>Send</button>
+        </div>
       </div>
     </div>
+
     <script src="renderer.js"></script>
   </body>
 </html>

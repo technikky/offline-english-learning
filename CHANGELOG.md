@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.4.0 — Stage 4: AI conversation engine
+
+- New AI Service (`apps/ai-service`, Python + FastAPI) wrapping a local llama.cpp model (`llama-cpp-python`). Streams token-by-token NDJSON responses from `POST /v1/chat`, with a system prompt assembled server-side from a scenario preset + CEFR difficulty level.
+- Dev-time model: Qwen2.5-1.5B-Instruct (GGUF Q4_K_M, ~1.1GB), vendored under `offline-sdk/ai-models/`. The production-sized 7–8B model from the technology-selection doc is a config swap (`AI_MODEL_PATH`), deliberately not done in this session — see `docs/07-stage4-plan.md`.
+- Backend: `conversations`/`messages` schema; scenario presets (`free_talk`, `role_play`, `interview`, `business`, `travel`, `daily`, `debate`); a v1 CEFR difficulty-estimation heuristic derived from a student's own message history (sentence length + vocabulary diversity); `POST /conversations`, `GET /conversations/:id`, and a streaming `POST /conversations/:id/messages` that proxies the AI service's NDJSON stream straight through to the client while persisting both sides of the exchange.
+- Desktop (Electron): real streaming chat UI — scenario picker, chat log, and token-by-token rendering read live from the response's `ReadableStream`, replacing the profile-only view from Stage 3.
+- Verified end-to-end via curl: admin creates a student, student starts a `daily` conversation, sends a message, and receives a live token stream from the real model appropriate to the chosen scenario and difficulty — both messages persisted correctly on refetch. 11 backend tests pass in total, including 4 new ones covering conversation creation/ownership/validation/auth-required and the difficulty heuristic's relative ordering.
+
 ## v0.3.0 — Stage 3: Authentication and user management
 
 - Backend: `users`, `refresh_tokens`, `classes`, `class_students` tables; argon2id password hashing; JWT access tokens (15 min) + rotating opaque refresh tokens (30 days, stored hashed); `authenticate`/`requireRole` RBAC middleware.

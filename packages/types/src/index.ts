@@ -63,3 +63,39 @@ export interface RegisterStudentRequest {
 export interface ApiErrorResponse {
   error: string;
 }
+
+export type Scenario =
+  | "free_talk"
+  | "role_play"
+  | "interview"
+  | "business"
+  | "travel"
+  | "daily"
+  | "debate";
+
+export type CefrLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
+
+export interface CreateConversationRequest {
+  scenario: Scenario;
+}
+
+export interface ConversationSummary {
+  id: number;
+  scenario: Scenario;
+  createdAt: string;
+}
+
+export interface MessageDto {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+  createdAt: string;
+}
+
+export interface ConversationDetail extends ConversationSummary {
+  messages: MessageDto[];
+}
+
+export interface SendMessageRequest {
+  content: string;
+}
