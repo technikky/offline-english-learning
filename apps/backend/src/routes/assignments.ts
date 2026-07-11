@@ -11,16 +11,7 @@ import { assignments, classStudents, users } from "../db/schema";
 import { authenticate, requireRole } from "../auth/middleware";
 import { getOwnedClass } from "../teacher/ownership";
 import { hasCompletedAssignment } from "../teacher/completion";
-
-const VALID_SCENARIOS: Scenario[] = [
-  "free_talk",
-  "role_play",
-  "interview",
-  "business",
-  "travel",
-  "daily",
-  "debate",
-];
+import { isValidScenario } from "../conversations/scenarios";
 
 function toDto(row: typeof assignments.$inferSelect): AssignmentDto {
   return {
@@ -48,7 +39,7 @@ export function registerAssignmentRoutes(app: FastifyInstance): void {
           .code(400)
           .send({ error: "title, description and dueDate are required" });
       }
-      if (!VALID_SCENARIOS.includes(scenario)) {
+      if (!isValidScenario(scenario)) {
         return reply.code(400).send({ error: "Invalid scenario" });
       }
 

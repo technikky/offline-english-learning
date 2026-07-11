@@ -14,10 +14,17 @@ scripts/start-dev.sh      # macOS/Linux
 
 This starts the local backend (Fastify + SQLite on `127.0.0.1:4310`) and launches the Electron desktop app, which shows a live `/health` check proving the offline round trip works end to end.
 
-## Other scripts
+## One-click batch files (Windows)
 
-- `scripts/rebuild.bat` / `.sh` — clean, reinstall from the offline package store, rebuild, ready to restart.
-- `scripts/deploy.bat` — Stage 1 stub for a local production build + packaged Electron app; matures into full one-click deployment in Stage 10.
+Each covers one part of the lifecycle, so you can jump straight to the one you need:
+
+- **`scripts\install.bat`** — first-time install on a machine that already has this repo (with its vendored `offline-sdk` assets) copied onto it, e.g. from a USB drive per [the install guide](docs/16-install-guide.md). Installs Node deps from the offline store, builds everything, sets up the AI service's Python venv, and checks that the vendored model/LanguageTool/voice files are actually present.
+- **`scripts\setup-dev-env.bat`** — one-click setup for a **developer's** machine from a fresh `git clone` (online `pnpm install`, Python venv, a full build, and runs the backend + AI-service test suites to confirm the environment is healthy). Large vendored binaries are gitignored and not fetched by this script — see its own output for pointers.
+- **`scripts\run.bat`** — **operate** an already-installed system: starts LanguageTool, the AI service, and the backend from their built artifacts (not dev-watch mode), waits for each to become healthy, then launches the desktop app (the packaged build if one exists under `apps\desktop\release\`, otherwise the unpackaged build).
+- **`scripts\start-dev.bat`** / `.sh` — the **development** equivalent of `run.bat`: same health-check chain, but launches the backend and desktop app in dev/watch mode for active development.
+- **`scripts\rebuild.bat`** / `.sh` — clean, reinstall from the offline package store, rebuild, ready to restart.
+- **`scripts\deploy.bat`** — package a distributable build (Electron installer/`--dir` build); see [docs/13-stage10-plan.md](docs/13-stage10-plan.md) for the Windows Developer-Mode requirement for the NSIS installer step.
+- **`scripts\generate-tls-cert.js`** — one-time self-signed TLS certificate generation for opt-in HTTPS (see Security features below).
 
 ## Project layout
 
@@ -25,7 +32,7 @@ See [docs/04-repo-structure.md](docs/04-repo-structure.md).
 
 ## Current stage
 
-**v1.0.0 — all 12 stages complete.** See [docs/15-stage12-plan.md](docs/15-stage12-plan.md) and [CHANGELOG.md](CHANGELOG.md) for the final stage, or [docs/03-roadmap.md](docs/03-roadmap.md) for the full history.
+**v1.1.0 — post-v1.0.0 platform expansion, Stage 13 (Conversation module redesign) complete.** All 12 originally-planned stages shipped as v1.0.0; development continues in further scoped stages per a master development brief expanding this into a full AI English Tutor platform (grammar/reading/listening/writing modules, quiz generator, multi-tenancy, and more — tracked stage by stage, same methodology as Stages 1–12). See [docs/20-stage13-plan.md](docs/20-stage13-plan.md) and [CHANGELOG.md](CHANGELOG.md) for the latest, or [docs/03-roadmap.md](docs/03-roadmap.md) for the original 12-stage history.
 
 ## Guides
 

@@ -68,7 +68,7 @@ test("creates an assignment and reports per-student completion based on matching
     payload: {
       title: "Practice daily talk",
       description: "Have a conversation",
-      scenario: "daily",
+      scenario: "daily_life",
       dueDate: "2026-08-01",
     },
   });
@@ -77,7 +77,7 @@ test("creates an assignment and reports per-student completion based on matching
   // Simulate the "done" student completing it after the assignment was created.
   await db.insert(conversations).values({
     studentId: studentDone.id,
-    scenario: "daily",
+    scenario: "daily_life",
     createdAt: new Date(Date.now() + 1000).toISOString(),
   });
 

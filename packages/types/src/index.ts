@@ -64,16 +64,75 @@ export interface ApiErrorResponse {
   error: string;
 }
 
+// Stage 13 conversation redesign: general open-ended modes plus a full set of
+// topic-specific scenarios (docs/20-stage13-plan.md). Renamed "interview" ->
+// "job_interview", "business" -> "business_meeting", "daily" -> "daily_life"
+// for consistency with the new topic names; old stored conversation/
+// assignment rows with the previous names still load (the DB column is
+// plain text), they just fall back to the AI service's default prompt.
 export type Scenario =
   | "free_talk"
   | "role_play"
-  | "interview"
-  | "business"
+  | "debate"
   | "travel"
-  | "daily"
-  | "debate";
+  | "airport"
+  | "restaurant"
+  | "business_meeting"
+  | "job_interview"
+  | "shopping"
+  | "technology"
+  | "sports"
+  | "movies"
+  | "daily_life"
+  | "hospital"
+  | "hotel"
+  | "school"
+  | "university"
+  | "coffee_shop"
+  | "emergency"
+  | "family"
+  | "culture";
+
+export const SCENARIO_LABELS: Record<Scenario, string> = {
+  free_talk: "Free Talk",
+  role_play: "Role Play",
+  debate: "Debate Practice",
+  travel: "Travel",
+  airport: "Airport",
+  restaurant: "Restaurant",
+  business_meeting: "Business Meeting",
+  job_interview: "Job Interview",
+  shopping: "Shopping",
+  technology: "Technology",
+  sports: "Sports",
+  movies: "Movies",
+  daily_life: "Daily Life",
+  hospital: "Hospital",
+  hotel: "Hotel",
+  school: "School",
+  university: "University",
+  coffee_shop: "Coffee Shop",
+  emergency: "Emergency",
+  family: "Family",
+  culture: "Culture",
+};
+
+export const ALL_SCENARIOS: Scenario[] = Object.keys(SCENARIO_LABELS) as Scenario[];
 
 export type CefrLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
+
+// Friendly display names for CEFR levels, per Stage 13's difficulty-tier
+// naming (Beginner..Native-like) -- CEFR stays the internal representation
+// everywhere (analytics, difficulty heuristic) since it's already wired
+// through the whole system; this is purely a display-label mapping.
+export const CEFR_LABELS: Record<CefrLevel, string> = {
+  A1: "Beginner",
+  A2: "Elementary",
+  B1: "Intermediate",
+  B2: "Upper Intermediate",
+  C1: "Advanced",
+  C2: "Native-like",
+};
 
 export interface CreateConversationRequest {
   scenario: Scenario;

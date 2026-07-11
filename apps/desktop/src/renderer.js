@@ -1,5 +1,21 @@
 const API_BASE = "http://127.0.0.1:4310";
 
+// Friendly display names for CEFR levels (Stage 13) -- mirrors
+// packages/types' CEFR_LABELS; duplicated here since this plain script tag
+// isn't bundled against the shared types package.
+const CEFR_LABELS = {
+  A1: "Beginner",
+  A2: "Elementary",
+  B1: "Intermediate",
+  B2: "Upper Intermediate",
+  C1: "Advanced",
+  C2: "Native-like",
+};
+
+function formatCefrLevel(level) {
+  return CEFR_LABELS[level] ? `${level} — ${CEFR_LABELS[level]}` : level;
+}
+
 let accessToken = null;
 let currentConversationId = null;
 let currentClassId = null;
@@ -554,7 +570,7 @@ function renderAnalytics(container, data) {
   const stats = document.createElement("div");
   stats.className = "analytics-stats";
   const statEntries = [
-    ["Level", data.estimatedLevel],
+    ["Level", formatCefrLevel(data.estimatedLevel)],
     ["Conversations", data.totalConversations],
     ["Messages", data.totalMessages],
     ["Practice (min, est.)", data.estimatedPracticeMinutes],

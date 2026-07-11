@@ -13,16 +13,7 @@ import { authenticate } from "../auth/middleware";
 import { estimateDifficultyLevel } from "../conversations/difficulty";
 import { requestAiChatStream, type AiChatMessage } from "../conversations/aiClient";
 import { checkAndPersistGrammar } from "../grammar/checkAndPersist";
-
-const VALID_SCENARIOS: Scenario[] = [
-  "free_talk",
-  "role_play",
-  "interview",
-  "business",
-  "travel",
-  "daily",
-  "debate",
-];
+import { isValidScenario } from "../conversations/scenarios";
 
 export function registerConversationRoutes(app: FastifyInstance): void {
   app.post<{ Body: CreateConversationRequest }>(
@@ -30,7 +21,7 @@ export function registerConversationRoutes(app: FastifyInstance): void {
     { preHandler: authenticate },
     async (request, reply) => {
       const { scenario } = request.body;
-      if (!VALID_SCENARIOS.includes(scenario)) {
+      if (!isValidScenario(scenario)) {
         return reply.code(400).send({ error: "Invalid scenario" });
       }
 

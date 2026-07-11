@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.1.0 — Stage 13: Conversation module redesign
+
+- **21 topic-grounded scenarios**, up from 7 generic modes: kept `free_talk`/`role_play`/`debate` as open-ended modes, added/renamed the rest to concrete situations — `travel`, `airport`, `restaurant`, `business_meeting` (was `business`), `job_interview` (was `interview`), `shopping`, `technology`, `sports`, `movies`, `daily_life` (was `daily`), `hospital`, `hotel`, `school`, `university`, `coffee_shop`, `emergency`, `family`, `culture`. Renaming is a documented breaking change for old stored scenario strings (no real deployment exists yet, so accepted).
+- **AI pedagogy**: every scenario's system prompt now gets a shared `PEDAGOGY_INSTRUCTIONS` block instructing the model to keep asking genuine follow-up questions, reference earlier parts of the conversation, correct mistakes by natural recasting (LanguageTool's explicit correction already covers the "explain the rule" side), teach vocabulary in context, and encourage longer student answers. Verified with a real live conversation (not just unit tests): the AI stayed in character as a restaurant server and asked real contextual follow-ups across two turns.
+- **Friendly difficulty labels**: CEFR A1–C2 now display as Beginner/Elementary/Intermediate/Upper Intermediate/Advanced/Native-like in the progress panel — CEFR remains the internal representation everywhere (no rearchitecture needed, since the whole difficulty-estimation pipeline already keys on CEFR).
+- **Deduplication**: the previously-duplicated `VALID_SCENARIOS` array (identically defined in both `conversations.ts` and `assignments.ts`) is now one shared `isValidScenario()` backed by `packages/types`' `ALL_SCENARIOS`.
+- Backend: 51 tests passing (3 new). AI service: 15 pytest tests passing (4 new).
+
 ## v1.0.0 — Stage 12: Production release
 
 - **Real bug found and fixed: cross-origin requests from the desktop app were silently broken.** The renderer loads `index.html` from a `file://` origin and calls the backend via `fetch()` — genuinely cross-origin under Chromium's security model (which Electron enforces same as any browser unless `webSecurity` is disabled, which it isn't). Every prior stage's "verification" relied on curl calls made separately from the UI (a documented limitation since Stage 3 — this environment can't screenshot or drive the actual Electron window), so this had never been exercised through an actual `fetch()` call before. Found this stage by loading the real UI in a browser context and clicking through it for the first time. Fixed with `@fastify/cors` (`origin: true` — safe here since auth is bearer-token, not cookie-based, so this doesn't reopen CSRF).

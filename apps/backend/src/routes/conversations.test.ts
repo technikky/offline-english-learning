@@ -34,7 +34,7 @@ test("a student can create a conversation, and only they can read it back", asyn
     method: "POST",
     url: "/conversations",
     headers: { authorization: `Bearer ${token}` },
-    payload: { scenario: "daily" },
+    payload: { scenario: "daily_life" },
   });
   assert.equal(created.statusCode, 201);
   const { id } = created.json();
@@ -45,7 +45,7 @@ test("a student can create a conversation, and only they can read it back", asyn
     headers: { authorization: `Bearer ${token}` },
   });
   assert.equal(ownView.statusCode, 200);
-  assert.equal(ownView.json().scenario, "daily");
+  assert.equal(ownView.json().scenario, "daily_life");
 
   const otherView = await app.inject({
     method: "GET",
@@ -80,7 +80,7 @@ test("requires authentication to create a conversation", async () => {
   const res = await app.inject({
     method: "POST",
     url: "/conversations",
-    payload: { scenario: "daily" },
+    payload: { scenario: "daily_life" },
   });
   assert.equal(res.statusCode, 401);
 });
