@@ -164,6 +164,12 @@ export function registerConversationRoutes(app: FastifyInstance): void {
         customPrompt,
       );
 
+      if (aiResponse.status === 503) {
+        // The AI service is already busy with another inference; surface it as
+        // a retryable "busy" rather than a hard failure so the client (esp.
+        // hands-free voice mode) can show a wait indicator and try again.
+        return reply.code(503).send({ error: "busy", detail: "AI is busy, please wait" });
+      }
       if (!aiResponse.ok || !aiResponse.body) {
         return reply.code(502).send({ error: "AI service unavailable" });
       }

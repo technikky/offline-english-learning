@@ -1,6 +1,6 @@
 import json
 from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 
 from .model import load_model, is_model_loaded, get_model_path, get_thread_count
 from .embeddings import embed_text, is_embedding_model_loaded
@@ -10,7 +10,7 @@ from .speech import (
     is_whisper_loaded,
     is_piper_loaded,
 )
-from .inference_lock import INFERENCE_LOCK
+from .inference_lock import INFERENCE_LOCK, inference_slot, BUSY_TIMEOUT_S
 from .reasoning import ThinkFilter, strip_think_blocks
 from .prompts import (
     build_system_prompt,
@@ -82,7 +82,9 @@ def _stream_chat(request: ChatRequest):
     # Qwen3 emits a leading <think>...</think> reasoning block; strip it from
     # the stream so only the reply reaches the student. No-op for Qwen2.5.
     think_filter = ThinkFilter()
-    with INFERENCE_LOCK:
+    # The lock is already held by the route (chat()); release it here when the
+    # stream ends so a StreamingResponse can't leave it stuck acquired.
+    try:
         llm = load_model()
         for chunk in llm.create_chat_completion(
             messages=messages,
@@ -101,11 +103,18 @@ def _stream_chat(request: ChatRequest):
             full_text += trailing
             yield json.dumps({"token": trailing}) + "\n"
 
-    yield json.dumps({"done": True, "fullText": full_text}) + "\n"
+        yield json.dumps({"done": True, "fullText": full_text}) + "\n"
+    finally:
+        INFERENCE_LOCK.release()
 
 
 @app.post("/v1/chat")
-def chat(request: ChatRequest) -> StreamingResponse:
+def chat(request: ChatRequest):
+    # Acquire before streaming so a busy service returns a clean 503 up front
+    # rather than opening a stream and stalling. The stream's generator owns
+    # releasing the lock when the reply finishes.
+    if not INFERENCE_LOCK.acquire(timeout=BUSY_TIMEOUT_S):
+        return JSONResponse(status_code=503, content={"error": "busy", "detail": "AI is busy, please wait"})
     return StreamingResponse(
         _stream_chat(request),
         media_type="application/x-ndjson",
@@ -121,7 +130,7 @@ def grammar_explain(request: GrammarExplainRequest) -> GrammarExplainResponse:
         request.difficultyLevel,
     )
 
-    with INFERENCE_LOCK:
+    with inference_slot():
         llm = load_model()
         result = llm.create_chat_completion(messages=messages, max_tokens=250)
 
@@ -133,7 +142,7 @@ def grammar_explain(request: GrammarExplainRequest) -> GrammarExplainResponse:
 
 @app.post("/v1/embed")
 def embed(request: EmbedRequest) -> EmbedResponse:
-    with INFERENCE_LOCK:
+    with inference_slot():
         embedding = embed_text(request.text)
     return EmbedResponse(embedding=embedding)
 
@@ -142,7 +151,7 @@ def embed(request: EmbedRequest) -> EmbedResponse:
 def vocabulary_explain(request: VocabularyExplainRequest) -> VocabularyExplainResponse:
     messages = build_vocabulary_explain_prompt(request.word, request.difficultyLevel)
 
-    with INFERENCE_LOCK:
+    with inference_slot():
         llm = load_model()
         result = llm.create_chat_completion(messages=messages, max_tokens=200)
 
@@ -161,7 +170,7 @@ def grammar_exercise(request: GrammarExerciseRequest) -> GrammarExerciseResponse
         request.exerciseType,
     )
 
-    with INFERENCE_LOCK:
+    with inference_slot():
         llm = load_model()
         result = llm.create_chat_completion(messages=messages, max_tokens=200)
 
@@ -175,7 +184,7 @@ def grammar_exercise(request: GrammarExerciseRequest) -> GrammarExerciseResponse
 def reading_comprehension(request: ReadingComprehensionRequest) -> ReadingComprehensionResponse:
     messages = build_reading_comprehension_prompt(request.passageContent, request.cefrLevel)
 
-    with INFERENCE_LOCK:
+    with inference_slot():
         llm = load_model()
         result = llm.create_chat_completion(messages=messages, max_tokens=700)
 
@@ -191,7 +200,7 @@ def writing_analyze(request: WritingAnalysisRequest) -> WritingAnalysisResponse:
         request.prompt, request.studentText, request.difficultyLevel
     )
 
-    with INFERENCE_LOCK:
+    with inference_slot():
         llm = load_model()
         result = llm.create_chat_completion(messages=messages, max_tokens=500)
 
@@ -205,7 +214,7 @@ def writing_analyze(request: WritingAnalysisRequest) -> WritingAnalysisResponse:
 def quiz_generate(request: QuizGenerateRequest) -> QuizGenerateResponse:
     messages = build_quiz_prompt(request.category, request.difficultyLevel)
 
-    with INFERENCE_LOCK:
+    with inference_slot():
         llm = load_model()
         result = llm.create_chat_completion(messages=messages, max_tokens=700)
 
@@ -217,13 +226,13 @@ def quiz_generate(request: QuizGenerateRequest) -> QuizGenerateResponse:
 
 @app.post("/v1/speech/transcribe")
 def speech_transcribe(request: TranscribeRequest) -> TranscribeResponse:
-    with INFERENCE_LOCK:
+    with inference_slot():
         transcript = transcribe_audio(request.audioBase64)
     return TranscribeResponse(transcript=transcript)
 
 
 @app.post("/v1/speech/synthesize")
 def speech_synthesize(request: SynthesizeRequest) -> SynthesizeResponse:
-    with INFERENCE_LOCK:
+    with inference_slot():
         audio_base64 = synthesize_speech(request.text, request.voice)
     return SynthesizeResponse(audioBase64=audio_base64)

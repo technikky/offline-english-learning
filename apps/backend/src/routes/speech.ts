@@ -10,7 +10,7 @@ import type {
 import { db } from "../db/client";
 import { pronunciationResults } from "../db/schema";
 import { authenticate } from "../auth/middleware";
-import { aiSpeechClient } from "../speech/aiSpeechClient";
+import { aiSpeechClient, AiServiceBusyError } from "../speech/aiSpeechClient";
 import { scorePronunciation } from "../speech/scoring";
 
 export function registerSpeechRoutes(app: FastifyInstance): void {
@@ -23,9 +23,16 @@ export function registerSpeechRoutes(app: FastifyInstance): void {
         return reply.code(400).send({ error: "audioBase64 is required" });
       }
 
-      const transcript = await aiSpeechClient.transcribe(audioBase64);
-      const response: TranscribeResponse = { transcript };
-      return response;
+      try {
+        const transcript = await aiSpeechClient.transcribe(audioBase64);
+        const response: TranscribeResponse = { transcript };
+        return response;
+      } catch (err) {
+        if (err instanceof AiServiceBusyError) {
+          return reply.code(503).send({ error: "busy", detail: "AI is busy, please wait" });
+        }
+        throw err;
+      }
     },
   );
 
@@ -39,9 +46,16 @@ export function registerSpeechRoutes(app: FastifyInstance): void {
       }
 
       const selectedVoice = voice === "male" ? "male" : "female";
-      const audioBase64 = await aiSpeechClient.synthesize(text, selectedVoice);
-      const response: SynthesizeResponse = { audioBase64 };
-      return response;
+      try {
+        const audioBase64 = await aiSpeechClient.synthesize(text, selectedVoice);
+        const response: SynthesizeResponse = { audioBase64 };
+        return response;
+      } catch (err) {
+        if (err instanceof AiServiceBusyError) {
+          return reply.code(503).send({ error: "busy", detail: "AI is busy, please wait" });
+        }
+        throw err;
+      }
     },
   );
 
