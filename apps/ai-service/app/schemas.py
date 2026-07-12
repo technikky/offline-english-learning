@@ -11,6 +11,7 @@ class ChatRequest(BaseModel):
     messages: list[ChatMessage]
     scenario: str = "free_talk"
     difficultyLevel: str = "B1"
+    customPrompt: str | None = None  # Stage 23: teacher-authored topic prompt
 
 
 class GrammarExplainRequest(BaseModel):

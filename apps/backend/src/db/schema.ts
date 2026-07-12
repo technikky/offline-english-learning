@@ -278,6 +278,22 @@ export const writingSubmissions = sqliteTable("writing_submissions", {
     .default(sql`(current_timestamp)`),
 });
 
+// Stage 23: instructor-authored conversation topics. A teacher writes a title
+// and a system-prompt describing the scenario; students in the same school see
+// it in their conversation topic list. Scoped by schoolId for tenant isolation.
+export const customTopics = sqliteTable("custom_topics", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  teacherId: integer("teacher_id")
+    .notNull()
+    .references(() => users.id),
+  schoolId: integer("school_id").references(() => schools.id),
+  title: text("title").notNull(),
+  prompt: text("prompt").notNull(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
+
 // Stage 19: Quiz Generator. A generated quiz is stored with its questions
 // (including answers/explanations) so grading is server-side and answers
 // aren't exposed to the client until after submission. graded flips once

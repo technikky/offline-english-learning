@@ -221,6 +221,15 @@ export function ensureSchema(): void {
       score INTEGER,
       created_at TEXT NOT NULL DEFAULT (current_timestamp)
     );
+
+    CREATE TABLE IF NOT EXISTS custom_topics (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      teacher_id INTEGER NOT NULL REFERENCES users(id),
+      school_id INTEGER REFERENCES schools(id),
+      title TEXT NOT NULL,
+      prompt TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (current_timestamp)
+    );
   `);
 
   runMigrations();

@@ -11,10 +11,11 @@ export function requestAiChatStream(
   messages: AiChatMessage[],
   scenario: string,
   difficultyLevel: string,
+  customPrompt?: string | null,
 ): Promise<Response> {
   return fetch(`${AI_SERVICE_URL}/v1/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages, scenario, difficultyLevel }),
+    body: JSON.stringify({ messages, scenario, difficultyLevel, customPrompt: customPrompt ?? null }),
   });
 }

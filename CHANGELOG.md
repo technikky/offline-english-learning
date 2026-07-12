@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.11.0 — Stage 23: Instructor-added conversation topics
+
+- **Teachers can now add their own conversation topics.** A new "Conversation topics" panel in the teacher sidebar lets an instructor create a topic (title + AI role/instructions) and delete their own; new `custom_topics` table.
+- **Custom topics appear in students' conversation picker** alongside the 21 built-ins, under a "School topics" group. The student dropdown is now populated from a new `GET /topics` (built-in + school's custom topics) instead of a static list.
+- **The teacher's instructions drive the AI**: a custom topic is addressed as `custom:<id>`; its prompt is threaded through the chat request (`build_system_prompt(..., custom_prompt)`) so the AI role-plays the teacher's scenario, while the built-in scenario dictionary stays untouched.
+- **Tenant-scoped** (reuses Stage 20): a student only sees/can start topics from their own school; a bogus or cross-school `custom:<id>` → 400. New teacher routes `GET/POST/DELETE /teacher/topics` (own-only; students get 403).
+- Verified end-to-end via curl (create → appears in student `/topics` → start conversation → cross-school + bogus denied → own-only delete) and unit tests. Backend: 99 tests passing (+4). AI service: 38 pytest tests (+2).
+
+## v1.10.0 — Stage 22: Learning history view
+
+- **New 📜 History tab** giving each student one chronological view of everything they've practiced across all seven modules (conversations, grammar, reading, listening, writing, quizzes, pronunciation).
+- Built as a **read-time aggregator** (`getLearningHistory`) over the existing per-module tables — no data duplication. Returns merged, newest-first entries plus `totalActivities` and an `averageScore` computed over scored entries only (ungraded items are listed but excluded from the average).
+- New `GET /history` (own history only). New shared types `LearningActivityType` / `LearningHistoryEntry` / `LearningHistoryResponse`.
+- Verified via unit tests (empty, cross-module merge/ordering/average, per-student isolation, auth 401) and live (a student with one started conversation → `totalActivities: 1`, unauthenticated → 401).
+
+## v1.9.0 — Stage 21: Hands-free voice conversation mode
+
+- **Voice mode for conversations**: after Start conversation, a new Voice-mode toggle enables a real-time, back-and-forth spoken exchange with the AI partner **with no Send button** — the app listens, detects end-of-speech, transcribes, sends, speaks the reply, and automatically resumes listening. Fully hands-free, mimicking a natural conversation. Text mode is unchanged.
+- Implemented as a renderer-side **voice-activity-detection state machine** (Web Audio RMS + thresholds/timers) orchestrating the existing Whisper STT (`/speech/transcribe`), Piper TTS (`speakAsAvatar`), and streaming chat. The mic is gated off during processing/speaking so the AI's own voice is never recorded. No backend/AI-service changes.
+- `sendMessage` refactored to share one path (`sendMessageContent`) between typed and spoken turns.
+- Note: live mic-driven turn-taking can't be automated (no microphone in the headless test browser); validated by construction and manual use in the Electron app.
+
 ## v1.8.0 — Stage 20: Multi-school (multi-tenant) support
 
 - **The platform can now host multiple schools on one deployment.** New `schools` table + a `schoolId` on every user (logical separation, not separate databases — an additive change, no rearchitecture).

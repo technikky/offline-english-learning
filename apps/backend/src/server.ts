@@ -15,6 +15,8 @@ import { registerReadingRoutes } from "./routes/reading";
 import { registerListeningRoutes } from "./routes/listening";
 import { registerWritingRoutes } from "./routes/writing";
 import { registerQuizRoutes } from "./routes/quiz";
+import { registerHistoryRoutes } from "./routes/history";
+import { registerTopicRoutes } from "./routes/topics";
 import { registerVocabularyRoutes } from "./routes/vocabulary";
 import { registerAssignmentRoutes } from "./routes/assignments";
 import { registerTeacherReviewRoutes } from "./routes/teacherReview";
@@ -68,6 +70,8 @@ async function main() {
   registerListeningRoutes(app);
   registerWritingRoutes(app);
   registerQuizRoutes(app);
+  registerHistoryRoutes(app);
+  registerTopicRoutes(app);
   registerVocabularyRoutes(app);
   registerAssignmentRoutes(app);
   registerTeacherReviewRoutes(app);

@@ -33,3 +33,16 @@ def test_build_system_prompt_falls_back_to_free_talk_for_unknown_scenario():
 def test_build_system_prompt_falls_back_to_b1_for_unknown_difficulty():
     prompt = build_system_prompt("free_talk", "not_a_real_level")
     assert "CEFR B1" in prompt
+
+
+def test_custom_prompt_overrides_the_builtin_scenario():
+    custom = "You are a museum tour guide talking about ancient Egypt."
+    prompt = build_system_prompt("free_talk", "B1", custom)
+    assert custom in prompt
+    # The built-in free_talk text should NOT be used when a custom prompt is given.
+    assert SCENARIO_PROMPTS["free_talk"] not in prompt
+
+
+def test_blank_custom_prompt_falls_back_to_builtin():
+    prompt = build_system_prompt("restaurant", "B1", "   ")
+    assert SCENARIO_PROMPTS["restaurant"] in prompt

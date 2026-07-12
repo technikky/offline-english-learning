@@ -14,6 +14,13 @@ import { estimateDifficultyLevel } from "../conversations/difficulty";
 import { requestAiChatStream, type AiChatMessage } from "../conversations/aiClient";
 import { checkAndPersistGrammar } from "../grammar/checkAndPersist";
 import { isValidScenario } from "../conversations/scenarios";
+import {
+  isCustomScenario,
+  parseCustomTopicId,
+  isTopicAccessible,
+  getCustomTopic,
+  getUserSchoolId,
+} from "../conversations/customTopics";
 
 export function registerConversationRoutes(app: FastifyInstance): void {
   app.post<{ Body: CreateConversationRequest }>(
@@ -21,7 +28,16 @@ export function registerConversationRoutes(app: FastifyInstance): void {
     { preHandler: authenticate },
     async (request, reply) => {
       const { scenario } = request.body;
-      if (!isValidScenario(scenario)) {
+
+      // Stage 23: a scenario is either a built-in key or "custom:<id>" for a
+      // teacher-authored topic the student's school has access to.
+      if (isCustomScenario(scenario)) {
+        const topicId = parseCustomTopicId(scenario);
+        const schoolId = await getUserSchoolId(request.authUser!.sub);
+        if (!topicId || !(await isTopicAccessible(topicId, schoolId))) {
+          return reply.code(400).send({ error: "Invalid or inaccessible topic" });
+        }
+      } else if (!isValidScenario(scenario)) {
         return reply.code(400).send({ error: "Invalid scenario" });
       }
 
@@ -134,10 +150,18 @@ export function registerConversationRoutes(app: FastifyInstance): void {
 
       const difficultyLevel = await estimateDifficultyLevel(request.authUser!.sub);
 
+      // Stage 23: for a teacher-authored topic, supply its prompt to the AI.
+      let customPrompt: string | null = null;
+      const customTopicId = parseCustomTopicId(conversation.scenario);
+      if (customTopicId) {
+        customPrompt = (await getCustomTopic(customTopicId))?.prompt ?? null;
+      }
+
       const aiResponse = await requestAiChatStream(
         aiMessages,
         conversation.scenario,
         difficultyLevel,
+        customPrompt,
       );
 
       if (!aiResponse.ok || !aiResponse.body) {

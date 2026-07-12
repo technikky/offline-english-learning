@@ -149,8 +149,16 @@ DIFFICULTY_INSTRUCTIONS = {
 }
 
 
-def build_system_prompt(scenario: str, difficulty_level: str) -> str:
-    scenario_text = SCENARIO_PROMPTS.get(scenario, SCENARIO_PROMPTS["free_talk"])
+def build_system_prompt(
+    scenario: str, difficulty_level: str, custom_prompt: str | None = None
+) -> str:
+    # Stage 23: a teacher-authored custom topic supplies its own scenario text;
+    # otherwise fall back to the built-in scenario prompts.
+    scenario_text = (
+        custom_prompt.strip()
+        if custom_prompt and custom_prompt.strip()
+        else SCENARIO_PROMPTS.get(scenario, SCENARIO_PROMPTS["free_talk"])
+    )
     difficulty_text = DIFFICULTY_INSTRUCTIONS.get(
         difficulty_level, DIFFICULTY_INSTRUCTIONS["B1"]
     )
