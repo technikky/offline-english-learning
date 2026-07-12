@@ -647,3 +647,48 @@ export interface QuizProgressResponse {
   totalQuizzes: number;
   averageScore: number;
 }
+
+// Stage 22: unified learning history across all practice modules.
+export type LearningActivityType =
+  | "conversation"
+  | "grammar"
+  | "reading"
+  | "listening"
+  | "writing"
+  | "quiz"
+  | "pronunciation";
+
+export interface LearningHistoryEntry {
+  type: LearningActivityType;
+  title: string;
+  detail: string | null;
+  score: number | null; // 0-100 where applicable
+  createdAt: string;
+}
+
+export interface LearningHistoryResponse {
+  entries: LearningHistoryEntry[];
+  totalActivities: number;
+  averageScore: number;
+}
+
+// Stage 23: instructor-authored conversation topics.
+export interface CustomTopicDto {
+  id: number;
+  title: string;
+  prompt: string;
+  createdAt: string;
+}
+
+export interface CreateCustomTopicRequest {
+  title: string;
+  prompt: string;
+}
+
+// One entry in the student's conversation topic picker — either a built-in
+// scenario (value is the scenario key) or a custom topic (value is "custom:<id>").
+export interface ConversationTopicOption {
+  value: string;
+  label: string;
+  isCustom: boolean;
+}
