@@ -14,11 +14,11 @@ export const aiSpeechClient = {
     return data.transcript;
   },
 
-  async synthesize(text: string): Promise<string> {
+  async synthesize(text: string, voice: "male" | "female" = "female"): Promise<string> {
     const res = await fetch(`${AI_SERVICE_URL}/v1/speech/synthesize`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text, voice }),
     });
     if (!res.ok) throw new Error(`AI service returned ${res.status}`);
     const data = (await res.json()) as { audioBase64: string };

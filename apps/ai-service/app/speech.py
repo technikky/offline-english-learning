@@ -13,26 +13,29 @@ WHISPER_SAMPLE_RATE = 16000
 WHISPER_MODELS_DIR = os.path.join(
     os.path.dirname(__file__), "..", "..", "..", "offline-sdk", "ai-models", "whisper-models"
 )
-PIPER_VOICE_PATH = os.path.join(
-    os.path.dirname(__file__),
-    "..",
-    "..",
-    "..",
-    "offline-sdk",
-    "ai-models",
-    "piper-voices",
-    "en_US-lessac-medium.onnx",
+_PIPER_VOICES_DIR = os.path.join(
+    os.path.dirname(__file__), "..", "..", "..", "offline-sdk", "ai-models", "piper-voices"
 )
 
+# Stage 16: two vendored voices so the conversation avatar can speak male or
+# female. The female (lessac) voice is the default, preserving the original
+# single-voice behavior for callers that don't specify a gender.
+PIPER_VOICE_PATH = os.path.join(_PIPER_VOICES_DIR, "en_US-lessac-medium.onnx")
+PIPER_VOICE_PATH_MALE = os.path.join(_PIPER_VOICES_DIR, "en_US-ryan-medium.onnx")
+
 _whisper_model: WhisperModel | None = None
-_piper_voice: PiperVoice | None = None
+# One lazily-loaded PiperVoice per gender, cached so we don't reload a ~60MB
+# model on every request (both fit comfortably in memory alongside the LLM).
+_piper_voices: dict[str, PiperVoice] = {}
 
 
 def _get_whisper_model_name() -> str:
     return os.environ.get("WHISPER_MODEL", "tiny.en")
 
 
-def _get_piper_voice_path() -> str:
+def _get_piper_voice_path(voice: str = "female") -> str:
+    if voice == "male":
+        return os.environ.get("PIPER_VOICE_PATH_MALE", PIPER_VOICE_PATH_MALE)
     return os.environ.get("PIPER_VOICE_PATH", PIPER_VOICE_PATH)
 
 
@@ -46,11 +49,11 @@ def load_whisper_model() -> WhisperModel:
     return _whisper_model
 
 
-def load_piper_voice() -> PiperVoice:
-    global _piper_voice
-    if _piper_voice is None:
-        _piper_voice = PiperVoice.load(_get_piper_voice_path())
-    return _piper_voice
+def load_piper_voice(voice: str = "female") -> PiperVoice:
+    normalized = "male" if voice == "male" else "female"
+    if normalized not in _piper_voices:
+        _piper_voices[normalized] = PiperVoice.load(_get_piper_voice_path(normalized))
+    return _piper_voices[normalized]
 
 
 def is_whisper_loaded() -> bool:
@@ -58,7 +61,7 @@ def is_whisper_loaded() -> bool:
 
 
 def is_piper_loaded() -> bool:
-    return _piper_voice is not None
+    return len(_piper_voices) > 0
 
 
 def _read_wav_as_float32(wav_path: str) -> np.ndarray:
@@ -108,9 +111,9 @@ def transcribe_audio(audio_base64: str) -> str:
         os.unlink(tmp_path)
 
 
-def synthesize_speech(text: str) -> str:
-    voice = load_piper_voice()
+def synthesize_speech(text: str, voice: str = "female") -> str:
+    piper_voice = load_piper_voice(voice)
     buffer = io.BytesIO()
     with wave.open(buffer, "wb") as wav_file:
-        voice.synthesize_wav(text, wav_file)
+        piper_voice.synthesize_wav(text, wav_file)
     return base64.b64encode(buffer.getvalue()).decode("ascii")

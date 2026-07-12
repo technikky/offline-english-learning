@@ -134,6 +134,49 @@
         flex-direction: column;
         min-height: 0;
       }
+      .avatar-stage {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px 0 12px;
+        border-bottom: 1px solid #334155;
+        margin-bottom: 10px;
+      }
+      .avatar-holder {
+        width: 96px;
+        height: 96px;
+        transition: transform 0.15s ease;
+      }
+      .avatar-holder svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .avatar-holder.speaking {
+        animation: avatarBob 0.6s ease-in-out infinite;
+      }
+      /* The mouth path is toggled between closed/open while speaking. */
+      .avatar-holder.speaking .avatar-mouth {
+        animation: avatarTalk 0.28s steps(1, end) infinite;
+      }
+      @keyframes avatarBob {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+      }
+      @keyframes avatarTalk {
+        0% { transform: scaleY(0.3); }
+        50% { transform: scaleY(1); }
+        100% { transform: scaleY(0.3); }
+      }
+      .avatar-name {
+        margin-top: 6px;
+        font-size: 13px;
+        opacity: 0.8;
+      }
+      .avatar-mouth {
+        transform-box: fill-box;
+        transform-origin: center;
+      }
       #grammarPanel {
         flex: 1;
         overflow-y: auto;
@@ -675,7 +718,16 @@
           <option value="family">Family</option>
           <option value="culture">Culture</option>
         </select>
-        <button id="startConversationBtn">Start conversation</button>
+        <label for="voiceSelect" style="display:block;margin-top:10px;font-size:12px;opacity:0.8">AI partner voice</label>
+        <select id="voiceSelect">
+          <option value="female">Female voice</option>
+          <option value="male">Male voice</option>
+        </select>
+        <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px">
+          <input id="autoSpeakToggle" type="checkbox" checked />
+          Speak replies aloud
+        </label>
+        <button id="startConversationBtn" style="margin-top:10px">Start conversation</button>
         <div id="conversationError" class="error"></div>
 
         <h3>Vocabulary notebook</h3>
@@ -709,6 +761,10 @@
         </div>
 
         <div id="chatPanel">
+          <div id="avatarStage" class="avatar-stage">
+            <div id="avatarHolder" class="avatar-holder"></div>
+            <div id="avatarName" class="avatar-name">Your AI partner</div>
+          </div>
           <div id="chatLog"></div>
           <div id="wordsToLearn" class="words-to-learn hidden"></div>
           <div id="composer">

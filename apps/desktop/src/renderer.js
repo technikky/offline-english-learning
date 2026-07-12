@@ -62,6 +62,7 @@ function showLoggedIn(user) {
   document.getElementById("profileName").textContent = user.displayName;
   document.getElementById("profileRole").textContent = user.role;
   document.getElementById("profileEmail").textContent = user.email;
+  renderAvatar();
   loadNotebook();
   loadStudentAnalytics();
   loadGrammarTopics();
@@ -408,6 +409,70 @@ async function loadRecommendations(conversationId) {
   }
 }
 
+// ---- AI conversation avatar + voice (Stage 16) ----
+// Inline SVGs (no external assets — the app is fully offline). Each has an
+// `.avatar-mouth` element the CSS animates while the avatar is "speaking".
+const AVATAR_SVGS = {
+  female: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="Female AI avatar">
+    <circle cx="50" cy="50" r="48" fill="#312e81"/>
+    <path d="M22 52 Q20 20 50 18 Q80 20 78 52 L78 74 Q78 60 68 58 L32 58 Q22 60 22 74 Z" fill="#7c3f2e"/>
+    <circle cx="50" cy="50" r="24" fill="#f2c9a0"/>
+    <circle cx="42" cy="48" r="3" fill="#1f2937"/>
+    <circle cx="58" cy="48" r="3" fill="#1f2937"/>
+    <ellipse class="avatar-mouth" cx="50" cy="60" rx="6" ry="3" fill="#a83f52"/>
+    <path d="M26 50 Q24 30 50 28 Q76 30 74 50 Q70 40 50 40 Q30 40 26 50 Z" fill="#7c3f2e"/>
+    <circle cx="30" cy="60" r="3.5" fill="#f2c9a0"/>
+    <circle cx="70" cy="60" r="3.5" fill="#f2c9a0"/>
+  </svg>`,
+  male: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="Male AI avatar">
+    <circle cx="50" cy="50" r="48" fill="#312e81"/>
+    <rect x="30" y="70" width="40" height="20" rx="6" fill="#1e293b"/>
+    <circle cx="50" cy="50" r="24" fill="#f2c9a0"/>
+    <path d="M28 44 Q26 24 50 24 Q74 24 72 44 Q72 34 50 34 Q28 34 28 44 Z" fill="#3b2417"/>
+    <circle cx="42" cy="48" r="3" fill="#1f2937"/>
+    <circle cx="58" cy="48" r="3" fill="#1f2937"/>
+    <ellipse class="avatar-mouth" cx="50" cy="61" rx="6" ry="2.5" fill="#a83f52"/>
+    <path d="M40 66 Q50 72 60 66" stroke="#c98d63" stroke-width="2" fill="none"/>
+  </svg>`,
+};
+
+function getSelectedVoice() {
+  const el = document.getElementById("voiceSelect");
+  return el && el.value === "male" ? "male" : "female";
+}
+
+function renderAvatar() {
+  const voice = getSelectedVoice();
+  const holder = document.getElementById("avatarHolder");
+  holder.innerHTML = AVATAR_SVGS[voice];
+  document.getElementById("avatarName").textContent =
+    voice === "male" ? "Your AI partner (male voice)" : "Your AI partner (female voice)";
+}
+
+// Speaks the given text in the selected voice and animates the avatar's mouth
+// for the duration of playback. No-op (silent) if "Speak replies aloud" is off.
+async function speakAsAvatar(text) {
+  const autoSpeak = document.getElementById("autoSpeakToggle");
+  if (!autoSpeak || !autoSpeak.checked || !text || !text.trim()) return;
+
+  const holder = document.getElementById("avatarHolder");
+  try {
+    const res = await fetch(`${API_BASE}/speech/synthesize`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ text, voice: getSelectedVoice() }),
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    holder.classList.add("speaking");
+    await playBase64Wav(data.audioBase64);
+  } catch (err) {
+    // speaking is a non-critical enhancement; the text reply is already shown
+  } finally {
+    holder.classList.remove("speaking");
+  }
+}
+
 async function startConversation() {
   const scenario = document.getElementById("scenarioSelect").value;
   const errorEl = document.getElementById("conversationError");
@@ -503,6 +568,10 @@ async function sendMessage() {
         }
       }
     }
+
+    // Let the AI avatar "conduct" the conversation by speaking its reply
+    // aloud in the selected voice (Stage 16). Non-blocking failures only.
+    await speakAsAvatar(displayedText);
   } catch (err) {
     assistantBubble.textContent = "(error contacting the AI service)";
   } finally {
@@ -969,6 +1038,12 @@ function stopRecording() {
 async function playBase64Wav(audioBase64) {
   const audio = new Audio(`data:audio/wav;base64,${audioBase64}`);
   await audio.play();
+  // Resolve when playback finishes so callers can, e.g., stop an avatar's
+  // speaking animation at the right time.
+  await new Promise((resolve) => {
+    audio.addEventListener("ended", resolve, { once: true });
+    audio.addEventListener("error", resolve, { once: true });
+  });
 }
 
 // ---- Mic button in the conversation composer ----
@@ -1029,7 +1104,7 @@ async function listenToTargetPhrase() {
     const res = await fetch(`${API_BASE}/speech/synthesize`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ text: phrase }),
+      body: JSON.stringify({ text: phrase, voice: getSelectedVoice() }),
     });
     if (!res.ok) {
       errorEl.textContent = "Could not synthesize speech.";
@@ -1112,6 +1187,7 @@ document.getElementById("password").addEventListener("keydown", (e) => {
   if (e.key === "Enter") login();
 });
 document.getElementById("startConversationBtn").addEventListener("click", startConversation);
+document.getElementById("voiceSelect").addEventListener("change", renderAvatar);
 document.getElementById("sendBtn").addEventListener("click", sendMessage);
 document.getElementById("messageInput").addEventListener("keydown", (e) => {
   if (e.key === "Enter") sendMessage();
@@ -1456,7 +1532,7 @@ async function listenToReadingPassage() {
     const res = await fetch(`${API_BASE}/speech/synthesize`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ text: content }),
+      body: JSON.stringify({ text: content, voice: getSelectedVoice() }),
     });
     if (!res.ok) return;
     const data = await res.json();

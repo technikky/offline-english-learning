@@ -39,7 +39,8 @@ GGUF file without any code changes.
 - `AI_THREADS` — llama.cpp inference thread count (default: the host's logical core count). Measured at a 55% tokens/sec speedup over a conservative `n_threads=4` default on the dev machine (16 cores) — see `scripts/benchmark.py` and `docs/13-stage10-plan.md`.
 - `EMBEDDING_CACHE_DIR` — where the ONNX embedding model is cached (default `offline-sdk/ai-models/fastembed-cache/`).
 - `WHISPER_MODEL` — Whisper model size (default `tiny.en`).
-- `PIPER_VOICE_PATH` — path to the Piper `.onnx` voice file (default `offline-sdk/ai-models/piper-voices/en_US-lessac-medium.onnx`).
+- `PIPER_VOICE_PATH` — path to the female/default Piper `.onnx` voice (default `offline-sdk/ai-models/piper-voices/en_US-lessac-medium.onnx`).
+- `PIPER_VOICE_PATH_MALE` — path to the male Piper voice (default `offline-sdk/ai-models/piper-voices/en_US-ryan-medium.onnx`), used when `/v1/speech/synthesize` is called with `voice: "male"` (Stage 16). See `docs/23-stage16-plan.md`.
 
 ## Tests
 

@@ -175,5 +175,5 @@ def speech_transcribe(request: TranscribeRequest) -> TranscribeResponse:
 @app.post("/v1/speech/synthesize")
 def speech_synthesize(request: SynthesizeRequest) -> SynthesizeResponse:
     with INFERENCE_LOCK:
-        audio_base64 = synthesize_speech(request.text)
+        audio_base64 = synthesize_speech(request.text, request.voice)
     return SynthesizeResponse(audioBase64=audio_base64)

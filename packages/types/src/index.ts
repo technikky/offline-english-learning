@@ -288,8 +288,13 @@ export interface TranscribeResponse {
   transcript: string;
 }
 
+// Stage 16: the AI conversation avatar can speak in a male or female voice;
+// the selected gender both picks the Piper voice and which avatar is shown.
+export type VoiceGender = "male" | "female";
+
 export interface SynthesizeRequest {
   text: string;
+  voice?: VoiceGender; // defaults to female (the original single vendored voice)
 }
 
 export interface SynthesizeResponse {

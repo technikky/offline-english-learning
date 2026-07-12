@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.4.0 — Stage 16: AI conversation avatar with male/female voice selection
+
+- **The AI conversation partner now has a visible avatar that speaks its replies aloud.** A voice selector (female/male) in the conversation sidebar swaps between a **female avatar + female voice** and a **male avatar + male voice**, exactly matching the two. The avatar bobs and its mouth animates for the duration of each spoken reply.
+- **Vendored a second Piper voice** (`en_US-ryan-medium`, male) alongside the original female `en_US-lessac-medium` — voice selection didn't exist before this; there was only one voice. Confirmed the two are genuinely distinct models (different MD5, audibly different synthesis).
+- AI service `app/speech.py` now lazily loads and caches one Piper voice per gender; `/v1/speech/synthesize` and the backend `/speech/synthesize` route take a `voice: "male" | "female"` param (defaulting to female, so every prior caller is unchanged). The single voice setting also drives the pronunciation-practice and reading-passage "Listen" buttons for consistency.
+- Avatars are inline SVGs (no image files — fully offline/self-contained). "Speak replies aloud" is a toggle (on by default); off makes it a silent no-op.
+- Verified end-to-end through the real UI + full stack: avatar switches male↔female with the selector, the correct `voice` param is sent per gender (request bodies captured), distinct audio is produced per gender through the full backend→AI path, and the speaking animation activates during playback and clears after. (The auto-speak-from-a-live-streamed-reply step is verified via the `speakAsAvatar` function directly, since the in-app preview browser doesn't consume the conversation route's hijacked streaming response — a preview-only limitation; the real Electron Chromium handles it, and the streaming path itself was verified via curl in Stage 13.)
+- Backend + AI service test suites extended (AI service 28 pytest tests; backend speech-route voice-forwarding tests).
+
 ## v1.3.0 — Stage 15: Reading module
 
 - **New Reading Module** (previously nonexistent): 5 curated passages across CEFR A1-C1 (a simple park story up through an academic AI-ethics piece), each with an AI-generated summary, vocabulary highlights, and a 4-question comprehension quiz.

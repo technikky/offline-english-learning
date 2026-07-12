@@ -56,6 +56,7 @@ class TranscribeResponse(BaseModel):
 
 class SynthesizeRequest(BaseModel):
     text: str
+    voice: Literal["male", "female"] = "female"
 
 
 class SynthesizeResponse(BaseModel):

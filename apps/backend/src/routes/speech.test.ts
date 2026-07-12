@@ -18,12 +18,17 @@ function buildApp() {
 
 function fakeSpeechClient(transcript: string) {
   const original = { transcribe: aiSpeechClient.transcribe, synthesize: aiSpeechClient.synthesize };
+  const calls: { synthesizeVoice: string | undefined } = { synthesizeVoice: undefined };
   aiSpeechClient.transcribe = async () => transcript;
-  aiSpeechClient.synthesize = async () => "ZmFrZS1hdWRpby1ieXRlcw==";
-  return () => {
+  aiSpeechClient.synthesize = async (_text: string, voice?: "male" | "female") => {
+    calls.synthesizeVoice = voice;
+    return "ZmFrZS1hdWRpby1ieXRlcw==";
+  };
+  const restore = () => {
     aiSpeechClient.transcribe = original.transcribe;
     aiSpeechClient.synthesize = original.synthesize;
   };
+  return Object.assign(restore, { calls });
 }
 
 test("transcribes audio via the AI speech client", async () => {
@@ -73,6 +78,60 @@ test("synthesizes speech via the AI speech client", async () => {
     });
     assert.equal(res.statusCode, 200);
     assert.equal(res.json().audioBase64, "ZmFrZS1hdWRpby1ieXRlcw==");
+    // No voice specified -> defaults to female (the original single voice).
+    assert.equal(restore.calls.synthesizeVoice, "female");
+  } finally {
+    restore();
+  }
+});
+
+test("forwards the selected voice (male) to the AI speech client", async () => {
+  ensureSchema();
+  const restore = fakeSpeechClient("unused");
+  const passwordHash = await hashPassword("studentpass123");
+  const [student] = await db
+    .insert(users)
+    .values({ email: "speechvoice@x.com", passwordHash, role: "student", displayName: "V" })
+    .returning();
+
+  try {
+    const app = buildApp();
+    const token = signAccessToken({ sub: student.id, role: "student" });
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/speech/synthesize",
+      headers: { authorization: `Bearer ${token}` },
+      payload: { text: "hello", voice: "male" },
+    });
+    assert.equal(res.statusCode, 200);
+    assert.equal(restore.calls.synthesizeVoice, "male");
+  } finally {
+    restore();
+  }
+});
+
+test("an unknown voice value falls back to female", async () => {
+  ensureSchema();
+  const restore = fakeSpeechClient("unused");
+  const passwordHash = await hashPassword("studentpass123");
+  const [student] = await db
+    .insert(users)
+    .values({ email: "speechvoice2@x.com", passwordHash, role: "student", displayName: "V2" })
+    .returning();
+
+  try {
+    const app = buildApp();
+    const token = signAccessToken({ sub: student.id, role: "student" });
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/speech/synthesize",
+      headers: { authorization: `Bearer ${token}` },
+      payload: { text: "hello", voice: "banana" },
+    });
+    assert.equal(res.statusCode, 200);
+    assert.equal(restore.calls.synthesizeVoice, "female");
   } finally {
     restore();
   }

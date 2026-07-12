@@ -33,12 +33,13 @@ export function registerSpeechRoutes(app: FastifyInstance): void {
     "/speech/synthesize",
     { preHandler: authenticate },
     async (request, reply) => {
-      const { text } = request.body;
+      const { text, voice } = request.body;
       if (!text || !text.trim()) {
         return reply.code(400).send({ error: "text is required" });
       }
 
-      const audioBase64 = await aiSpeechClient.synthesize(text);
+      const selectedVoice = voice === "male" ? "male" : "female";
+      const audioBase64 = await aiSpeechClient.synthesize(text, selectedVoice);
       const response: SynthesizeResponse = { audioBase64 };
       return response;
     },
