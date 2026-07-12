@@ -767,7 +767,7 @@ async function loadTeacherTopics() {
 
       const del = document.createElement("button");
       del.className = "secondary";
-      del.textContent = "Delete";
+      del.textContent = window.i18n.t("common.delete");
       del.style.padding = "2px 8px";
       del.addEventListener("click", () => deleteTeacherTopic(topic.id));
       item.appendChild(del);
@@ -2717,10 +2717,10 @@ async function loadAiModels() {
     for (const model of models) {
       const row = document.createElement("tr");
       const statusCell = model.isActive
-        ? `<span class="badge ok">active</span>`
-        : `<button data-filename="${model.filename}" class="select-model-btn">Select</button>`;
+        ? `<span class="badge ok">${window.i18n.t("common.active")}</span>`
+        : `<button data-filename="${model.filename}" class="select-model-btn">${window.i18n.t("common.select")}</button>`;
       row.innerHTML = `<td>${model.filename}</td><td>${fmtBytes(model.sizeBytes)}</td><td>${
-        model.isActive ? "active" : ""
+        model.isActive ? window.i18n.t("common.active") : ""
       }</td><td>${model.isActive ? "" : statusCell}</td>`;
       body.appendChild(row);
     }
@@ -2764,7 +2764,7 @@ async function loadBackups() {
       const row = document.createElement("tr");
       row.innerHTML = `<td>${backup.filename}</td><td>${fmtBytes(backup.sizeBytes)}</td><td>${new Date(
         backup.createdAt,
-      ).toLocaleString()}</td><td><button data-filename="${backup.filename}" class="restore-backup-btn">Restore</button></td>`;
+      ).toLocaleString()}</td><td><button data-filename="${backup.filename}" class="restore-backup-btn">${window.i18n.t("common.restore")}</button></td>`;
       body.appendChild(row);
     }
     body.querySelectorAll(".restore-backup-btn").forEach((btn) => {

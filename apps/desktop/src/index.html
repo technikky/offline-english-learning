@@ -1039,67 +1039,68 @@
 
     <div id="teacherView" class="hidden">
       <div id="teacherSidebar">
-        <div class="profile-row"><span>Name</span><span id="teacherProfileName"></span></div>
-        <div class="profile-row"><span>Role</span><span id="teacherProfileRole"></span></div>
-        <button id="teacherLogoutBtn" class="secondary">Log out</button>
+        <div class="profile-row"><span data-i18n="sidebar.name">Name</span><span id="teacherProfileName"></span></div>
+        <div class="profile-row"><span data-i18n="sidebar.role">Role</span><span id="teacherProfileRole"></span></div>
+        <button id="teacherLogoutBtn" class="secondary" data-i18n="sidebar.logout">Log out</button>
 
-        <h3>My classes</h3>
+        <h3 data-i18n="teacher.myClasses">My classes</h3>
         <div id="classList"></div>
         <div class="inline-form">
-          <input id="newClassNameInput" type="text" placeholder="New class name…" />
-          <button id="createClassBtn">Create</button>
+          <input id="newClassNameInput" type="text" placeholder="New class name…" data-i18n-ph="teacher.newClassName" />
+          <button id="createClassBtn" data-i18n="common.create">Create</button>
         </div>
         <div id="createClassError" class="error"></div>
 
-        <h3>Conversation topics</h3>
-        <p style="font-size: 12px; opacity: 0.75; margin-top: -6px">
+        <h3 data-i18n="teacher.convTopics">Conversation topics</h3>
+        <p style="font-size: 12px; opacity: 0.75; margin-top: -6px" data-i18n="teacher.convTopicsHint">
           Custom topics appear in your students' conversation picker.
         </p>
         <div id="teacherTopicList"></div>
         <div class="inline-form">
-          <input id="newTopicTitle" type="text" placeholder="Topic title…" />
+          <input id="newTopicTitle" type="text" placeholder="Topic title…" data-i18n-ph="teacher.topicTitle" />
         </div>
         <textarea
           id="newTopicPrompt"
           rows="3"
           placeholder="AI role/instructions (e.g. You are a museum guide…)"
+          data-i18n-ph="teacher.topicPrompt"
           style="width: 100%; margin-top: 6px; box-sizing: border-box"
         ></textarea>
-        <button id="createTopicBtn" style="margin-top: 6px">Add topic</button>
+        <button id="createTopicBtn" style="margin-top: 6px" data-i18n="teacher.addTopic">Add topic</button>
         <div id="createTopicError" class="error"></div>
       </div>
 
       <div id="teacherMain">
-        <div id="noClassSelected">Select or create a class to get started.</div>
+        <div id="noClassSelected" data-i18n="teacher.selectClass">Select or create a class to get started.</div>
         <div id="classDetail" class="hidden">
           <h2 id="classDetailName"></h2>
 
           <div class="panel">
-            <h3>Roster</h3>
-            <p style="font-size: 12px; opacity: 0.75; margin-top: -6px">
+            <h3 data-i18n="teacher.roster">Roster</h3>
+            <p style="font-size: 12px; opacity: 0.75; margin-top: -6px" data-i18n="teacher.rosterHint">
               Click a student to view their progress.
             </p>
             <table class="data-table">
               <thead>
-                <tr><th>Name</th><th>Email</th></tr>
+                <tr><th data-i18n="sidebar.name">Name</th><th data-i18n="sidebar.email">Email</th></tr>
               </thead>
               <tbody id="rosterBody"></tbody>
             </table>
             <div class="inline-form">
-              <input id="newStudentEmail" type="email" placeholder="Student email" />
-              <input id="newStudentName" type="text" placeholder="Display name" />
-              <input id="newStudentPassword" type="password" placeholder="Initial password" />
-              <button id="addStudentBtn">Add student</button>
+              <input id="newStudentEmail" type="email" placeholder="Student email" data-i18n-ph="teacher.studentEmail" />
+              <input id="newStudentName" type="text" placeholder="Display name" data-i18n-ph="teacher.displayName" />
+              <input id="newStudentPassword" type="password" placeholder="Initial password" data-i18n-ph="teacher.initialPassword" />
+              <button id="addStudentBtn" data-i18n="teacher.addStudent">Add student</button>
             </div>
             <div id="addStudentError" class="error"></div>
             <div id="teacherStudentAnalyticsPanel" class="hidden"></div>
           </div>
 
           <div class="panel">
-            <h3>Assignments</h3>
+            <h3 data-i18n="teacher.assignments">Assignments</h3>
             <div id="assignmentsList"></div>
             <div class="inline-form">
-              <input id="assignmentTitle" type="text" placeholder="Title" />
+              <input id="assignmentTitle" type="text" placeholder="Title" data-i18n-ph="teacher.title" />
               <select id="assignmentScenario">
                 <option value="free_talk">Free Talk</option>
                 <option value="role_play">Role Play</option>
@@ -1124,32 +1125,33 @@
                 <option value="culture">Culture</option>
               </select>
               <input id="assignmentDueDate" type="date" />
-              <button id="createAssignmentBtn">Create</button>
+              <button id="createAssignmentBtn" data-i18n="common.create">Create</button>
             </div>
             <input
               id="assignmentDescription"
               type="text"
               placeholder="Description"
+              data-i18n-ph="teacher.description"
               style="margin-top: 8px"
             />
             <div id="createAssignmentError" class="error"></div>
           </div>
 
           <div class="panel">
-            <h3>Grammar mistakes review</h3>
+            <h3 data-i18n="teacher.grammarReview">Grammar mistakes review</h3>
             <table class="data-table">
               <thead>
-                <tr><th>Student</th><th>Original</th><th>Corrected</th><th>Rule</th></tr>
+                <tr><th data-i18n="teacher.colStudent">Student</th><th data-i18n="teacher.colOriginal">Original</th><th data-i18n="teacher.colCorrected">Corrected</th><th data-i18n="teacher.colRule">Rule</th></tr>
               </thead>
               <tbody id="mistakesBody"></tbody>
             </table>
           </div>
 
           <div class="panel">
-            <h3>Reports</h3>
+            <h3 data-i18n="teacher.reports">Reports</h3>
             <div class="report-buttons">
-              <button id="downloadCsvBtn">Download CSV</button>
-              <button id="downloadPdfBtn">Download PDF</button>
+              <button id="downloadCsvBtn" data-i18n="teacher.downloadCsv">Download CSV</button>
+              <button id="downloadPdfBtn" data-i18n="teacher.downloadPdf">Download PDF</button>
             </div>
           </div>
         </div>
@@ -1158,33 +1160,33 @@
 
     <div id="adminView" class="hidden">
       <div id="adminSidebar">
-        <div class="profile-row"><span>Name</span><span id="adminProfileName"></span></div>
-        <div class="profile-row"><span>Role</span><span id="adminProfileRole"></span></div>
-        <button id="adminLogoutBtn" class="secondary">Log out</button>
+        <div class="profile-row"><span data-i18n="sidebar.name">Name</span><span id="adminProfileName"></span></div>
+        <div class="profile-row"><span data-i18n="sidebar.role">Role</span><span id="adminProfileRole"></span></div>
+        <button id="adminLogoutBtn" class="secondary" data-i18n="sidebar.logout">Log out</button>
       </div>
 
       <div id="adminMain">
-        <h2>Admin console</h2>
+        <h2 data-i18n="admin.console">Admin console</h2>
 
         <div class="panel">
-          <h3>System health</h3>
-          <button id="refreshHealthBtn">Refresh</button>
+          <h3 data-i18n="admin.systemHealth">System health</h3>
+          <button id="refreshHealthBtn" data-i18n="admin.refresh">Refresh</button>
           <table class="kv-table" id="systemHealthTable"></table>
         </div>
 
         <div class="panel">
-          <h3>Server configuration</h3>
+          <h3 data-i18n="admin.serverConfig">Server configuration</h3>
           <table class="kv-table" id="serverConfigTable"></table>
         </div>
 
         <div class="panel">
-          <h3>AI model management</h3>
-          <p style="font-size: 12px; opacity: 0.75; margin-top: -6px">
+          <h3 data-i18n="admin.modelMgmt">AI model management</h3>
+          <p style="font-size: 12px; opacity: 0.75; margin-top: -6px" data-i18n="admin.modelMgmtHint">
             Selecting a model writes the choice for the AI service to pick up on its next restart — it does not hot-swap the running model.
           </p>
           <table class="data-table">
             <thead>
-              <tr><th>Model file</th><th>Size</th><th>Status</th><th></th></tr>
+              <tr><th data-i18n="admin.modelFile">Model file</th><th data-i18n="common.size">Size</th><th data-i18n="common.status">Status</th><th></th></tr>
             </thead>
             <tbody id="aiModelsBody"></tbody>
           </table>
@@ -1192,28 +1194,28 @@
         </div>
 
         <div class="panel">
-          <h3>Backup &amp; restore</h3>
-          <button id="createBackupBtn">Create backup now</button>
+          <h3 data-i18n="admin.backupRestore">Backup &amp; restore</h3>
+          <button id="createBackupBtn" data-i18n="admin.createBackup">Create backup now</button>
           <div id="backupError" class="error"></div>
           <table class="data-table">
             <thead>
-              <tr><th>Filename</th><th>Size</th><th>Created</th><th></th></tr>
+              <tr><th data-i18n="common.filename">Filename</th><th data-i18n="common.size">Size</th><th data-i18n="common.created">Created</th><th></th></tr>
             </thead>
             <tbody id="backupsBody"></tbody>
           </table>
         </div>
 
         <div class="panel">
-          <h3>Create teacher / student account</h3>
+          <h3 data-i18n="admin.createAccount">Create teacher / student account</h3>
           <div class="inline-form">
-            <input id="newUserEmail" type="email" placeholder="Email" />
-            <input id="newUserName" type="text" placeholder="Display name" />
-            <input id="newUserPassword" type="password" placeholder="Initial password" />
+            <input id="newUserEmail" type="email" placeholder="Email" data-i18n-ph="auth.email" />
+            <input id="newUserName" type="text" placeholder="Display name" data-i18n-ph="teacher.displayName" />
+            <input id="newUserPassword" type="password" placeholder="Initial password" data-i18n-ph="teacher.initialPassword" />
             <select id="newUserRole">
-              <option value="teacher">Teacher</option>
-              <option value="student">Student</option>
+              <option value="teacher" data-i18n="admin.role.teacher">Teacher</option>
+              <option value="student" data-i18n="admin.role.student">Student</option>
             </select>
-            <button id="createUserBtn">Create</button>
+            <button id="createUserBtn" data-i18n="common.create">Create</button>
           </div>
           <div id="createUserError" class="error"></div>
           <div id="createUserSuccess" style="font-size: 12px; opacity: 0.85"></div>
@@ -1223,40 +1225,40 @@
 
     <div id="superAdminView" class="hidden">
       <div class="admin-sidebar-shared">
-        <div class="profile-row"><span>Name</span><span id="superAdminName"></span></div>
-        <div class="profile-row"><span>Role</span><span>Platform super-admin</span></div>
-        <button id="superAdminLogoutBtn" class="secondary">Log out</button>
+        <div class="profile-row"><span data-i18n="sidebar.name">Name</span><span id="superAdminName"></span></div>
+        <div class="profile-row"><span data-i18n="sidebar.role">Role</span><span data-i18n="super.role">Platform super-admin</span></div>
+        <button id="superAdminLogoutBtn" class="secondary" data-i18n="sidebar.logout">Log out</button>
       </div>
 
       <div class="admin-main-shared">
-        <h2>Platform administration — Schools</h2>
+        <h2 data-i18n="super.title">Platform administration — Schools</h2>
 
         <div class="panel">
-          <h3>Create a school</h3>
+          <h3 data-i18n="super.createSchool">Create a school</h3>
           <div class="inline-form">
-            <input id="newSchoolName" type="text" placeholder="School name" />
-            <button id="createSchoolBtn">Create school</button>
+            <input id="newSchoolName" type="text" placeholder="School name" data-i18n-ph="super.schoolName" />
+            <button id="createSchoolBtn" data-i18n="super.createSchoolBtn">Create school</button>
           </div>
           <div id="createSchoolError" class="error"></div>
         </div>
 
         <div class="panel">
-          <h3>Schools</h3>
+          <h3 data-i18n="super.schools">Schools</h3>
           <table class="data-table">
             <thead>
-              <tr><th>School</th><th>Admins</th><th>Teachers</th><th>Students</th><th>Add admin</th></tr>
+              <tr><th data-i18n="super.colSchool">School</th><th data-i18n="super.colAdmins">Admins</th><th data-i18n="super.colTeachers">Teachers</th><th data-i18n="super.colStudents">Students</th><th data-i18n="super.colAddAdmin">Add admin</th></tr>
             </thead>
             <tbody id="schoolsBody"></tbody>
           </table>
         </div>
 
         <div id="addSchoolAdminPanel" class="panel hidden">
-          <h3>Add an admin to <span id="addAdminSchoolName"></span></h3>
+          <h3><span data-i18n="super.colAddAdmin">Add admin</span>: <span id="addAdminSchoolName"></span></h3>
           <div class="inline-form">
-            <input id="newSchoolAdminEmail" type="email" placeholder="Admin email" />
-            <input id="newSchoolAdminName" type="text" placeholder="Display name" />
-            <input id="newSchoolAdminPassword" type="password" placeholder="Initial password" />
-            <button id="createSchoolAdminBtn">Create admin</button>
+            <input id="newSchoolAdminEmail" type="email" placeholder="Admin email" data-i18n-ph="super.adminEmail" />
+            <input id="newSchoolAdminName" type="text" placeholder="Display name" data-i18n-ph="teacher.displayName" />
+            <input id="newSchoolAdminPassword" type="password" placeholder="Initial password" data-i18n-ph="teacher.initialPassword" />
+            <button id="createSchoolAdminBtn" data-i18n="super.createAdmin">Create admin</button>
           </div>
           <div id="createSchoolAdminError" class="error"></div>
           <div id="createSchoolAdminSuccess" style="font-size:12px;opacity:0.85"></div>
