@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.12.0 — Stage 24: Vendor Qwen3-8B + model choice
+
+- **A second, production-sized model is now available**: Qwen3-8B (Q4_K_M, ~5.0 GB) is vendored alongside the default Qwen2.5-1.5B, so a deployment can pick the right one for its hardware. Verified it loads and generates under llama-cpp-python 0.3.33.
+- **Choosing between the two models reuses the existing admin Model-management UI** (Stage 12): it lists every `.gguf` in `offline-sdk/ai-models/` and persists the choice to `data/ai-model-config.json`, read by the AI service on startup. The 8B appears automatically — no code change to the selector. Switching requires an AI-service restart (a single in-memory llama.cpp instance can't be hot-swapped mid-request).
+- **Qwen3 reasoning output is stripped automatically**: Qwen3 is a hybrid-reasoning model that emits a leading `<think>…</think>` block. New `reasoning.py` removes it from both the streaming chat path (`ThinkFilter`, handles split tags / trailing blank lines) and every structured endpoint (`strip_think_blocks`), so replies and marker-parsed outputs stay clean. It's a transparent no-op for Qwen2.5, which never emits these tags.
+- Verified end-to-end with the 8B selected: a conversation returned a clean, natural reply with no `<think>` leakage, and `/v1/vocabulary/explain` parsed correctly. AI service: 47 pytest tests (+9). Model README documents both models, the selection flow, and fresh-clone restore commands.
+
 ## v1.11.0 — Stage 23: Instructor-added conversation topics
 
 - **Teachers can now add their own conversation topics.** A new "Conversation topics" panel in the teacher sidebar lets an instructor create a topic (title + AI role/instructions) and delete their own; new `custom_topics` table.

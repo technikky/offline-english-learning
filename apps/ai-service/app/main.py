@@ -11,6 +11,7 @@ from .speech import (
     is_piper_loaded,
 )
 from .inference_lock import INFERENCE_LOCK
+from .reasoning import ThinkFilter, strip_think_blocks
 from .prompts import (
     build_system_prompt,
     build_grammar_explain_prompt,
@@ -78,6 +79,9 @@ def _stream_chat(request: ChatRequest):
     ]
 
     full_text = ""
+    # Qwen3 emits a leading <think>...</think> reasoning block; strip it from
+    # the stream so only the reply reaches the student. No-op for Qwen2.5.
+    think_filter = ThinkFilter()
     with INFERENCE_LOCK:
         llm = load_model()
         for chunk in llm.create_chat_completion(
@@ -88,8 +92,14 @@ def _stream_chat(request: ChatRequest):
             delta = chunk["choices"][0].get("delta", {})
             token = delta.get("content")
             if token:
-                full_text += token
-                yield json.dumps({"token": token}) + "\n"
+                visible = think_filter.feed(token)
+                if visible:
+                    full_text += visible
+                    yield json.dumps({"token": visible}) + "\n"
+        trailing = think_filter.flush()
+        if trailing:
+            full_text += trailing
+            yield json.dumps({"token": trailing}) + "\n"
 
     yield json.dumps({"done": True, "fullText": full_text}) + "\n"
 
@@ -115,7 +125,7 @@ def grammar_explain(request: GrammarExplainRequest) -> GrammarExplainResponse:
         llm = load_model()
         result = llm.create_chat_completion(messages=messages, max_tokens=250)
 
-    raw_text = result["choices"][0]["message"]["content"]
+    raw_text = strip_think_blocks(result["choices"][0]["message"]["content"])
     explanation, example = parse_grammar_explain_response(raw_text)
 
     return GrammarExplainResponse(explanation=explanation, example=example)
@@ -136,7 +146,7 @@ def vocabulary_explain(request: VocabularyExplainRequest) -> VocabularyExplainRe
         llm = load_model()
         result = llm.create_chat_completion(messages=messages, max_tokens=200)
 
-    raw_text = result["choices"][0]["message"]["content"]
+    raw_text = strip_think_blocks(result["choices"][0]["message"]["content"])
     parsed = parse_vocabulary_explain_response(raw_text)
 
     return VocabularyExplainResponse(**parsed)
@@ -155,7 +165,7 @@ def grammar_exercise(request: GrammarExerciseRequest) -> GrammarExerciseResponse
         llm = load_model()
         result = llm.create_chat_completion(messages=messages, max_tokens=200)
 
-    raw_text = result["choices"][0]["message"]["content"]
+    raw_text = strip_think_blocks(result["choices"][0]["message"]["content"])
     parsed = parse_grammar_exercise_response(raw_text, request.exerciseType)
 
     return GrammarExerciseResponse(**parsed)
@@ -169,7 +179,7 @@ def reading_comprehension(request: ReadingComprehensionRequest) -> ReadingCompre
         llm = load_model()
         result = llm.create_chat_completion(messages=messages, max_tokens=700)
 
-    raw_text = result["choices"][0]["message"]["content"]
+    raw_text = strip_think_blocks(result["choices"][0]["message"]["content"])
     parsed = parse_reading_comprehension_response(raw_text)
 
     return ReadingComprehensionResponse(**parsed)
@@ -185,7 +195,7 @@ def writing_analyze(request: WritingAnalysisRequest) -> WritingAnalysisResponse:
         llm = load_model()
         result = llm.create_chat_completion(messages=messages, max_tokens=500)
 
-    raw_text = result["choices"][0]["message"]["content"]
+    raw_text = strip_think_blocks(result["choices"][0]["message"]["content"])
     parsed = parse_writing_analysis_response(raw_text)
 
     return WritingAnalysisResponse(**parsed)
@@ -199,7 +209,7 @@ def quiz_generate(request: QuizGenerateRequest) -> QuizGenerateResponse:
         llm = load_model()
         result = llm.create_chat_completion(messages=messages, max_tokens=700)
 
-    raw_text = result["choices"][0]["message"]["content"]
+    raw_text = strip_think_blocks(result["choices"][0]["message"]["content"])
     parsed = parse_quiz_response(raw_text)
 
     return QuizGenerateResponse(**parsed)
