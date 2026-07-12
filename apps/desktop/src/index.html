@@ -181,7 +181,8 @@
       #readingPanel,
       #listeningPanel,
       #writingPanel,
-      #quizPanel {
+      #quizPanel,
+      #historyPanel {
         flex: 1;
         overflow-y: auto;
         min-height: 0;
@@ -291,6 +292,23 @@
         background: #334155;
         margin-right: auto;
         border-bottom-left-radius: 2px;
+      }
+      .voice-mode-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .voice-mode-bar button {
+        width: auto;
+        margin: 0;
+      }
+      .voice-mode-bar button.active {
+        background: #b91c1c;
+      }
+      .voice-mode-status {
+        font-size: 13px;
+        opacity: 0.85;
       }
       #composer {
         display: flex;
@@ -776,12 +794,17 @@
           <button id="tabListeningBtn" class="main-tab">🎧 Listening</button>
           <button id="tabWritingBtn" class="main-tab">✍️ Writing</button>
           <button id="tabQuizBtn" class="main-tab">❓ Quiz</button>
+          <button id="tabHistoryBtn" class="main-tab">📜 History</button>
         </div>
 
         <div id="chatPanel">
           <div id="avatarStage" class="avatar-stage">
             <div id="avatarHolder" class="avatar-holder"></div>
             <div id="avatarName" class="avatar-name">Your AI partner</div>
+          </div>
+          <div id="voiceModeBar" class="voice-mode-bar hidden">
+            <button id="voiceModeBtn" class="secondary">🎙️ Start hands-free voice chat</button>
+            <span id="voiceModeStatus" class="voice-mode-status"></span>
           </div>
           <div id="chatLog"></div>
           <div id="wordsToLearn" class="words-to-learn hidden"></div>
@@ -990,6 +1013,22 @@
             <div id="quizResultSummary"></div>
           </div>
         </div>
+
+        <div id="historyPanel" class="hidden">
+          <div class="panel">
+            <h3>Learning history</h3>
+            <div id="historySummary" style="font-size:13px;opacity:0.85"></div>
+            <button id="historyRefreshBtn" class="secondary" style="margin-top:8px">Refresh</button>
+          </div>
+          <div class="panel">
+            <table class="data-table">
+              <thead>
+                <tr><th>When</th><th>Activity</th><th>Detail</th><th>Score</th></tr>
+              </thead>
+              <tbody id="historyBody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1006,6 +1045,23 @@
           <button id="createClassBtn">Create</button>
         </div>
         <div id="createClassError" class="error"></div>
+
+        <h3>Conversation topics</h3>
+        <p style="font-size: 12px; opacity: 0.75; margin-top: -6px">
+          Custom topics appear in your students' conversation picker.
+        </p>
+        <div id="teacherTopicList"></div>
+        <div class="inline-form">
+          <input id="newTopicTitle" type="text" placeholder="Topic title…" />
+        </div>
+        <textarea
+          id="newTopicPrompt"
+          rows="3"
+          placeholder="AI role/instructions (e.g. You are a museum guide…)"
+          style="width: 100%; margin-top: 6px; box-sizing: border-box"
+        ></textarea>
+        <button id="createTopicBtn" style="margin-top: 6px">Add topic</button>
+        <div id="createTopicError" class="error"></div>
       </div>
 
       <div id="teacherMain">

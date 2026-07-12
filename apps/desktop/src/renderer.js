@@ -63,6 +63,7 @@ function showLoggedIn(user) {
     document.getElementById("teacherProfileName").textContent = user.displayName;
     document.getElementById("teacherProfileRole").textContent = user.role;
     loadClasses();
+    loadTeacherTopics();
     return;
   }
 
@@ -72,6 +73,7 @@ function showLoggedIn(user) {
   document.getElementById("profileRole").textContent = user.role;
   document.getElementById("profileEmail").textContent = user.email;
   renderAvatar();
+  loadConversationTopics();
   loadNotebook();
   loadStudentAnalytics();
   loadGrammarTopics();
@@ -79,12 +81,15 @@ function showLoggedIn(user) {
   loadListeningClips();
   loadWritingPrompts();
   loadQuizProgress();
+  loadLearningHistory();
 }
 
 function showLoggedOut() {
+  if (voiceMode.active) stopVoiceMode();
   accessToken = null;
   currentConversationId = null;
   currentClassId = null;
+  document.getElementById("voiceModeBar").classList.add("hidden");
   document.getElementById("appView").classList.add("hidden");
   document.getElementById("appView").style.display = "none";
   document.getElementById("teacherView").classList.add("hidden");
@@ -138,6 +143,8 @@ function showLoggedOut() {
   document.getElementById("quizResultSummary").innerHTML = "";
   document.getElementById("quizActive").classList.add("hidden");
   document.getElementById("quizSetup").classList.remove("hidden");
+  document.getElementById("historyBody").innerHTML = "";
+  document.getElementById("historySummary").innerHTML = "";
   showChatTab();
 }
 
@@ -358,6 +365,49 @@ async function loadNotebook() {
   }
 }
 
+// Rebuilds the "New conversation" topic dropdown from the backend so that
+// custom topics a teacher has added for the school appear alongside the
+// built-in scenarios. Falls back silently to the hardcoded <option>s in
+// index.html if the request fails.
+async function loadConversationTopics() {
+  const select = document.getElementById("scenarioSelect");
+  if (!select) return;
+  try {
+    const res = await fetch(`${API_BASE}/topics`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!res.ok) return;
+
+    const options = await res.json();
+    if (!Array.isArray(options) || options.length === 0) return;
+
+    const previous = select.value;
+    select.innerHTML = "";
+    let customGroup = null;
+    for (const opt of options) {
+      const el = document.createElement("option");
+      el.value = opt.value;
+      el.textContent = opt.label;
+      if (opt.isCustom) {
+        if (!customGroup) {
+          customGroup = document.createElement("optgroup");
+          customGroup.label = "School topics";
+          select.appendChild(customGroup);
+        }
+        customGroup.appendChild(el);
+      } else {
+        select.appendChild(el);
+      }
+    }
+    // Preserve the user's selection across refreshes when still available.
+    if (previous && [...select.options].some((o) => o.value === previous)) {
+      select.value = previous;
+    }
+  } catch (err) {
+    // The dropdown already has built-in options; a failed refresh is non-fatal.
+  }
+}
+
 async function addWordToNotebook(word, errorEl) {
   try {
     const res = await fetch(`${API_BASE}/vocabulary/notebook`, {
@@ -479,9 +529,10 @@ function renderAvatar() {
 
 // Speaks the given text in the selected voice and animates the avatar's mouth
 // for the duration of playback. No-op (silent) if "Speak replies aloud" is off.
-async function speakAsAvatar(text) {
+async function speakAsAvatar(text, force = false) {
   const autoSpeak = document.getElementById("autoSpeakToggle");
-  if (!autoSpeak || !autoSpeak.checked || !text || !text.trim()) return;
+  // Voice mode (force) always speaks; text mode respects the toggle.
+  if ((!force && (!autoSpeak || !autoSpeak.checked)) || !text || !text.trim()) return;
 
   const holder = document.getElementById("avatarHolder");
   try {
@@ -502,6 +553,7 @@ async function speakAsAvatar(text) {
 }
 
 async function startConversation() {
+  if (voiceMode.active) stopVoiceMode();
   const scenario = document.getElementById("scenarioSelect").value;
   const errorEl = document.getElementById("conversationError");
   errorEl.textContent = "";
@@ -530,6 +582,7 @@ async function startConversation() {
     const wordsToLearn = document.getElementById("wordsToLearn");
     wordsToLearn.innerHTML = "";
     wordsToLearn.classList.add("hidden");
+    document.getElementById("voiceModeBar").classList.remove("hidden");
     appendBubble("assistant", `New ${scenario.replace("_", " ")} conversation started. Say hello!`);
   } catch (err) {
     errorEl.textContent = "Could not reach the backend.";
@@ -540,13 +593,23 @@ async function sendMessage() {
   const input = document.getElementById("messageInput");
   const content = input.value.trim();
   if (!content || !currentConversationId) return;
-
   input.value = "";
-  input.disabled = true;
+  await sendMessageContent(content);
+  input.focus();
+}
+
+/** Sends one user turn, streams + renders the AI reply, speaks it, and returns
+ * the reply text. Shared by the typed composer and hands-free voice mode
+ * (Stage 21). `forceSpeak` makes the avatar always talk (used by voice mode). */
+async function sendMessageContent(content, { forceSpeak = false } = {}) {
+  if (!content || !currentConversationId) return "";
+
+  document.getElementById("messageInput").disabled = true;
   document.getElementById("sendBtn").disabled = true;
 
   appendBubble("user", content);
   const assistantBubble = appendBubble("assistant", "");
+  let displayedText = "";
 
   try {
     const res = await fetch(`${API_BASE}/conversations/${currentConversationId}/messages`, {
@@ -560,13 +623,12 @@ async function sendMessage() {
 
     if (!res.ok || !res.body) {
       assistantBubble.textContent = "(error contacting the AI service)";
-      return;
+      return "";
     }
 
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
-    let displayedText = "";
 
     while (true) {
       const { done, value } = await reader.read();
@@ -599,15 +661,15 @@ async function sendMessage() {
 
     // Let the AI avatar "conduct" the conversation by speaking its reply
     // aloud in the selected voice (Stage 16). Non-blocking failures only.
-    await speakAsAvatar(displayedText);
+    await speakAsAvatar(displayedText, forceSpeak);
   } catch (err) {
     assistantBubble.textContent = "(error contacting the AI service)";
   } finally {
-    input.disabled = false;
+    document.getElementById("messageInput").disabled = false;
     document.getElementById("sendBtn").disabled = false;
-    input.focus();
     if (currentConversationId) loadRecommendations(currentConversationId);
   }
+  return displayedText;
 }
 
 function authHeaders(extra) {
@@ -656,6 +718,88 @@ async function createClass() {
     await loadClasses();
   } catch (err) {
     errorEl.textContent = "Could not reach the backend.";
+  }
+}
+
+// --- Teacher custom conversation topics (Stage 23) ---
+async function loadTeacherTopics() {
+  const container = document.getElementById("teacherTopicList");
+  if (!container) return;
+  try {
+    const res = await fetch(`${API_BASE}/teacher/topics`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const topics = await res.json();
+    container.innerHTML = "";
+    if (topics.length === 0) {
+      container.innerHTML = '<div style="font-size:12px;opacity:0.7">No custom topics yet.</div>';
+      return;
+    }
+    for (const topic of topics) {
+      const item = document.createElement("div");
+      item.className = "class-list-item";
+      item.style.display = "flex";
+      item.style.justifyContent = "space-between";
+      item.style.alignItems = "center";
+      item.style.gap = "8px";
+
+      const label = document.createElement("span");
+      label.textContent = topic.title;
+      label.title = topic.prompt;
+      item.appendChild(label);
+
+      const del = document.createElement("button");
+      del.className = "secondary";
+      del.textContent = "Delete";
+      del.style.padding = "2px 8px";
+      del.addEventListener("click", () => deleteTeacherTopic(topic.id));
+      item.appendChild(del);
+
+      container.appendChild(item);
+    }
+  } catch (err) {
+    // non-critical panel; fail silently
+  }
+}
+
+async function createTeacherTopic() {
+  const titleInput = document.getElementById("newTopicTitle");
+  const promptInput = document.getElementById("newTopicPrompt");
+  const errorEl = document.getElementById("createTopicError");
+  errorEl.textContent = "";
+  const title = titleInput.value.trim();
+  const prompt = promptInput.value.trim();
+  if (!title || !prompt) {
+    errorEl.textContent = "Title and instructions are both required.";
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/teacher/topics`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ title, prompt }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      errorEl.textContent = body.error || "Could not add topic";
+      return;
+    }
+    titleInput.value = "";
+    promptInput.value = "";
+    await loadTeacherTopics();
+  } catch (err) {
+    errorEl.textContent = "Could not reach the backend.";
+  }
+}
+
+async function deleteTeacherTopic(id) {
+  try {
+    const res = await fetch(`${API_BASE}/teacher/topics/${id}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    if (res.ok) await loadTeacherTopics();
+  } catch (err) {
+    // fail silently
   }
 }
 
@@ -967,6 +1111,7 @@ document.getElementById("createClassBtn").addEventListener("click", createClass)
 document.getElementById("newClassNameInput").addEventListener("keydown", (e) => {
   if (e.key === "Enter") createClass();
 });
+document.getElementById("createTopicBtn").addEventListener("click", createTeacherTopic);
 document.getElementById("addStudentBtn").addEventListener("click", addStudent);
 document.getElementById("createAssignmentBtn").addEventListener("click", createAssignment);
 document.getElementById("downloadCsvBtn").addEventListener("click", () => downloadReport("csv"));
@@ -1116,6 +1261,187 @@ async function toggleMicRecording() {
   }
 }
 
+// ---- Hands-free voice conversation mode (Stage 21) ----
+// A continuous listen -> transcribe -> reply -> speak -> listen loop driven by
+// simple voice-activity detection (RMS on the mic stream): the student just
+// talks, pauses, and the AI answers aloud — no Send button, like a real call.
+const voiceMode = {
+  active: false,
+  stream: null,
+  audioCtx: null,
+  analyser: null,
+  data: null,
+  recorder: null,
+  chunks: [],
+  state: "idle", // idle | listening | recording | processing | speaking
+  lastLoudAt: 0,
+  speechStartAt: 0,
+  pollId: null,
+};
+
+const VAD_RMS_THRESHOLD = 0.045; // speech vs. background
+const VAD_SILENCE_MS = 1200; // trailing silence that ends an utterance
+const VAD_MIN_SPEECH_MS = 400; // ignore ultra-short blips
+
+function setVoiceStatus(text) {
+  document.getElementById("voiceModeStatus").textContent = text;
+}
+
+async function toggleVoiceMode() {
+  if (voiceMode.active) {
+    stopVoiceMode();
+    return;
+  }
+  if (!currentConversationId) return;
+  try {
+    voiceMode.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    alert("Could not access the microphone.");
+    return;
+  }
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  voiceMode.audioCtx = new AudioContextClass();
+  const source = voiceMode.audioCtx.createMediaStreamSource(voiceMode.stream);
+  voiceMode.analyser = voiceMode.audioCtx.createAnalyser();
+  voiceMode.analyser.fftSize = 1024;
+  voiceMode.data = new Uint8Array(voiceMode.analyser.fftSize);
+  source.connect(voiceMode.analyser);
+
+  voiceMode.active = true;
+  voiceMode.state = "listening";
+  const btn = document.getElementById("voiceModeBtn");
+  btn.classList.add("active");
+  btn.textContent = "⏹ Stop voice chat";
+  document.getElementById("micBtn").disabled = true;
+  document.getElementById("messageInput").disabled = true;
+  document.getElementById("sendBtn").disabled = true;
+  setVoiceStatus("🎙️ Listening… just start speaking.");
+  voiceMode.pollId = setInterval(voiceTick, 60);
+}
+
+function stopVoiceMode() {
+  voiceMode.active = false;
+  if (voiceMode.pollId) clearInterval(voiceMode.pollId);
+  voiceMode.pollId = null;
+  try {
+    if (voiceMode.recorder && voiceMode.recorder.state === "recording") voiceMode.recorder.stop();
+  } catch (err) {
+    /* ignore */
+  }
+  if (voiceMode.stream) voiceMode.stream.getTracks().forEach((t) => t.stop());
+  if (voiceMode.audioCtx) voiceMode.audioCtx.close().catch(() => {});
+  voiceMode.stream = null;
+  voiceMode.audioCtx = null;
+  voiceMode.recorder = null;
+  voiceMode.state = "idle";
+  const btn = document.getElementById("voiceModeBtn");
+  btn.classList.remove("active");
+  btn.textContent = "🎙️ Start hands-free voice chat";
+  document.getElementById("micBtn").disabled = false;
+  if (currentConversationId) {
+    document.getElementById("messageInput").disabled = false;
+    document.getElementById("sendBtn").disabled = false;
+  }
+  setVoiceStatus("");
+}
+
+function currentRms() {
+  voiceMode.analyser.getByteTimeDomainData(voiceMode.data);
+  let sumSq = 0;
+  for (let i = 0; i < voiceMode.data.length; i++) {
+    const v = (voiceMode.data[i] - 128) / 128;
+    sumSq += v * v;
+  }
+  return Math.sqrt(sumSq / voiceMode.data.length);
+}
+
+function voiceTick() {
+  if (!voiceMode.active) return;
+  // Only the listening/recording states watch the mic; while the AI is being
+  // transcribed or is speaking, we ignore input so we don't record ourselves.
+  if (voiceMode.state !== "listening" && voiceMode.state !== "recording") return;
+
+  const rms = currentRms();
+  const now = Date.now();
+
+  if (voiceMode.state === "listening") {
+    if (rms > VAD_RMS_THRESHOLD) {
+      // Speech started — begin capturing this utterance.
+      voiceMode.chunks = [];
+      voiceMode.recorder = new MediaRecorder(voiceMode.stream);
+      voiceMode.recorder.ondataavailable = (e) => voiceMode.chunks.push(e.data);
+      voiceMode.recorder.onstop = () => finishUtterance();
+      voiceMode.recorder.start();
+      voiceMode.state = "recording";
+      voiceMode.speechStartAt = now;
+      voiceMode.lastLoudAt = now;
+      setVoiceStatus("🎤 Listening to you…");
+    }
+    return;
+  }
+
+  // state === "recording"
+  if (rms > VAD_RMS_THRESHOLD) {
+    voiceMode.lastLoudAt = now;
+  } else if (
+    now - voiceMode.lastLoudAt > VAD_SILENCE_MS &&
+    now - voiceMode.speechStartAt > VAD_MIN_SPEECH_MS
+  ) {
+    voiceMode.state = "processing";
+    setVoiceStatus("💭 Thinking…");
+    if (voiceMode.recorder && voiceMode.recorder.state === "recording") {
+      voiceMode.recorder.stop();
+    }
+  }
+}
+
+async function finishUtterance() {
+  if (!voiceMode.active) return;
+  let audioBase64;
+  try {
+    const blob = new Blob(voiceMode.chunks, { type: voiceMode.recorder.mimeType });
+    const arrayBuffer = await blob.arrayBuffer();
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    const decodeCtx = new AudioContextClass();
+    const audioBuffer = await decodeCtx.decodeAudioData(arrayBuffer);
+    decodeCtx.close().catch(() => {});
+    audioBase64 = arrayBufferToBase64(audioBufferToWav(audioBuffer));
+  } catch (err) {
+    resumeListening();
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/speech/transcribe`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ audioBase64 }),
+    });
+    const transcript = res.ok ? (await res.json()).transcript.trim() : "";
+    if (!voiceMode.active) return;
+
+    // Ignore empty/noise transcriptions and just keep listening.
+    if (!transcript || transcript.length < 2) {
+      resumeListening();
+      return;
+    }
+
+    voiceMode.state = "speaking";
+    setVoiceStatus("🔊 AI is replying…");
+    await sendMessageContent(transcript, { forceSpeak: true });
+    if (!voiceMode.active) return;
+    resumeListening();
+  } catch (err) {
+    if (voiceMode.active) resumeListening();
+  }
+}
+
+function resumeListening() {
+  if (!voiceMode.active) return;
+  voiceMode.state = "listening";
+  setVoiceStatus("🎙️ Your turn — start speaking.");
+}
+
 // ---- Pronunciation practice panel ----
 let pronunciationRecording = false;
 
@@ -1204,6 +1530,7 @@ async function togglePronunciationRecording() {
 }
 
 document.getElementById("micBtn").addEventListener("click", toggleMicRecording);
+document.getElementById("voiceModeBtn").addEventListener("click", toggleVoiceMode);
 document.getElementById("pronunciationListenBtn").addEventListener("click", listenToTargetPhrase);
 document
   .getElementById("pronunciationRecordBtn")
@@ -1256,6 +1583,7 @@ function showMainTab(tabName) {
     listening: { btn: "tabListeningBtn", panel: "listeningPanel" },
     writing: { btn: "tabWritingBtn", panel: "writingPanel" },
     quiz: { btn: "tabQuizBtn", panel: "quizPanel" },
+    history: { btn: "tabHistoryBtn", panel: "historyPanel" },
   };
   for (const [name, ids] of Object.entries(tabs)) {
     const isActive = name === tabName;
@@ -1286,6 +1614,11 @@ function showWritingTab() {
 
 function showQuizTab() {
   showMainTab("quiz");
+}
+
+function showHistoryTab() {
+  showMainTab("history");
+  loadLearningHistory();
 }
 
 async function loadGrammarTopics() {
@@ -2154,6 +2487,46 @@ document.getElementById("tabQuizBtn").addEventListener("click", showQuizTab);
 document.getElementById("quizGenerateBtn").addEventListener("click", generateQuiz);
 document.getElementById("quizSubmitBtn").addEventListener("click", submitQuiz);
 document.getElementById("quizNewBtn").addEventListener("click", newQuiz);
+
+// --- Learning History (Stage 22) ---
+
+const HISTORY_TYPE_ICONS = {
+  conversation: "💬",
+  grammar: "📘",
+  reading: "📖",
+  listening: "🎧",
+  writing: "✍️",
+  quiz: "❓",
+  pronunciation: "🗣️",
+};
+
+async function loadLearningHistory() {
+  const body = document.getElementById("historyBody");
+  const summary = document.getElementById("historySummary");
+  try {
+    const res = await fetch(`${API_BASE}/history`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    summary.textContent =
+      data.totalActivities === 0
+        ? "No activity yet — try any of the practice modules and your history will appear here."
+        : `${data.totalActivities} activities · average score ${data.averageScore}%`;
+    body.innerHTML = "";
+    for (const e of data.entries) {
+      const row = document.createElement("tr");
+      const icon = HISTORY_TYPE_ICONS[e.type] || "•";
+      const when = e.createdAt.replace("T", " ").slice(0, 16);
+      const score = e.score !== null && e.score !== undefined ? `${e.score}%` : "—";
+      row.innerHTML = `<td style="white-space:nowrap;opacity:0.8">${when}</td><td>${icon} ${e.title}</td><td style="opacity:0.8">${e.detail || ""}</td><td>${score}</td>`;
+      body.appendChild(row);
+    }
+  } catch (err) {
+    body.innerHTML = "<tr><td colspan='4'>Could not reach the backend.</td></tr>";
+  }
+}
+
+document.getElementById("tabHistoryBtn").addEventListener("click", showHistoryTab);
+document.getElementById("historyRefreshBtn").addEventListener("click", loadLearningHistory);
 
 // --- Platform super-admin: school management (Stage 20) ---
 
