@@ -506,3 +506,84 @@ def parse_writing_analysis_response(raw_text: str) -> dict:
         "improvements": parse_list(improvements_raw),
         "modelAnswer": model_answer,
     }
+
+
+# Stage 19: Quiz Generator. Produces a fixed-size mixed quiz (multiple-choice
+# and true/false) on a category at a difficulty. Uses per-question numbered
+# markers (Q1_TYPE / Q1 / Q1_OPTIONS / Q1_ANSWER / Q1_EXPLANATION ...), which
+# a small local model follows more reliably than a free-form "repeat N times".
+QUIZ_QUESTION_COUNT = 5
+
+QUIZ_CATEGORY_GUIDANCE = {
+    "grammar": "Test grammar: verb tenses, articles, prepositions, sentence structure.",
+    "vocabulary": "Test vocabulary: word meanings, synonyms/antonyms, correct word choice.",
+    "everyday_english": "Test practical everyday English: common phrases, situations, idioms.",
+}
+
+
+def build_quiz_prompt(category: str, difficulty_level: str) -> list[dict]:
+    difficulty_text = DIFFICULTY_INSTRUCTIONS.get(
+        difficulty_level, DIFFICULTY_INSTRUCTIONS["B1"]
+    )
+    category_text = QUIZ_CATEGORY_GUIDANCE.get(category, QUIZ_CATEGORY_GUIDANCE["grammar"])
+
+    per_question = "\n".join(
+        f"Q{i}_TYPE: <multiple_choice or true_false>\n"
+        f"Q{i}: <the question; for true_false, a statement to judge>\n"
+        f"Q{i}_OPTIONS: <for multiple_choice, exactly 4 options comma-separated; "
+        f"for true_false, exactly: True, False>\n"
+        f"Q{i}_ANSWER: <the correct option, exactly as written in Q{i}_OPTIONS>\n"
+        f"Q{i}_EXPLANATION: <one sentence explaining why>"
+        for i in range(1, QUIZ_QUESTION_COUNT + 1)
+    )
+
+    system = (
+        f"You are an English quiz writer. Create a {QUIZ_QUESTION_COUNT}-question "
+        f"quiz. {category_text} {difficulty_text}\n\n"
+        "Mix multiple_choice and true_false question types. Make each question "
+        "different and use varied vocabulary. Respond in exactly this format, "
+        "with nothing before or after:\n"
+        f"{per_question}"
+    )
+    return [{"role": "system", "content": system}]
+
+
+def parse_quiz_response(raw_text: str) -> dict:
+    """Skips any question that fails to parse rather than raising, so a partly
+    malformed model response still yields a usable (possibly shorter) quiz."""
+    questions = []
+    for i in range(1, QUIZ_QUESTION_COUNT + 1):
+        type_marker = f"Q{i}_TYPE:"
+        q_marker = f"Q{i}:"
+        options_marker = f"Q{i}_OPTIONS:"
+        answer_marker = f"Q{i}_ANSWER:"
+        explanation_marker = f"Q{i}_EXPLANATION:"
+        next_marker = f"Q{i + 1}_TYPE:" if i < QUIZ_QUESTION_COUNT else None
+
+        q_type_raw = _extract_marked_section(raw_text, type_marker, q_marker).lower()
+        q_type = "true_false" if "true_false" in q_type_raw or "true/false" in q_type_raw else "multiple_choice"
+
+        question = _extract_marked_section(raw_text, q_marker, options_marker)
+        options_raw = _extract_marked_section(raw_text, options_marker, answer_marker)
+        answer = _extract_marked_section(raw_text, answer_marker, explanation_marker)
+        explanation = _extract_marked_section(raw_text, explanation_marker, next_marker)
+
+        if not question or not answer:
+            continue
+
+        if q_type == "true_false":
+            options = ["True", "False"]
+        else:
+            options = [o.strip() for o in options_raw.split(",") if o.strip()]
+
+        questions.append(
+            {
+                "type": q_type,
+                "question": question,
+                "options": options,
+                "correctAnswer": answer,
+                "explanation": explanation,
+            }
+        )
+
+    return {"questions": questions}

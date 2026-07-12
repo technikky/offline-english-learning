@@ -69,6 +69,7 @@ function showLoggedIn(user) {
   loadReadingPassages();
   loadListeningClips();
   loadWritingPrompts();
+  loadQuizProgress();
 }
 
 function showLoggedOut() {
@@ -121,6 +122,11 @@ function showLoggedOut() {
   document.getElementById("writingPromptDetail").classList.add("hidden");
   document.getElementById("writingTextarea").value = "";
   document.getElementById("writingFeedback").classList.add("hidden");
+  document.getElementById("quizQuestions").innerHTML = "";
+  document.getElementById("quizProgress").innerHTML = "";
+  document.getElementById("quizResultSummary").innerHTML = "";
+  document.getElementById("quizActive").classList.add("hidden");
+  document.getElementById("quizSetup").classList.remove("hidden");
   showChatTab();
 }
 
@@ -1238,6 +1244,7 @@ function showMainTab(tabName) {
     reading: { btn: "tabReadingBtn", panel: "readingPanel" },
     listening: { btn: "tabListeningBtn", panel: "listeningPanel" },
     writing: { btn: "tabWritingBtn", panel: "writingPanel" },
+    quiz: { btn: "tabQuizBtn", panel: "quizPanel" },
   };
   for (const [name, ids] of Object.entries(tabs)) {
     const isActive = name === tabName;
@@ -1264,6 +1271,10 @@ function showListeningTab() {
 
 function showWritingTab() {
   showMainTab("writing");
+}
+
+function showQuizTab() {
+  showMainTab("quiz");
 }
 
 async function loadGrammarTopics() {
@@ -1976,6 +1987,162 @@ document.getElementById("tabWritingBtn").addEventListener("click", showWritingTa
 document.getElementById("writingBackBtn").addEventListener("click", closeWritingPrompt);
 document.getElementById("writingTextarea").addEventListener("input", updateWritingWordCount);
 document.getElementById("writingSubmitBtn").addEventListener("click", submitWriting);
+
+// --- Quiz Generator (Stage 19) ---
+
+let currentQuiz = null; // { quizId, questions: [{type, question, options}] }
+let quizGraded = false;
+
+const QUIZ_CATEGORY_LABELS = {
+  grammar: "Grammar",
+  vocabulary: "Vocabulary",
+  everyday_english: "Everyday English",
+};
+
+async function loadQuizProgress() {
+  const el = document.getElementById("quizProgress");
+  try {
+    const res = await fetch(`${API_BASE}/quiz/progress`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const p = await res.json();
+    if (p.recent.length === 0) {
+      el.innerHTML = "<p style='opacity:0.7;font-size:13px'>No quizzes taken yet.</p>";
+      return;
+    }
+    el.innerHTML = `<p style="font-size:13px">Average score: <strong>${p.averageScore}%</strong> over ${p.totalQuizzes} quiz${p.totalQuizzes === 1 ? "" : "zes"}.</p>`;
+    const list = document.createElement("div");
+    for (const q of p.recent.slice(0, 8)) {
+      const row = document.createElement("div");
+      row.style.fontSize = "12px";
+      row.style.opacity = "0.85";
+      row.textContent = `${QUIZ_CATEGORY_LABELS[q.category] || q.category} (${q.difficultyLevel}) — ${q.score}%`;
+      list.appendChild(row);
+    }
+    el.appendChild(list);
+  } catch (err) {
+    // non-critical
+  }
+}
+
+async function generateQuiz() {
+  const category = document.getElementById("quizCategory").value;
+  const difficultyLevel = document.getElementById("quizDifficulty").value;
+  const statusEl = document.getElementById("quizGenStatus");
+  const errorEl = document.getElementById("quizError");
+  errorEl.textContent = "";
+  const btn = document.getElementById("quizGenerateBtn");
+  btn.disabled = true;
+  statusEl.textContent = "Generating your quiz… (this can take a moment)";
+
+  try {
+    const res = await fetch(`${API_BASE}/quiz/generate`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ category, difficultyLevel }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      errorEl.textContent = body.error || "Could not generate a quiz.";
+      return;
+    }
+    currentQuiz = await res.json();
+    quizGraded = false;
+    renderQuiz();
+  } catch (err) {
+    errorEl.textContent = "Could not reach the backend.";
+  } finally {
+    btn.disabled = false;
+    statusEl.textContent = "";
+  }
+}
+
+function renderQuiz() {
+  document.getElementById("quizSetup").classList.add("hidden");
+  document.getElementById("quizActive").classList.remove("hidden");
+  document.getElementById("quizResultSummary").innerHTML = "";
+  document.getElementById("quizNewBtn").classList.add("hidden");
+  document.getElementById("quizSubmitBtn").classList.remove("hidden");
+  document.getElementById("quizSubmitBtn").disabled = false;
+  document.getElementById("quizActiveTitle").textContent =
+    `${QUIZ_CATEGORY_LABELS[currentQuiz.category] || currentQuiz.category} Quiz (${currentQuiz.difficultyLevel})`;
+
+  const container = document.getElementById("quizQuestions");
+  container.innerHTML = "";
+  currentQuiz.questions.forEach((q, index) => {
+    const block = document.createElement("div");
+    block.className = "quiz-question";
+    block.id = `quizQ${index}`;
+    const qText = document.createElement("p");
+    qText.textContent = `${index + 1}. ${q.question}`;
+    block.appendChild(qText);
+    for (const option of q.options) {
+      const label = document.createElement("label");
+      label.style.display = "block";
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = `quizQuestion${index}`;
+      input.value = option;
+      label.appendChild(input);
+      label.appendChild(document.createTextNode(" " + option));
+      block.appendChild(label);
+    }
+    container.appendChild(block);
+  });
+}
+
+async function submitQuiz() {
+  if (!currentQuiz || quizGraded) return;
+  const answers = currentQuiz.questions.map((_, index) => {
+    const sel = document.querySelector(`input[name="quizQuestion${index}"]:checked`);
+    return sel ? sel.value : "";
+  });
+
+  try {
+    const res = await fetch(`${API_BASE}/quiz/${currentQuiz.quizId}/submit`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ answers }),
+    });
+    if (!res.ok) return;
+    const result = await res.json();
+    quizGraded = true;
+
+    result.results.forEach((r, index) => {
+      const block = document.getElementById(`quizQ${index}`);
+      block.classList.add(r.isCorrect ? "correct" : "incorrect");
+      block.querySelectorAll("input").forEach((input) => (input.disabled = true));
+      const explain = document.createElement("div");
+      explain.className = "quiz-explanation";
+      explain.textContent = r.isCorrect
+        ? `✓ Correct. ${r.explanation}`
+        : `✗ Correct answer: ${r.correctAnswer}. ${r.explanation}`;
+      block.appendChild(explain);
+    });
+
+    document.getElementById("quizResultSummary").innerHTML =
+      `<h3>Score: ${result.score}% (${result.correctCount}/${result.totalQuestions})</h3>`;
+    document.getElementById("quizSubmitBtn").classList.add("hidden");
+    document.getElementById("quizNewBtn").classList.remove("hidden");
+    loadQuizProgress();
+  } catch (err) {
+    document.getElementById("quizError").textContent = "Could not reach the backend.";
+  }
+}
+
+function newQuiz() {
+  currentQuiz = null;
+  quizGraded = false;
+  document.getElementById("quizActive").classList.add("hidden");
+  document.getElementById("quizSetup").classList.remove("hidden");
+  document.getElementById("quizQuestions").innerHTML = "";
+  document.getElementById("quizResultSummary").innerHTML = "";
+  loadQuizProgress();
+}
+
+document.getElementById("tabQuizBtn").addEventListener("click", showQuizTab);
+document.getElementById("quizGenerateBtn").addEventListener("click", generateQuiz);
+document.getElementById("quizSubmitBtn").addEventListener("click", submitQuiz);
+document.getElementById("quizNewBtn").addEventListener("click", newQuiz);
 
 // --- Admin console (Stage 12) ---
 

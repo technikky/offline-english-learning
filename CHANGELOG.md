@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.7.0 — Stage 19: Quiz generator module
+
+- **New AI Quiz Generator**: pick a category (Grammar / Vocabulary / Everyday English) and difficulty (CEFR), and the AI generates a 5-question quiz mixing multiple-choice and true/false, auto-graded with a per-question explanation and score.
+- **Answers kept server-side**: a generated quiz is stored in a new `quiz_instances` table and only the question+options are sent to the client; correct answers and explanations are revealed only after submission (graded server-side). Ownership enforced — you can't submit someone else's quiz.
+- New `GET /quiz/progress` (recent graded quizzes + average score).
+- **Desktop**: new "❓ Quiz" tab — category/difficulty selectors, a recent-quizzes summary, radio-button questions, and post-submit grading that annotates each question correct/incorrect inline with the answer + explanation and a score.
+- Verified end-to-end: via curl (generate hides answers, submit grades 3/5 and reveals them, progress recorded) and via the real UI (vocabulary A2 quiz generated, answered, graded 60% with inline explanations).
+- Backend: 87 tests passing (5 new). AI service: 36 pytest tests (4 new).
+
 ## v1.6.0 — Stage 18: Writing module
 
 - **New Writing Module**: 4 scaffolded prompts (A1–B2), each with a topic, target vocabulary, grammar focus, word-count target, and hints — not a blank page. The student writes a response and gets structured AI feedback.

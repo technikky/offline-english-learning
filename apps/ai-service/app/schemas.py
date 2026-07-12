@@ -108,3 +108,20 @@ class WritingAnalysisResponse(BaseModel):
     strengths: list[str]
     improvements: list[str]
     modelAnswer: str
+
+
+class QuizGenerateRequest(BaseModel):
+    category: str = "grammar"
+    difficultyLevel: str = "B1"
+
+
+class QuizQuestionModel(BaseModel):
+    type: str
+    question: str
+    options: list[str]
+    correctAnswer: str
+    explanation: str
+
+
+class QuizGenerateResponse(BaseModel):
+    questions: list[QuizQuestionModel]

@@ -266,3 +266,21 @@ export const writingSubmissions = sqliteTable("writing_submissions", {
     .notNull()
     .default(sql`(current_timestamp)`),
 });
+
+// Stage 19: Quiz Generator. A generated quiz is stored with its questions
+// (including answers/explanations) so grading is server-side and answers
+// aren't exposed to the client until after submission. graded flips once
+// submitted (a quiz is single-attempt).
+export const quizInstances = sqliteTable("quiz_instances", {
+  id: text("id").primaryKey(), // uuid
+  studentId: integer("student_id")
+    .notNull()
+    .references(() => users.id),
+  category: text("category").notNull(),
+  difficultyLevel: text("difficulty_level").notNull(),
+  questionsJson: text("questions_json").notNull(), // full questions with answers
+  score: integer("score"), // null until graded
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});

@@ -180,11 +180,20 @@
       #grammarPanel,
       #readingPanel,
       #listeningPanel,
-      #writingPanel {
+      #writingPanel,
+      #quizPanel {
         flex: 1;
         overflow-y: auto;
         min-height: 0;
       }
+      .quiz-question {
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #334155;
+      }
+      .quiz-question.correct { border-left: 3px solid #22c55e; padding-left: 8px; }
+      .quiz-question.incorrect { border-left: 3px solid #dc2626; padding-left: 8px; }
+      .quiz-explanation { font-size: 12px; opacity: 0.8; margin-top: 4px; }
       .grammar-topic-list {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -763,6 +772,7 @@
           <button id="tabReadingBtn" class="main-tab">📖 Reading</button>
           <button id="tabListeningBtn" class="main-tab">🎧 Listening</button>
           <button id="tabWritingBtn" class="main-tab">✍️ Writing</button>
+          <button id="tabQuizBtn" class="main-tab">❓ Quiz</button>
         </div>
 
         <div id="chatPanel">
@@ -934,6 +944,47 @@
                 <p id="wfModel" class="reading-content"></p>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div id="quizPanel" class="hidden">
+          <div id="quizSetup">
+            <div class="panel">
+              <h3>Generate a quiz</h3>
+              <div class="inline-form">
+                <label style="font-size:12px;display:flex;align-items:center;gap:4px">Category
+                  <select id="quizCategory">
+                    <option value="grammar">Grammar</option>
+                    <option value="vocabulary">Vocabulary</option>
+                    <option value="everyday_english">Everyday English</option>
+                  </select>
+                </label>
+                <label style="font-size:12px;display:flex;align-items:center;gap:4px">Difficulty
+                  <select id="quizDifficulty">
+                    <option value="A1">A1 — Beginner</option>
+                    <option value="A2">A2 — Elementary</option>
+                    <option value="B1" selected>B1 — Intermediate</option>
+                    <option value="B2">B2 — Upper Intermediate</option>
+                    <option value="C1">C1 — Advanced</option>
+                  </select>
+                </label>
+                <button id="quizGenerateBtn">Generate quiz</button>
+              </div>
+              <div id="quizGenStatus" style="font-size:12px;opacity:0.75"></div>
+              <div id="quizError" class="error"></div>
+            </div>
+            <div class="panel">
+              <h3>Recent quizzes</h3>
+              <div id="quizProgress"></div>
+            </div>
+          </div>
+
+          <div id="quizActive" class="hidden">
+            <h2 id="quizActiveTitle"></h2>
+            <div id="quizQuestions"></div>
+            <button id="quizSubmitBtn">Submit quiz</button>
+            <button id="quizNewBtn" class="secondary hidden">New quiz</button>
+            <div id="quizResultSummary"></div>
           </div>
         </div>
       </div>

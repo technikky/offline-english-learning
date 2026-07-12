@@ -558,3 +558,68 @@ export interface WritingProgressResponse {
   totalSubmissions: number;
   averageOverallScore: number;
 }
+
+// Stage 19: Quiz Generator. A quiz is AI-generated per category+difficulty and
+// stored server-side so the correct answers aren't sent to the client until
+// after grading.
+export type QuizCategory = "grammar" | "vocabulary" | "everyday_english";
+export type QuizQuestionType = "multiple_choice" | "true_false";
+
+export const QUIZ_CATEGORY_LABELS: Record<QuizCategory, string> = {
+  grammar: "Grammar",
+  vocabulary: "Vocabulary",
+  everyday_english: "Everyday English",
+};
+
+export interface GenerateQuizRequest {
+  category: QuizCategory;
+  difficultyLevel: CefrLevel;
+}
+
+// The client's view of a question — no correctAnswer/explanation until graded.
+export interface QuizQuestionForStudent {
+  type: QuizQuestionType;
+  question: string;
+  options: string[];
+}
+
+export interface QuizDto {
+  quizId: string;
+  category: QuizCategory;
+  difficultyLevel: CefrLevel;
+  questions: QuizQuestionForStudent[];
+}
+
+export interface SubmitQuizRequest {
+  answers: string[]; // one per question, in order
+}
+
+export interface QuizQuestionResult {
+  question: string;
+  options: string[];
+  studentAnswer: string;
+  correctAnswer: string;
+  isCorrect: boolean;
+  explanation: string;
+}
+
+export interface QuizResultResponse {
+  score: number;
+  correctCount: number;
+  totalQuestions: number;
+  results: QuizQuestionResult[];
+}
+
+export interface QuizProgressEntry {
+  quizId: string;
+  category: QuizCategory;
+  difficultyLevel: CefrLevel;
+  score: number;
+  createdAt: string;
+}
+
+export interface QuizProgressResponse {
+  recent: QuizProgressEntry[];
+  totalQuizzes: number;
+  averageScore: number;
+}

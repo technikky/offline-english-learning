@@ -23,6 +23,8 @@ from .prompts import (
     parse_reading_comprehension_response,
     build_writing_analysis_prompt,
     parse_writing_analysis_response,
+    build_quiz_prompt,
+    parse_quiz_response,
 )
 from .schemas import (
     ChatRequest,
@@ -42,6 +44,8 @@ from .schemas import (
     ReadingComprehensionResponse,
     WritingAnalysisRequest,
     WritingAnalysisResponse,
+    QuizGenerateRequest,
+    QuizGenerateResponse,
 )
 
 app = FastAPI(title="English Class AI Service")
@@ -183,6 +187,20 @@ def writing_analyze(request: WritingAnalysisRequest) -> WritingAnalysisResponse:
     parsed = parse_writing_analysis_response(raw_text)
 
     return WritingAnalysisResponse(**parsed)
+
+
+@app.post("/v1/quiz/generate")
+def quiz_generate(request: QuizGenerateRequest) -> QuizGenerateResponse:
+    messages = build_quiz_prompt(request.category, request.difficultyLevel)
+
+    with INFERENCE_LOCK:
+        llm = load_model()
+        result = llm.create_chat_completion(messages=messages, max_tokens=700)
+
+    raw_text = result["choices"][0]["message"]["content"]
+    parsed = parse_quiz_response(raw_text)
+
+    return QuizGenerateResponse(**parsed)
 
 
 @app.post("/v1/speech/transcribe")

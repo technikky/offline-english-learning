@@ -204,5 +204,15 @@ export function ensureSchema(): void {
       feedback_json TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (current_timestamp)
     );
+
+    CREATE TABLE IF NOT EXISTS quiz_instances (
+      id TEXT PRIMARY KEY,
+      student_id INTEGER NOT NULL REFERENCES users(id),
+      category TEXT NOT NULL,
+      difficulty_level TEXT NOT NULL,
+      questions_json TEXT NOT NULL,
+      score INTEGER,
+      created_at TEXT NOT NULL DEFAULT (current_timestamp)
+    );
   `);
 }
