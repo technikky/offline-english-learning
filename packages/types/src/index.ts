@@ -182,6 +182,8 @@ export interface ConversationDetail extends ConversationSummary {
 
 export interface SendMessageRequest {
   content: string;
+  /** UI language ("en" | "zh"); when "zh" the AI partner replies in Chinese. */
+  language?: string;
 }
 
 export interface GrammarMistakeDto {

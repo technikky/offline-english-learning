@@ -522,9 +522,22 @@ function getSelectedVoice() {
 function renderAvatar() {
   const voice = getSelectedVoice();
   const holder = document.getElementById("avatarHolder");
-  holder.innerHTML = AVATAR_SVGS[voice];
+  // Prefer the real-time 3D avatar (Three.js); fall back to the flat SVG if
+  // WebGL/THREE is unavailable so the app still works everywhere.
+  let mounted3d = false;
+  if (window.Avatar3D) {
+    if (window.Avatar3D.isMounted()) {
+      window.Avatar3D.setVoice(voice);
+      mounted3d = true;
+    } else {
+      mounted3d = window.Avatar3D.mount(holder, voice);
+    }
+  }
+  if (!mounted3d) {
+    holder.innerHTML = AVATAR_SVGS[voice];
+  }
   document.getElementById("avatarName").textContent =
-    voice === "male" ? "Your AI partner (male voice)" : "Your AI partner (female voice)";
+    voice === "male" ? window.i18n.t("avatar.male") : window.i18n.t("avatar.female");
 }
 
 // Speaks the given text in the selected voice and animates the avatar's mouth
@@ -544,11 +557,13 @@ async function speakAsAvatar(text, force = false) {
     if (!res.ok) return;
     const data = await res.json();
     holder.classList.add("speaking");
+    if (window.Avatar3D) window.Avatar3D.setSpeaking(true);
     await playBase64Wav(data.audioBase64);
   } catch (err) {
     // speaking is a non-critical enhancement; the text reply is already shown
   } finally {
     holder.classList.remove("speaking");
+    if (window.Avatar3D) window.Avatar3D.setSpeaking(false);
   }
 }
 
@@ -570,7 +585,7 @@ async function startConversation() {
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      errorEl.textContent = body.error || "Could not start conversation";
+      errorEl.textContent = body.error || window.i18n.t("err.startConversation");
       return;
     }
 
@@ -583,9 +598,12 @@ async function startConversation() {
     wordsToLearn.innerHTML = "";
     wordsToLearn.classList.add("hidden");
     document.getElementById("voiceModeBar").classList.remove("hidden");
-    appendBubble("assistant", `New ${scenario.replace("_", " ")} conversation started. Say hello!`);
+    appendBubble(
+      "assistant",
+      window.i18n.t("chat.started", { scenario: window.i18n.scenarioLabel(scenario) }),
+    );
   } catch (err) {
-    errorEl.textContent = "Could not reach the backend.";
+    errorEl.textContent = window.i18n.t("err.backendUnreachable");
   }
 }
 
@@ -618,11 +636,11 @@ async function sendMessageContent(content, { forceSpeak = false } = {}) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, language: window.i18n.getLang() }),
     });
 
     if (!res.ok || !res.body) {
-      assistantBubble.textContent = "(error contacting the AI service)";
+      assistantBubble.textContent = window.i18n.t("chat.errorContacting");
       return "";
     }
 
@@ -663,7 +681,7 @@ async function sendMessageContent(content, { forceSpeak = false } = {}) {
     // aloud in the selected voice (Stage 16). Non-blocking failures only.
     await speakAsAvatar(displayedText, forceSpeak);
   } catch (err) {
-    assistantBubble.textContent = "(error contacting the AI service)";
+    assistantBubble.textContent = window.i18n.t("chat.errorContacting");
   } finally {
     document.getElementById("messageInput").disabled = false;
     document.getElementById("sendBtn").disabled = false;
@@ -1311,11 +1329,11 @@ async function toggleVoiceMode() {
   voiceMode.state = "listening";
   const btn = document.getElementById("voiceModeBtn");
   btn.classList.add("active");
-  btn.textContent = "⏹ Stop voice chat";
+  btn.textContent = window.i18n.t("voice.stop");
   document.getElementById("micBtn").disabled = true;
   document.getElementById("messageInput").disabled = true;
   document.getElementById("sendBtn").disabled = true;
-  setVoiceStatus("🎙️ Listening… just start speaking.");
+  setVoiceStatus(window.i18n.t("voice.listening"));
   voiceMode.pollId = setInterval(voiceTick, 60);
 }
 
@@ -1336,7 +1354,7 @@ function stopVoiceMode() {
   voiceMode.state = "idle";
   const btn = document.getElementById("voiceModeBtn");
   btn.classList.remove("active");
-  btn.textContent = "🎙️ Start hands-free voice chat";
+  btn.textContent = window.i18n.t("voice.start");
   document.getElementById("micBtn").disabled = false;
   if (currentConversationId) {
     document.getElementById("messageInput").disabled = false;
@@ -1375,7 +1393,7 @@ function voiceTick() {
       voiceMode.state = "recording";
       voiceMode.speechStartAt = now;
       voiceMode.lastLoudAt = now;
-      setVoiceStatus("🎤 Listening to you…");
+      setVoiceStatus(window.i18n.t("voice.listeningYou"));
     }
     return;
   }
@@ -1388,7 +1406,7 @@ function voiceTick() {
     now - voiceMode.speechStartAt > VAD_MIN_SPEECH_MS
   ) {
     voiceMode.state = "processing";
-    setVoiceStatus("💭 Thinking…");
+    setVoiceStatus(window.i18n.t("voice.thinking"));
     if (voiceMode.recorder && voiceMode.recorder.state === "recording") {
       voiceMode.recorder.stop();
     }
@@ -1427,7 +1445,7 @@ async function finishUtterance() {
     }
 
     voiceMode.state = "speaking";
-    setVoiceStatus("🔊 AI is replying…");
+    setVoiceStatus(window.i18n.t("voice.replying"));
     await sendMessageContent(transcript, { forceSpeak: true });
     if (!voiceMode.active) return;
     resumeListening();
@@ -1439,7 +1457,7 @@ async function finishUtterance() {
 function resumeListening() {
   if (!voiceMode.active) return;
   voiceMode.state = "listening";
-  setVoiceStatus("🎙️ Your turn — start speaking.");
+  setVoiceStatus(window.i18n.t("voice.yourTurn"));
 }
 
 // ---- Pronunciation practice panel ----
@@ -2832,6 +2850,26 @@ document.getElementById("adminLogoutBtn").addEventListener("click", logout);
 document.getElementById("refreshHealthBtn").addEventListener("click", loadSystemHealth);
 document.getElementById("createBackupBtn").addEventListener("click", createBackupNow);
 document.getElementById("createUserBtn").addEventListener("click", createAccount);
+
+// --- i18n boot (Chinese-support feature) ---
+// Apply the saved language to all static markup, sync the selector, and switch
+// languages live when the user picks a different one on the login screen.
+(function initI18n() {
+  const langSelect = document.getElementById("langSelect");
+  if (langSelect) {
+    langSelect.value = window.i18n.getLang();
+    langSelect.addEventListener("change", () => {
+      window.i18n.setLang(langSelect.value);
+      // Re-render the pieces whose text is set from JS rather than markup.
+      const nameEl = document.getElementById("avatarName");
+      if (nameEl) {
+        nameEl.textContent =
+          getSelectedVoice() === "male" ? window.i18n.t("avatar.male") : window.i18n.t("avatar.female");
+      }
+    });
+  }
+  window.i18n.setLang(window.i18n.getLang());
+})();
 
 checkHealth();
 setInterval(checkHealth, 5000);

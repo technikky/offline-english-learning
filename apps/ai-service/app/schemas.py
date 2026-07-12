@@ -12,6 +12,7 @@ class ChatRequest(BaseModel):
     scenario: str = "free_talk"
     difficultyLevel: str = "B1"
     customPrompt: str | None = None  # Stage 23: teacher-authored topic prompt
+    languageInstruction: str | None = None  # Chinese-support: reply-language override
 
 
 class GrammarExplainRequest(BaseModel):
