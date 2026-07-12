@@ -31,12 +31,19 @@ export function ensureSchema(): void {
       value TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS schools (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (current_timestamp)
+    );
+
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
-      role TEXT NOT NULL CHECK (role IN ('admin', 'teacher', 'student')),
+      role TEXT NOT NULL CHECK (role IN ('super_admin', 'admin', 'teacher', 'student')),
       display_name TEXT NOT NULL,
+      school_id INTEGER REFERENCES schools(id),
       must_change_password INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (current_timestamp)
     );
@@ -215,4 +222,19 @@ export function ensureSchema(): void {
       created_at TEXT NOT NULL DEFAULT (current_timestamp)
     );
   `);
+
+  runMigrations();
+}
+
+// Lightweight additive migrations for DBs created before a column existed.
+// CREATE TABLE IF NOT EXISTS never alters an existing table, so a dev DB that
+// predates Stage 20 won't have users.school_id -- add it if missing. (New DBs
+// already include it from the CREATE above, so this is a no-op there.)
+function runMigrations(): void {
+  const userColumns = sqlite
+    .prepare("PRAGMA table_info(users)")
+    .all() as Array<{ name: string }>;
+  if (!userColumns.some((c) => c.name === "school_id")) {
+    sqlite.exec("ALTER TABLE users ADD COLUMN school_id INTEGER REFERENCES schools(id)");
+  }
 }

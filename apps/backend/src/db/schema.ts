@@ -8,12 +8,23 @@ export const systemInfo = sqliteTable("system_info", {
   value: text("value").notNull(),
 });
 
+// Stage 20: multi-school tenancy. One row per institution; users belong to a
+// school (except the platform super_admin, whose schoolId is null).
+export const schools = sqliteTable("schools", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
+
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
-  role: text("role", { enum: ["admin", "teacher", "student"] }).notNull(),
+  role: text("role", { enum: ["super_admin", "admin", "teacher", "student"] }).notNull(),
   displayName: text("display_name").notNull(),
+  schoolId: integer("school_id").references(() => schools.id), // null for super_admin
   mustChangePassword: integer("must_change_password", { mode: "boolean" })
     .notNull()
     .default(false),

@@ -32,7 +32,7 @@ See [docs/04-repo-structure.md](docs/04-repo-structure.md).
 
 ## Current stage
 
-**v1.7.0 — post-v1.0.0 platform expansion, Stage 19 (Quiz generator module) complete.** All 12 originally-planned stages shipped as v1.0.0; development continues in further scoped stages per a master development brief expanding this into a full AI English Tutor platform (multi-tenancy, teacher content management, and more — tracked stage by stage, same methodology as Stages 1–12). The student now has eight practice modules: Conversation (with a voiced AI avatar), Grammar, Reading, Listening, Writing, Pronunciation, Vocabulary, and Quizzes. See [docs/26-stage19-plan.md](docs/26-stage19-plan.md) and [CHANGELOG.md](CHANGELOG.md) for the latest, or [docs/03-roadmap.md](docs/03-roadmap.md) for the original 12-stage history.
+**v1.8.0 — post-v1.0.0 platform expansion, Stage 20 (Multi-school / multi-tenant support) complete.** All 12 originally-planned stages shipped as v1.0.0; development continues in further scoped stages per a master development brief expanding this into a full AI English Tutor platform (per-school content/settings, teacher content management, and more — tracked stage by stage, same methodology as Stages 1–12). The platform now hosts multiple schools under a platform super-admin, and students have eight practice modules: Conversation (with a voiced AI avatar), Grammar, Reading, Listening, Writing, Pronunciation, Vocabulary, and Quizzes. See [docs/27-stage20-plan.md](docs/27-stage20-plan.md) and [CHANGELOG.md](CHANGELOG.md) for the latest, or [docs/03-roadmap.md](docs/03-roadmap.md) for the original 12-stage history.
 
 ## Guides
 

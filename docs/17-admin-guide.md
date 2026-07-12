@@ -4,9 +4,18 @@ For the school administrator (or whoever holds the `admin` account) using the de
 
 ## Logging in
 
-The first admin account is created automatically the first time the backend starts with an empty database, with a random password written to `data/admin-credentials.txt` (see `docs/16-install-guide.md`). Log in with that email/password. There is currently no in-app "change password" button for the admin account specifically — use `POST /auth/change-password` (any authenticated user can change their own password) if you need to rotate it, or ask a developer to run it via the API directly.
+On first boot with an empty database, the system creates two accounts and writes both to `data/admin-credentials.txt` (see `docs/16-install-guide.md`):
 
-Logging in as an admin takes you straight to the **admin console** — a different screen from the teacher dashboard or student chat view.
+- a **platform super-admin** (`superadmin@platform.local`) — manages schools across the whole deployment, and
+- a **school admin** (`admin@school.local`) for the auto-created "Default School".
+
+For a single-school deployment, just log in as the school admin (`admin@school.local`) — everything below applies to you, scoped to your school. There is currently no in-app "change password" button; use `POST /auth/change-password` (any authenticated user can change their own password) to rotate it.
+
+Logging in as an admin takes you straight to the **admin console** — a different screen from the teacher dashboard or student chat view. The header shows which school you administer.
+
+## Multiple schools (super-admin)
+
+If your deployment serves more than one school, log in as the **super-admin** instead. That opens a platform view where you can create schools and create a school admin for each. Each school's admin, teachers, and students are kept separate: when a school admin creates teachers/students (or a teacher registers students), those users automatically belong to that admin's school. A single deployment can therefore host many independent schools; teachers and students only ever see their own school's classes and data.
 
 ## System health
 

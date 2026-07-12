@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.8.0 — Stage 20: Multi-school (multi-tenant) support
+
+- **The platform can now host multiple schools on one deployment.** New `schools` table + a `schoolId` on every user (logical separation, not separate databases — an additive change, no rearchitecture).
+- **New `super_admin` platform role** that manages schools and their admins, above the existing school-scoped `admin` → `teacher` → `student` hierarchy. New super-admin-only routes: `GET/POST /schools` and `POST /schools/:id/admins`.
+- **Tenant isolation enforced on user creation**: teachers/students created by a school admin (or students registered by a teacher) automatically inherit the creator's school — an admin can't place users in another school. Verified with a real two-school test.
+- **Backward compatible**: first-boot bootstrap now creates *both* a platform super-admin and a "Default School" with its own admin (`admin@school.local`, unchanged). A single-school deployment works exactly as before; multi-school is opt-in via the super-admin.
+- `UserProfile` now carries `schoolId`/`schoolName`; the admin console header shows which school the admin manages.
+- **Desktop**: new super-admin view — a schools table with per-role member counts, create-school, and add-school-admin. Verified end-to-end (bootstrap → create school → add admin → tenant-isolated teacher creation → UI create-school).
+- Backend: 91 tests passing (4 new + RBAC sweep extended to the super-admin routes).
+
 ## v1.7.0 — Stage 19: Quiz generator module
 
 - **New AI Quiz Generator**: pick a category (Grammar / Vocabulary / Everyday English) and difficulty (CEFR), and the AI generates a 5-question quiz mixing multiple-choice and true/false, auto-graded with a per-question explanation and score.

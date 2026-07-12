@@ -12,6 +12,7 @@ import { registerAssignmentRoutes } from "../routes/assignments";
 import { registerTeacherReviewRoutes } from "../routes/teacherReview";
 import { registerReportRoutes } from "../routes/reports";
 import { registerAnalyticsRoutes } from "../routes/analytics";
+import { registerSchoolRoutes } from "../routes/schools";
 
 // Systematic sweep of every route protected by requireRole(): each must
 // reject an unauthenticated caller (401) and a caller with the wrong role
@@ -21,8 +22,11 @@ import { registerAnalyticsRoutes } from "../routes/analytics";
 const protectedRoutes: {
   method: "GET" | "POST";
   url: string;
-  allowedRole: "admin" | "teacher";
+  allowedRole: "super_admin" | "admin" | "teacher";
 }[] = [
+  { method: "GET", url: "/schools", allowedRole: "super_admin" },
+  { method: "POST", url: "/schools", allowedRole: "super_admin" },
+  { method: "POST", url: "/schools/1/admins", allowedRole: "super_admin" },
   { method: "POST", url: "/admin/users", allowedRole: "admin" },
   { method: "POST", url: "/admin/backups", allowedRole: "admin" },
   { method: "GET", url: "/admin/backups", allowedRole: "admin" },
@@ -51,6 +55,7 @@ function buildApp(): FastifyInstance {
   registerTeacherReviewRoutes(app);
   registerReportRoutes(app);
   registerAnalyticsRoutes(app);
+  registerSchoolRoutes(app);
   return app;
 }
 
@@ -69,8 +74,13 @@ test("RBAC penetration sweep: every protected route rejects unauthenticated and 
     .insert(users)
     .values({ email: "pentest-student@x.com", passwordHash, role: "student", displayName: "S" })
     .returning();
+  const [superAdmin] = await db
+    .insert(users)
+    .values({ email: "pentest-super@x.com", passwordHash, role: "super_admin", displayName: "SA" })
+    .returning();
 
   const tokensByRole = {
+    super_admin: signAccessToken({ sub: superAdmin.id, role: "super_admin" }),
     admin: signAccessToken({ sub: admin.id, role: "admin" }),
     teacher: signAccessToken({ sub: teacher.id, role: "teacher" }),
     student: signAccessToken({ sub: student.id, role: "student" }),
@@ -86,7 +96,7 @@ test("RBAC penetration sweep: every protected route rejects unauthenticated and 
       `${route.method} ${route.url} should reject a missing token with 401`,
     );
 
-    const wrongRoles = (["admin", "teacher", "student"] as const).filter(
+    const wrongRoles = (["super_admin", "admin", "teacher", "student"] as const).filter(
       (role) => role !== route.allowedRole,
     );
     for (const wrongRole of wrongRoles) {

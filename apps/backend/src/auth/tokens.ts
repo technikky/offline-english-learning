@@ -11,7 +11,7 @@ const REFRESH_TOKEN_TTL_DAYS = 30;
 
 export interface AccessTokenPayload {
   sub: number;
-  role: "admin" | "teacher" | "student";
+  role: "super_admin" | "admin" | "teacher" | "student";
 }
 
 export function signAccessToken(payload: AccessTokenPayload): string {

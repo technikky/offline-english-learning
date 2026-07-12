@@ -108,10 +108,15 @@ export function registerTeacherRoutes(app: FastifyInstance): void {
         return reply.code(409).send({ error: "Email already registered" });
       }
 
+      // Stage 20: the new student inherits the teacher's school.
+      const teacher = await db.query.users.findFirst({
+        where: eq(users.id, request.authUser!.sub),
+      });
+
       const passwordHash = await hashPassword(password);
       const [student] = await db
         .insert(users)
-        .values({ email, passwordHash, role: "student", displayName })
+        .values({ email, passwordHash, role: "student", displayName, schoolId: teacher?.schoolId ?? null })
         .returning();
 
       await db.insert(classStudents).values({

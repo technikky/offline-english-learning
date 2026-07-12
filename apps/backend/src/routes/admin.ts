@@ -1,10 +1,11 @@
 import type { FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
-import type { CreateUserRequest, UserProfile } from "@englishclass/types";
+import type { CreateUserRequest } from "@englishclass/types";
 import { db } from "../db/client";
 import { users } from "../db/schema";
 import { hashPassword } from "../auth/password";
 import { authenticate, requireRole } from "../auth/middleware";
+import { buildUserProfile } from "../auth/profile";
 import { recordAuditEvent } from "../audit/log";
 import { createBackup, listBackups, restoreBackup } from "../admin/backup";
 import { getSystemHealth } from "../admin/systemHealth";
@@ -37,10 +38,16 @@ export function registerAdminRoutes(app: FastifyInstance): void {
         return reply.code(409).send({ error: "Email already registered" });
       }
 
+      // Stage 20: the new teacher/student inherits the creating admin's
+      // school, so users are tenant-scoped without the admin choosing a school.
+      const creatingAdmin = await db.query.users.findFirst({
+        where: eq(users.id, request.authUser!.sub),
+      });
+
       const passwordHash = await hashPassword(password);
       const [created] = await db
         .insert(users)
-        .values({ email, passwordHash, role, displayName })
+        .values({ email, passwordHash, role, displayName, schoolId: creatingAdmin?.schoolId ?? null })
         .returning();
 
       await recordAuditEvent({
@@ -50,14 +57,7 @@ export function registerAdminRoutes(app: FastifyInstance): void {
         ipAddress: request.ip,
       });
 
-      const profile: UserProfile = {
-        id: created.id,
-        email: created.email,
-        role: created.role,
-        displayName: created.displayName,
-        mustChangePassword: created.mustChangePassword,
-      };
-      return reply.code(201).send(profile);
+      return reply.code(201).send(await buildUserProfile(created));
     },
   );
 

@@ -5,7 +5,6 @@ import type {
   LoginResponse,
   LogoutRequest,
   RefreshRequest,
-  UserProfile,
 } from "@englishclass/types";
 import { db } from "../db/client";
 import { users } from "../db/schema";
@@ -18,19 +17,10 @@ import {
   signAccessToken,
 } from "../auth/tokens";
 import { authenticate } from "../auth/middleware";
+import { buildUserProfile } from "../auth/profile";
 import { recordAuditEvent } from "../audit/log";
 
 const loginRateLimit = { rateLimit: { max: 10, timeWindow: "1 minute" } };
-
-function toProfile(user: typeof users.$inferSelect): UserProfile {
-  return {
-    id: user.id,
-    email: user.email,
-    role: user.role,
-    displayName: user.displayName,
-    mustChangePassword: user.mustChangePassword,
-  };
-}
 
 export function registerAuthRoutes(app: FastifyInstance): void {
   app.post<{ Body: LoginRequest }>(
@@ -67,7 +57,7 @@ export function registerAuthRoutes(app: FastifyInstance): void {
         accessToken,
         refreshToken,
         expiresInSeconds: accessTokenTtlSeconds,
-        user: toProfile(user),
+        user: await buildUserProfile(user),
       };
       return response;
     },
@@ -104,7 +94,7 @@ export function registerAuthRoutes(app: FastifyInstance): void {
         where: eq(users.id, request.authUser!.sub),
       });
       if (!user) return reply.code(404).send({ error: "User not found" });
-      return toProfile(user);
+      return buildUserProfile(user);
     },
   );
 

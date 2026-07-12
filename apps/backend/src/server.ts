@@ -6,6 +6,7 @@ import { ensureSchema } from "./db/client";
 import { registerHealthRoute } from "./routes/health";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerAdminRoutes } from "./routes/admin";
+import { registerSchoolRoutes } from "./routes/schools";
 import { registerTeacherRoutes } from "./routes/teacher";
 import { registerConversationRoutes } from "./routes/conversations";
 import { registerGrammarRoutes } from "./routes/grammar";
@@ -58,6 +59,7 @@ async function main() {
   registerHealthRoute(app);
   registerAuthRoutes(app);
   registerAdminRoutes(app);
+  registerSchoolRoutes(app);
   registerTeacherRoutes(app);
   registerConversationRoutes(app);
   registerGrammarRoutes(app);

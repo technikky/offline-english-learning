@@ -4,7 +4,9 @@ export interface HealthResponse {
   timestamp: string;
 }
 
-export type UserRole = "admin" | "teacher" | "student";
+// Stage 20: multi-school tenancy. "super_admin" is a platform-level role that
+// manages schools and their admins; "admin" is a school-scoped administrator.
+export type UserRole = "super_admin" | "admin" | "teacher" | "student";
 
 export interface UserProfile {
   id: number;
@@ -12,6 +14,8 @@ export interface UserProfile {
   role: UserRole;
   displayName: string;
   mustChangePassword: boolean;
+  schoolId: number | null; // null for the platform super_admin
+  schoolName: string | null;
 }
 
 export interface LoginRequest {
@@ -42,6 +46,26 @@ export interface CreateUserRequest {
   password: string;
   displayName: string;
   role: Extract<UserRole, "teacher" | "student">;
+}
+
+// Stage 20: multi-school management (super_admin only).
+export interface CreateSchoolRequest {
+  name: string;
+}
+
+export interface SchoolSummary {
+  id: number;
+  name: string;
+  createdAt: string;
+  adminCount: number;
+  teacherCount: number;
+  studentCount: number;
+}
+
+export interface CreateSchoolAdminRequest {
+  email: string;
+  password: string;
+  displayName: string;
 }
 
 export interface CreateClassRequest {

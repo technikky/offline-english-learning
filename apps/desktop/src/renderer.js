@@ -36,11 +36,20 @@ async function checkHealth() {
 function showLoggedIn(user) {
   document.getElementById("authScreen").classList.add("hidden");
 
+  if (user.role === "super_admin") {
+    document.getElementById("superAdminView").classList.remove("hidden");
+    document.getElementById("superAdminView").style.display = "flex";
+    document.getElementById("superAdminName").textContent = user.displayName;
+    loadSchools();
+    return;
+  }
+
   if (user.role === "admin") {
     document.getElementById("adminView").classList.remove("hidden");
     document.getElementById("adminView").style.display = "flex";
     document.getElementById("adminProfileName").textContent = user.displayName;
-    document.getElementById("adminProfileRole").textContent = user.role;
+    document.getElementById("adminProfileRole").textContent =
+      user.schoolName ? `admin — ${user.schoolName}` : user.role;
     loadSystemHealth();
     loadServerConfig();
     loadAiModels();
@@ -82,6 +91,8 @@ function showLoggedOut() {
   document.getElementById("teacherView").style.display = "none";
   document.getElementById("adminView").classList.add("hidden");
   document.getElementById("adminView").style.display = "none";
+  document.getElementById("superAdminView").classList.add("hidden");
+  document.getElementById("superAdminView").style.display = "none";
   document.getElementById("authScreen").classList.remove("hidden");
   document.getElementById("email").value = "";
   document.getElementById("password").value = "";
@@ -2143,6 +2154,103 @@ document.getElementById("tabQuizBtn").addEventListener("click", showQuizTab);
 document.getElementById("quizGenerateBtn").addEventListener("click", generateQuiz);
 document.getElementById("quizSubmitBtn").addEventListener("click", submitQuiz);
 document.getElementById("quizNewBtn").addEventListener("click", newQuiz);
+
+// --- Platform super-admin: school management (Stage 20) ---
+
+let addAdminSchoolId = null;
+
+async function loadSchools() {
+  const body = document.getElementById("schoolsBody");
+  try {
+    const res = await fetch(`${API_BASE}/schools`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const schools = await res.json();
+    body.innerHTML = "";
+    if (schools.length === 0) {
+      body.innerHTML = "<tr><td colspan='5'>No schools yet. Create one above.</td></tr>";
+      return;
+    }
+    for (const s of schools) {
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${s.name}</td><td>${s.adminCount}</td><td>${s.teacherCount}</td><td>${s.studentCount}</td>`;
+      const actionCell = document.createElement("td");
+      const btn = document.createElement("button");
+      btn.textContent = "+ Admin";
+      btn.addEventListener("click", () => openAddSchoolAdmin(s.id, s.name));
+      actionCell.appendChild(btn);
+      row.appendChild(actionCell);
+      body.appendChild(row);
+    }
+  } catch (err) {
+    body.innerHTML = "<tr><td colspan='5'>Could not reach the backend.</td></tr>";
+  }
+}
+
+async function createSchool() {
+  const input = document.getElementById("newSchoolName");
+  const errorEl = document.getElementById("createSchoolError");
+  errorEl.textContent = "";
+  const name = input.value.trim();
+  if (!name) return;
+  try {
+    const res = await fetch(`${API_BASE}/schools`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) {
+      const b = await res.json().catch(() => ({}));
+      errorEl.textContent = b.error || "Could not create school";
+      return;
+    }
+    input.value = "";
+    await loadSchools();
+  } catch (err) {
+    errorEl.textContent = "Could not reach the backend.";
+  }
+}
+
+function openAddSchoolAdmin(schoolId, schoolName) {
+  addAdminSchoolId = schoolId;
+  document.getElementById("addSchoolAdminPanel").classList.remove("hidden");
+  document.getElementById("addAdminSchoolName").textContent = schoolName;
+  document.getElementById("createSchoolAdminError").textContent = "";
+  document.getElementById("createSchoolAdminSuccess").textContent = "";
+}
+
+async function createSchoolAdmin() {
+  if (!addAdminSchoolId) return;
+  const email = document.getElementById("newSchoolAdminEmail").value.trim();
+  const displayName = document.getElementById("newSchoolAdminName").value.trim();
+  const password = document.getElementById("newSchoolAdminPassword").value;
+  const errorEl = document.getElementById("createSchoolAdminError");
+  const successEl = document.getElementById("createSchoolAdminSuccess");
+  errorEl.textContent = "";
+  successEl.textContent = "";
+  try {
+    const res = await fetch(`${API_BASE}/schools/${addAdminSchoolId}/admins`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ email, displayName, password }),
+    });
+    if (!res.ok) {
+      const b = await res.json().catch(() => ({}));
+      errorEl.textContent = b.error || "Could not create admin";
+      return;
+    }
+    document.getElementById("newSchoolAdminEmail").value = "";
+    document.getElementById("newSchoolAdminName").value = "";
+    document.getElementById("newSchoolAdminPassword").value = "";
+    successEl.textContent = `Created admin ${email}.`;
+    await loadSchools();
+  } catch (err) {
+    errorEl.textContent = "Could not reach the backend.";
+  }
+}
+
+document.getElementById("superAdminLogoutBtn").addEventListener("click", logout);
+document.getElementById("createSchoolBtn").addEventListener("click", createSchool);
+document.getElementById("createSchoolAdminBtn").addEventListener("click", createSchoolAdmin);
 
 // --- Admin console (Stage 12) ---
 

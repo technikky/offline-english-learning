@@ -465,18 +465,21 @@
 
       /* Teacher dashboard */
       #teacherView,
-      #adminView {
+      #adminView,
+      #superAdminView {
         display: flex;
         height: 100vh;
       }
-      #adminSidebar {
+      #adminSidebar,
+      .admin-sidebar-shared {
         width: 260px;
         background: #1e293b;
         padding: 20px;
         border-right: 1px solid #334155;
         overflow-y: auto;
       }
-      #adminMain {
+      #adminMain,
+      .admin-main-shared {
         flex: 1;
         padding: 24px;
         overflow-y: auto;
@@ -1153,6 +1156,49 @@
           </div>
           <div id="createUserError" class="error"></div>
           <div id="createUserSuccess" style="font-size: 12px; opacity: 0.85"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="superAdminView" class="hidden">
+      <div class="admin-sidebar-shared">
+        <div class="profile-row"><span>Name</span><span id="superAdminName"></span></div>
+        <div class="profile-row"><span>Role</span><span>Platform super-admin</span></div>
+        <button id="superAdminLogoutBtn" class="secondary">Log out</button>
+      </div>
+
+      <div class="admin-main-shared">
+        <h2>Platform administration — Schools</h2>
+
+        <div class="panel">
+          <h3>Create a school</h3>
+          <div class="inline-form">
+            <input id="newSchoolName" type="text" placeholder="School name" />
+            <button id="createSchoolBtn">Create school</button>
+          </div>
+          <div id="createSchoolError" class="error"></div>
+        </div>
+
+        <div class="panel">
+          <h3>Schools</h3>
+          <table class="data-table">
+            <thead>
+              <tr><th>School</th><th>Admins</th><th>Teachers</th><th>Students</th><th>Add admin</th></tr>
+            </thead>
+            <tbody id="schoolsBody"></tbody>
+          </table>
+        </div>
+
+        <div id="addSchoolAdminPanel" class="panel hidden">
+          <h3>Add an admin to <span id="addAdminSchoolName"></span></h3>
+          <div class="inline-form">
+            <input id="newSchoolAdminEmail" type="email" placeholder="Admin email" />
+            <input id="newSchoolAdminName" type="text" placeholder="Display name" />
+            <input id="newSchoolAdminPassword" type="password" placeholder="Initial password" />
+            <button id="createSchoolAdminBtn">Create admin</button>
+          </div>
+          <div id="createSchoolAdminError" class="error"></div>
+          <div id="createSchoolAdminSuccess" style="font-size:12px;opacity:0.85"></div>
         </div>
       </div>
     </div>
