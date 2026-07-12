@@ -68,6 +68,7 @@ function showLoggedIn(user) {
   loadGrammarTopics();
   loadReadingPassages();
   loadListeningClips();
+  loadWritingPrompts();
 }
 
 function showLoggedOut() {
@@ -116,6 +117,10 @@ function showLoggedOut() {
   document.getElementById("listeningQuestions").innerHTML = "";
   document.getElementById("listeningResult").innerHTML = "";
   document.getElementById("dictationResult").innerHTML = "";
+  document.getElementById("writingPromptList").innerHTML = "";
+  document.getElementById("writingPromptDetail").classList.add("hidden");
+  document.getElementById("writingTextarea").value = "";
+  document.getElementById("writingFeedback").classList.add("hidden");
   showChatTab();
 }
 
@@ -1232,6 +1237,7 @@ function showMainTab(tabName) {
     grammar: { btn: "tabGrammarBtn", panel: "grammarPanel" },
     reading: { btn: "tabReadingBtn", panel: "readingPanel" },
     listening: { btn: "tabListeningBtn", panel: "listeningPanel" },
+    writing: { btn: "tabWritingBtn", panel: "writingPanel" },
   };
   for (const [name, ids] of Object.entries(tabs)) {
     const isActive = name === tabName;
@@ -1254,6 +1260,10 @@ function showReadingTab() {
 
 function showListeningTab() {
   showMainTab("listening");
+}
+
+function showWritingTab() {
+  showMainTab("writing");
 }
 
 async function loadGrammarTopics() {
@@ -1807,6 +1817,165 @@ document.getElementById("listeningSubmitBtn").addEventListener("click", submitLi
 document.getElementById("dictationPlayBtn").addEventListener("click", playDictationSentence);
 document.getElementById("dictationCheckBtn").addEventListener("click", checkDictation);
 document.getElementById("dictationNextBtn").addEventListener("click", nextDictationSentence);
+
+// --- Writing Module (Stage 18) ---
+
+let currentWritingPromptId = null;
+
+async function loadWritingPrompts() {
+  const container = document.getElementById("writingPromptList");
+  try {
+    const [promptsRes, progressRes] = await Promise.all([
+      fetch(`${API_BASE}/writing/prompts`, { headers: authHeaders() }),
+      fetch(`${API_BASE}/writing/progress`, { headers: authHeaders() }),
+    ]);
+    if (!promptsRes.ok) return;
+    const prompts = await promptsRes.json();
+    const progress = progressRes.ok ? await progressRes.json() : { submissions: [] };
+    const countByPrompt = new Map();
+    for (const s of progress.submissions) {
+      countByPrompt.set(s.promptId, (countByPrompt.get(s.promptId) || 0) + 1);
+    }
+
+    container.innerHTML = "";
+    for (const prompt of prompts) {
+      const count = countByPrompt.get(prompt.id) || 0;
+      const card = document.createElement("div");
+      card.className = "grammar-topic-card";
+      card.innerHTML = `
+        <span class="badge">${prompt.cefrLevel}</span>
+        <h4>${prompt.title}</h4>
+        <div style="font-size: 12px; opacity: 0.75">${prompt.wordCountTarget} words${
+          count > 0 ? ` · ${count} submission${count === 1 ? "" : "s"}` : " · not started"
+        }</div>
+      `;
+      card.addEventListener("click", () => openWritingPrompt(prompt.id));
+      container.appendChild(card);
+    }
+  } catch (err) {
+    container.innerHTML = "Could not reach the backend.";
+  }
+}
+
+async function openWritingPrompt(promptId) {
+  const listEl = document.getElementById("writingPromptList");
+  const detailEl = document.getElementById("writingPromptDetail");
+  listEl.classList.add("hidden");
+  detailEl.classList.remove("hidden");
+  document.getElementById("writingFeedback").classList.add("hidden");
+  document.getElementById("writingTextarea").value = "";
+  document.getElementById("writingError").textContent = "";
+  document.getElementById("writingSubmitStatus").textContent = "";
+  updateWritingWordCount();
+
+  try {
+    const res = await fetch(`${API_BASE}/writing/prompts/${promptId}`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const p = await res.json();
+    currentWritingPromptId = promptId;
+
+    document.getElementById("writingPromptTitle").textContent = `${p.title} (${p.cefrLevel})`;
+    document.getElementById("writingPromptText").textContent = p.prompt;
+    document.getElementById("writingGrammarFocus").textContent = p.grammarFocus;
+    document.getElementById("writingTargetVocab").textContent = p.targetVocabulary.join(", ");
+    document.getElementById("writingWordTarget").textContent = `${p.wordCountTarget} words`;
+    const hints = document.getElementById("writingHints");
+    hints.innerHTML = "";
+    for (const hint of p.hints) {
+      const li = document.createElement("li");
+      li.textContent = hint;
+      hints.appendChild(li);
+    }
+  } catch (err) {
+    // detail load failed; list stays
+  }
+}
+
+function closeWritingPrompt() {
+  document.getElementById("writingPromptList").classList.remove("hidden");
+  document.getElementById("writingPromptDetail").classList.add("hidden");
+  currentWritingPromptId = null;
+  loadWritingPrompts();
+}
+
+function updateWritingWordCount() {
+  const text = document.getElementById("writingTextarea").value.trim();
+  const count = text ? text.split(/\s+/).filter((w) => w.length > 0).length : 0;
+  document.getElementById("writingLiveWordCount").textContent = `(${count} words)`;
+}
+
+function renderList(elId, items) {
+  const el = document.getElementById(elId);
+  el.innerHTML = "";
+  for (const item of items) {
+    const li = document.createElement("li");
+    li.textContent = item;
+    el.appendChild(li);
+  }
+}
+
+async function submitWriting() {
+  if (!currentWritingPromptId) return;
+  const text = document.getElementById("writingTextarea").value.trim();
+  const errorEl = document.getElementById("writingError");
+  const statusEl = document.getElementById("writingSubmitStatus");
+  errorEl.textContent = "";
+  if (!text) {
+    errorEl.textContent = "Write something first.";
+    return;
+  }
+
+  const btn = document.getElementById("writingSubmitBtn");
+  btn.disabled = true;
+  statusEl.textContent = "Analyzing your writing… (this can take a moment)";
+
+  try {
+    const res = await fetch(`${API_BASE}/writing/prompts/${currentWritingPromptId}/submit`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      errorEl.textContent = body.error || "Could not analyze your writing.";
+      return;
+    }
+    const fb = await res.json();
+
+    document.getElementById("wfOverall").textContent = fb.overall;
+    document.getElementById("wfGrammar").textContent = `${fb.grammarScore}%`;
+    document.getElementById("wfVocab").textContent = `${fb.vocabularyScore}%`;
+    document.getElementById("wfCoherence").textContent = `${fb.coherenceScore}%`;
+    document.getElementById("wfWordCount").textContent = String(fb.wordCount);
+    renderList("wfStrengths", fb.strengths);
+    renderList("wfImprovements", fb.improvements);
+
+    const mistakesEl = document.getElementById("wfMistakes");
+    mistakesEl.innerHTML = "";
+    if (fb.mistakes.length === 0) {
+      mistakesEl.textContent = "No grammar or spelling issues detected. Well done!";
+    } else {
+      for (const m of fb.mistakes) {
+        const div = document.createElement("div");
+        div.className = "correction-item";
+        div.innerHTML = `<span class="strike">${m.originalText}</span><span class="arrow">→</span><span class="fix">${m.correctedText}</span> <span style="opacity:0.65;font-size:12px">(${m.category})</span>`;
+        mistakesEl.appendChild(div);
+      }
+    }
+    document.getElementById("wfModel").textContent = fb.modelAnswer;
+    document.getElementById("writingFeedback").classList.remove("hidden");
+    statusEl.textContent = "Feedback ready.";
+  } catch (err) {
+    errorEl.textContent = "Could not reach the backend.";
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById("tabWritingBtn").addEventListener("click", showWritingTab);
+document.getElementById("writingBackBtn").addEventListener("click", closeWritingPrompt);
+document.getElementById("writingTextarea").addEventListener("input", updateWritingWordCount);
+document.getElementById("writingSubmitBtn").addEventListener("click", submitWriting);
 
 // --- Admin console (Stage 12) ---
 

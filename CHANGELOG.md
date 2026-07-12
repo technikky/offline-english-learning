@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.6.0 — Stage 18: Writing module
+
+- **New Writing Module**: 4 scaffolded prompts (A1–B2), each with a topic, target vocabulary, grammar focus, word-count target, and hints — not a blank page. The student writes a response and gets structured AI feedback.
+- **Hybrid analysis**: concrete grammar/spelling/punctuation errors come from **LanguageTool** (deterministic, reused from Stage 5) as exact original→correction pairs; the higher-level judgment (overall assessment, vocabulary/coherence scores, strengths, actionable suggestions, and a **model answer**) comes from the LLM via a new `/v1/writing/analyze`. Degrades gracefully to AI-only feedback if LanguageTool is down.
+- New `writing_submissions` table + `GET /writing/progress` (submission history + average score).
+- **Desktop**: new "✍️ Writing" tab — prompt cards, a scaffolded prompt view, a textarea with a live word counter, and a feedback panel (overall, scores table, strengths/suggestions, LanguageTool grammar/spelling issues, and the model answer).
+- Verified end-to-end through the real UI + full stack: submitted an essay containing "recieve", and the feedback showed the LLM's assessment/scores/model-answer **plus LanguageTool's real "recieve → receive" correction**; progress updated.
+- Backend: 82 tests passing (6 new). AI service: 32 pytest tests (4 new).
+
 ## v1.5.0 — Stage 17: Listening module
 
 - **New Listening Module**: 4 curated audio clips across CEFR A1–B2, each with an AI-generated comprehension quiz, a dictation mode, and playback controls (speed 0.75x–1.5x, loop, hidden-by-default transcript).

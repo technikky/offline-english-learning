@@ -246,3 +246,23 @@ export const listeningResults = sqliteTable("listening_results", {
     .notNull()
     .default(sql`(current_timestamp)`),
 });
+
+// Stage 18: Writing Module. Each submission stores the student's text and the
+// AI feedback (scores inline for cheap progress queries; the full feedback
+// JSON for re-display). promptId references prompts.ts's static ids.
+export const writingSubmissions = sqliteTable("writing_submissions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  studentId: integer("student_id")
+    .notNull()
+    .references(() => users.id),
+  promptId: text("prompt_id").notNull(),
+  text: text("text").notNull(),
+  wordCount: integer("word_count").notNull(),
+  grammarScore: integer("grammar_score").notNull(),
+  vocabularyScore: integer("vocabulary_score").notNull(),
+  coherenceScore: integer("coherence_score").notNull(),
+  feedbackJson: text("feedback_json").notNull(), // full WritingFeedback
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});

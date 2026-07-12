@@ -191,5 +191,18 @@ export function ensureSchema(): void {
       total_questions INTEGER NOT NULL,
       created_at TEXT NOT NULL DEFAULT (current_timestamp)
     );
+
+    CREATE TABLE IF NOT EXISTS writing_submissions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id INTEGER NOT NULL REFERENCES users(id),
+      prompt_id TEXT NOT NULL,
+      text TEXT NOT NULL,
+      word_count INTEGER NOT NULL,
+      grammar_score INTEGER NOT NULL,
+      vocabulary_score INTEGER NOT NULL,
+      coherence_score INTEGER NOT NULL,
+      feedback_json TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (current_timestamp)
+    );
   `);
 }

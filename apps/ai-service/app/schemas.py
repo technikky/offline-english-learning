@@ -92,3 +92,19 @@ class ReadingComprehensionResponse(BaseModel):
     summary: str
     vocabularyWords: list[str]
     questions: list[ComprehensionQuestionModel]
+
+
+class WritingAnalysisRequest(BaseModel):
+    prompt: str
+    studentText: str
+    difficultyLevel: str = "B1"
+
+
+class WritingAnalysisResponse(BaseModel):
+    overall: str
+    grammarScore: int
+    vocabularyScore: int
+    coherenceScore: int
+    strengths: list[str]
+    improvements: list[str]
+    modelAnswer: str

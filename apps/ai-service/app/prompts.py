@@ -429,3 +429,80 @@ def parse_reading_comprehension_response(raw_text: str) -> dict:
         "vocabularyWords": vocabulary_words,
         "questions": questions,
     }
+
+
+# Stage 18: Writing Module analysis. The LLM handles the higher-level feedback
+# (overall assessment, dimension scores, strengths, improvements, a model
+# answer); concrete grammar/spelling errors come from LanguageTool on the
+# backend, so this prompt deliberately doesn't ask the model to list every
+# mistake (the small model isn't reliable at exhaustive error-finding, and
+# LanguageTool already does it deterministically).
+WRITING_ANALYSIS_MARKERS = (
+    "OVERALL:",
+    "GRAMMAR:",
+    "VOCABULARY:",
+    "COHERENCE:",
+    "STRENGTHS:",
+    "IMPROVEMENTS:",
+    "MODEL:",
+)
+
+
+def build_writing_analysis_prompt(prompt: str, student_text: str, difficulty_level: str) -> list[dict]:
+    difficulty_text = DIFFICULTY_INSTRUCTIONS.get(
+        difficulty_level, DIFFICULTY_INSTRUCTIONS["B1"]
+    )
+    system = (
+        "You are a supportive but honest English writing teacher giving feedback "
+        "on a student's response to a writing prompt. "
+        f"Judge the writing against this expected level: {difficulty_text}\n\n"
+        "Give scores from 0 to 100 for each dimension. Be encouraging in tone "
+        "but specific. Respond in exactly this format, with nothing before or "
+        "after:\n"
+        "OVERALL: <2-3 sentence overall assessment>\n"
+        "GRAMMAR: <0-100>\n"
+        "VOCABULARY: <0-100>\n"
+        "COHERENCE: <0-100>\n"
+        "STRENGTHS: <2-3 things the student did well, separated by semicolons>\n"
+        "IMPROVEMENTS: <2-3 specific, actionable suggestions, separated by semicolons>\n"
+        "MODEL: <a short, improved model version of the response, 2-4 sentences>"
+    )
+    user = f'Writing prompt: "{prompt}"\n\nStudent response:\n{student_text}'
+    return [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
+
+
+def parse_writing_analysis_response(raw_text: str) -> dict:
+    """Lenient marker parse, same approach as grammar/vocabulary explain.
+    Falls back to safe defaults per field so a partial/garbled model response
+    still yields usable feedback rather than a 500."""
+    overall = _extract_marked_section(raw_text, "OVERALL:", "GRAMMAR:") or raw_text.strip()
+    grammar_raw = _extract_marked_section(raw_text, "GRAMMAR:", "VOCABULARY:")
+    vocabulary_raw = _extract_marked_section(raw_text, "VOCABULARY:", "COHERENCE:")
+    coherence_raw = _extract_marked_section(raw_text, "COHERENCE:", "STRENGTHS:")
+    strengths_raw = _extract_marked_section(raw_text, "STRENGTHS:", "IMPROVEMENTS:")
+    improvements_raw = _extract_marked_section(raw_text, "IMPROVEMENTS:", "MODEL:")
+    model_answer = _extract_marked_section(raw_text, "MODEL:", None)
+
+    def parse_score(raw: str) -> int:
+        import re
+
+        match = re.search(r"\d{1,3}", raw)
+        if not match:
+            return 60
+        return max(0, min(100, int(match.group())))
+
+    def parse_list(raw: str) -> list[str]:
+        return [item.strip() for item in raw.split(";") if item.strip()]
+
+    return {
+        "overall": overall,
+        "grammarScore": parse_score(grammar_raw),
+        "vocabularyScore": parse_score(vocabulary_raw),
+        "coherenceScore": parse_score(coherence_raw),
+        "strengths": parse_list(strengths_raw),
+        "improvements": parse_list(improvements_raw),
+        "modelAnswer": model_answer,
+    }

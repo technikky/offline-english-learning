@@ -500,3 +500,61 @@ export interface ListeningProgressResponse {
   clips: ListeningProgressEntry[];
   overallAverageScore: number;
 }
+
+// Stage 18: Writing Module. Feedback combines deterministic LanguageTool
+// grammar/spelling checks (reused from Stage 5) with higher-level LLM analysis.
+export interface WritingPromptSummary {
+  id: string;
+  title: string;
+  cefrLevel: CefrLevel;
+  wordCountTarget: number;
+}
+
+export interface WritingPromptDetail extends WritingPromptSummary {
+  prompt: string;
+  targetVocabulary: string[];
+  grammarFocus: string;
+  hints: string[];
+}
+
+// A concrete grammar/spelling issue from LanguageTool (not persisted, so no id).
+export interface WritingMistake {
+  originalText: string;
+  correctedText: string;
+  ruleDescription: string;
+  category: string;
+}
+
+export interface WritingFeedback {
+  overall: string;
+  grammarScore: number;
+  vocabularyScore: number;
+  coherenceScore: number;
+  strengths: string[];
+  improvements: string[];
+  modelAnswer: string;
+  // Concrete grammar/spelling issues from LanguageTool (may be empty).
+  mistakes: WritingMistake[];
+  wordCount: number;
+}
+
+export interface SubmitWritingRequest {
+  text: string;
+}
+
+export interface WritingSubmissionSummary {
+  id: number;
+  promptId: string;
+  promptTitle: string;
+  wordCount: number;
+  grammarScore: number;
+  vocabularyScore: number;
+  coherenceScore: number;
+  createdAt: string;
+}
+
+export interface WritingProgressResponse {
+  submissions: WritingSubmissionSummary[];
+  totalSubmissions: number;
+  averageOverallScore: number;
+}

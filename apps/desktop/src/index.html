@@ -179,7 +179,8 @@
       }
       #grammarPanel,
       #readingPanel,
-      #listeningPanel {
+      #listeningPanel,
+      #writingPanel {
         flex: 1;
         overflow-y: auto;
         min-height: 0;
@@ -761,6 +762,7 @@
           <button id="tabGrammarBtn" class="main-tab">📘 Grammar</button>
           <button id="tabReadingBtn" class="main-tab">📖 Reading</button>
           <button id="tabListeningBtn" class="main-tab">🎧 Listening</button>
+          <button id="tabWritingBtn" class="main-tab">✍️ Writing</button>
         </div>
 
         <div id="chatPanel">
@@ -875,6 +877,62 @@
                 <button id="dictationNextBtn" class="secondary">Next sentence →</button>
               </div>
               <div id="dictationResult"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="writingPanel" class="hidden">
+          <div id="writingPromptList" class="grammar-topic-list"></div>
+          <div id="writingPromptDetail" class="hidden">
+            <button id="writingBackBtn" class="secondary">← Back to prompts</button>
+            <h2 id="writingPromptTitle"></h2>
+
+            <div class="panel">
+              <p id="writingPromptText" style="font-size:15px;line-height:1.5"></p>
+              <div style="font-size:13px;opacity:0.85">
+                <div><strong>Grammar focus:</strong> <span id="writingGrammarFocus"></span></div>
+                <div><strong>Target words:</strong> <span id="writingTargetVocab"></span></div>
+                <div><strong>Word count target:</strong> <span id="writingWordTarget"></span></div>
+              </div>
+              <h4>Hints</h4>
+              <ul id="writingHints"></ul>
+            </div>
+
+            <div class="panel">
+              <h3>Your writing <span id="writingLiveWordCount" style="font-size:12px;opacity:0.7"></span></h3>
+              <textarea id="writingTextarea" rows="10" style="width:100%;resize:vertical" placeholder="Write your response here…"></textarea>
+              <div class="inline-form">
+                <button id="writingSubmitBtn">Get AI feedback</button>
+                <span id="writingSubmitStatus" style="font-size:12px;opacity:0.75"></span>
+              </div>
+              <div id="writingError" class="error"></div>
+            </div>
+
+            <div id="writingFeedback" class="hidden">
+              <div class="panel">
+                <h3>Overall feedback</h3>
+                <p id="wfOverall"></p>
+                <table class="kv-table">
+                  <tr><td>Grammar</td><td id="wfGrammar"></td></tr>
+                  <tr><td>Vocabulary</td><td id="wfVocab"></td></tr>
+                  <tr><td>Coherence</td><td id="wfCoherence"></td></tr>
+                  <tr><td>Word count</td><td id="wfWordCount"></td></tr>
+                </table>
+              </div>
+              <div class="panel">
+                <h3>Strengths</h3>
+                <ul id="wfStrengths"></ul>
+                <h3>Suggestions</h3>
+                <ul id="wfImprovements"></ul>
+              </div>
+              <div class="panel">
+                <h3>Grammar &amp; spelling issues</h3>
+                <div id="wfMistakes"></div>
+              </div>
+              <div class="panel">
+                <h3>Model answer</h3>
+                <p id="wfModel" class="reading-content"></p>
+              </div>
             </div>
           </div>
         </div>
