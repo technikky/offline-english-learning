@@ -1585,6 +1585,12 @@ function showMainTab(tabName) {
     quiz: { btn: "tabQuizBtn", panel: "quizPanel" },
     history: { btn: "tabHistoryBtn", panel: "historyPanel" },
   };
+  // Leaving the conversation tab must stop hands-free voice mode, otherwise the
+  // mic keeps listening (and the AI keeps replying) in the background while the
+  // student is on another module.
+  if (tabName !== "conversation" && voiceMode.active) {
+    stopVoiceMode();
+  }
   for (const [name, ids] of Object.entries(tabs)) {
     const isActive = name === tabName;
     document.getElementById(ids.btn).classList.toggle("active", isActive);

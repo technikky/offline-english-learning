@@ -81,8 +81,12 @@
         margin-top: 8px;
         min-height: 16px;
       }
+      /* !important so this utility beats ID-level `display` rules (e.g.
+         #chatPanel { display: flex }); without it, hiding a panel that sets
+         its own display via an ID selector silently fails on specificity and
+         the panel leaks into every tab. */
       .hidden {
-        display: none;
+        display: none !important;
       }
       .profile-row {
         display: flex;
