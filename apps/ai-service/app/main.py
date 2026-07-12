@@ -74,6 +74,10 @@ def _stream_chat(request: ChatRequest):
     system_prompt = build_system_prompt(
         request.scenario, request.difficultyLevel, request.customPrompt
     )
+    # Chinese-support: append a reply-language directive (e.g. respond in
+    # Chinese) without disturbing the scenario/pedagogy prompt.
+    if request.languageInstruction and request.languageInstruction.strip():
+        system_prompt = f"{system_prompt}\n\n{request.languageInstruction.strip()}"
     messages = [{"role": "system", "content": system_prompt}] + [
         {"role": m.role, "content": m.content} for m in request.messages
     ]

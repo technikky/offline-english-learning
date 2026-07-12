@@ -113,7 +113,14 @@ export function registerConversationRoutes(app: FastifyInstance): void {
     { preHandler: authenticate },
     async (request, reply) => {
       const conversationId = Number(request.params.id);
-      const { content } = request.body;
+      const { content, language } = request.body;
+
+      // Chinese-support: when the student's UI is in Chinese, ask the AI partner
+      // to converse in Simplified Chinese (the model is multilingual).
+      const languageInstruction =
+        language === "zh"
+          ? "Always reply in Simplified Chinese (Mandarin), at a level appropriate for a Chinese learner."
+          : null;
 
       if (!content || !content.trim()) {
         return reply.code(400).send({ error: "content is required" });
@@ -162,6 +169,7 @@ export function registerConversationRoutes(app: FastifyInstance): void {
         conversation.scenario,
         difficultyLevel,
         customPrompt,
+        languageInstruction,
       );
 
       if (!aiResponse.ok || !aiResponse.body) {
