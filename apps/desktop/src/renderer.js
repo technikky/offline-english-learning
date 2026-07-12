@@ -529,6 +529,16 @@ function renderAvatar() {
 
 // Speaks the given text in the selected voice and animates the avatar's mouth
 // for the duration of playback. No-op (silent) if "Speak replies aloud" is off.
+// Thrown by sendMessageContent when the AI service replies 503 (already busy
+// with another inference). Lets the typed composer and hands-free voice mode
+// show a "busy, please wait" state and retry instead of erroring out.
+class AiBusyError extends Error {
+  constructor() {
+    super("AI is busy");
+    this.name = "AiBusyError";
+  }
+}
+
 async function speakAsAvatar(text, force = false) {
   const autoSpeak = document.getElementById("autoSpeakToggle");
   // Voice mode (force) always speaks; text mode respects the toggle.
@@ -594,7 +604,16 @@ async function sendMessage() {
   const content = input.value.trim();
   if (!content || !currentConversationId) return;
   input.value = "";
-  await sendMessageContent(content);
+  try {
+    await sendMessageContent(content);
+  } catch (err) {
+    if (err instanceof AiBusyError) {
+      appendBubble(
+        "assistant",
+        "⏳ The AI is busy finishing another reply — please wait a moment and send again.",
+      );
+    }
+  }
   input.focus();
 }
 
@@ -621,6 +640,12 @@ async function sendMessageContent(content, { forceSpeak = false } = {}) {
       body: JSON.stringify({ content }),
     });
 
+    if (res.status === 503) {
+      // The AI is already generating another reply. Surface a retryable busy
+      // signal rather than a hard error so callers can wait and retry.
+      assistantBubble.remove();
+      throw new AiBusyError();
+    }
     if (!res.ok || !res.body) {
       assistantBubble.textContent = "(error contacting the AI service)";
       return "";
@@ -663,6 +688,10 @@ async function sendMessageContent(content, { forceSpeak = false } = {}) {
     // aloud in the selected voice (Stage 16). Non-blocking failures only.
     await speakAsAvatar(displayedText, forceSpeak);
   } catch (err) {
+    if (err instanceof AiBusyError) {
+      // Re-enable inputs (finally) then let the caller handle the busy state.
+      throw err;
+    }
     assistantBubble.textContent = "(error contacting the AI service)";
   } finally {
     document.getElementById("messageInput").disabled = false;
@@ -1417,8 +1446,14 @@ async function finishUtterance() {
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ audioBase64 }),
     });
-    const transcript = res.ok ? (await res.json()).transcript.trim() : "";
     if (!voiceMode.active) return;
+    // The AI service is busy transcribing/replying to another turn: wait a
+    // beat, then start listening again instead of piling on more requests.
+    if (res.status === 503) {
+      resumeListeningAfterBusy();
+      return;
+    }
+    const transcript = res.ok ? (await res.json()).transcript.trim() : "";
 
     // Ignore empty/noise transcriptions and just keep listening.
     if (!transcript || transcript.length < 2) {
@@ -1432,8 +1467,26 @@ async function finishUtterance() {
     if (!voiceMode.active) return;
     resumeListening();
   } catch (err) {
-    if (voiceMode.active) resumeListening();
+    if (!voiceMode.active) return;
+    // Chat came back busy (503): show a wait state and resume after a pause so
+    // we don't immediately re-fire into the still-busy service.
+    if (err instanceof AiBusyError) {
+      resumeListeningAfterBusy();
+    } else {
+      resumeListening();
+    }
   }
+}
+
+// Show a brief "busy" state, then go back to listening. The pause gives the
+// in-flight inference time to finish so the next turn isn't rejected too.
+function resumeListeningAfterBusy() {
+  if (!voiceMode.active) return;
+  voiceMode.state = "processing"; // keep the mic gated during the pause
+  setVoiceStatus("⏳ AI is busy — one moment…");
+  setTimeout(() => {
+    if (voiceMode.active) resumeListening();
+  }, 1500);
 }
 
 function resumeListening() {
