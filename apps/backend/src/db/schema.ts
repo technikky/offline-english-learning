@@ -218,3 +218,31 @@ export const readingResults = sqliteTable("reading_results", {
     .notNull()
     .default(sql`(current_timestamp)`),
 });
+
+// Stage 17: Listening Module. Same shape/caching rationale as reading -- the
+// clip's audio is TTS-synthesized client-side, so a "clip" is a script whose
+// comprehension package is generated once and cached, keyed by clip id.
+export const listeningComprehensionCache = sqliteTable("listening_comprehension_cache", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  clipId: text("clip_id").notNull().unique(),
+  summary: text("summary").notNull(),
+  vocabularyWords: text("vocabulary_words").notNull(),
+  questions: text("questions").notNull(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
+
+export const listeningResults = sqliteTable("listening_results", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  studentId: integer("student_id")
+    .notNull()
+    .references(() => users.id),
+  clipId: text("clip_id").notNull(),
+  score: integer("score").notNull(),
+  correctCount: integer("correct_count").notNull(),
+  totalQuestions: integer("total_questions").notNull(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});

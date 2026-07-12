@@ -177,7 +177,9 @@
         transform-box: fill-box;
         transform-origin: center;
       }
-      #grammarPanel {
+      #grammarPanel,
+      #readingPanel,
+      #listeningPanel {
         flex: 1;
         overflow-y: auto;
         min-height: 0;
@@ -758,6 +760,7 @@
           <button id="tabConversationBtn" class="main-tab active">💬 Conversation</button>
           <button id="tabGrammarBtn" class="main-tab">📘 Grammar</button>
           <button id="tabReadingBtn" class="main-tab">📖 Reading</button>
+          <button id="tabListeningBtn" class="main-tab">🎧 Listening</button>
         </div>
 
         <div id="chatPanel">
@@ -821,6 +824,57 @@
               <div id="readingQuestions"></div>
               <button id="readingSubmitBtn">Submit answers</button>
               <div id="readingResult"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="listeningPanel" class="hidden">
+          <div id="listeningClipList" class="grammar-topic-list"></div>
+          <div id="listeningClipDetail" class="hidden">
+            <button id="listeningBackBtn" class="secondary">← Back to clips</button>
+            <h2 id="listeningClipTitle"></h2>
+
+            <div class="panel">
+              <h3>Audio</h3>
+              <div class="inline-form">
+                <button id="listeningPlayBtn">▶ Play</button>
+                <label style="font-size:12px;display:flex;align-items:center;gap:4px">Speed
+                  <select id="listeningSpeed">
+                    <option value="0.75">0.75x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.25">1.25x</option>
+                    <option value="1.5">1.5x</option>
+                  </select>
+                </label>
+                <label style="font-size:12px;display:flex;align-items:center;gap:4px">
+                  <input id="listeningLoop" type="checkbox" /> Loop
+                </label>
+              </div>
+              <p style="font-size:12px;opacity:0.7">Listen first, then answer — reveal the transcript only if you need it.</p>
+              <button id="listeningToggleTranscriptBtn" class="secondary">Show transcript</button>
+              <p id="listeningTranscript" class="reading-content hidden"></p>
+            </div>
+
+            <div class="panel">
+              <h3>Comprehension check</h3>
+              <div id="listeningQuestions"></div>
+              <button id="listeningSubmitBtn">Submit answers</button>
+              <div id="listeningResult"></div>
+            </div>
+
+            <div class="panel">
+              <h3>Dictation practice</h3>
+              <p style="font-size:12px;opacity:0.7">Play one sentence, type what you hear, and check your accuracy.</p>
+              <div class="inline-form">
+                <button id="dictationPlayBtn">🔊 Play sentence</button>
+                <span id="dictationProgress" style="font-size:12px;opacity:0.7"></span>
+              </div>
+              <input id="dictationInput" type="text" placeholder="Type the sentence you heard…" style="margin-top:8px;width:100%" />
+              <div class="inline-form">
+                <button id="dictationCheckBtn">Check</button>
+                <button id="dictationNextBtn" class="secondary">Next sentence →</button>
+              </div>
+              <div id="dictationResult"></div>
             </div>
           </div>
         </div>

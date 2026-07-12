@@ -172,5 +172,24 @@ export function ensureSchema(): void {
       total_questions INTEGER NOT NULL,
       created_at TEXT NOT NULL DEFAULT (current_timestamp)
     );
+
+    CREATE TABLE IF NOT EXISTS listening_comprehension_cache (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      clip_id TEXT NOT NULL UNIQUE,
+      summary TEXT NOT NULL,
+      vocabulary_words TEXT NOT NULL,
+      questions TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (current_timestamp)
+    );
+
+    CREATE TABLE IF NOT EXISTS listening_results (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id INTEGER NOT NULL REFERENCES users(id),
+      clip_id TEXT NOT NULL,
+      score INTEGER NOT NULL,
+      correct_count INTEGER NOT NULL,
+      total_questions INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (current_timestamp)
+    );
   `);
 }

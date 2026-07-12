@@ -450,3 +450,53 @@ export interface ReadingProgressResponse {
   passages: ReadingProgressEntry[];
   overallAverageScore: number;
 }
+
+// Stage 17: Listening Module. Audio is TTS-synthesized on the client from the
+// transcript (reusing the Stage 16 voice selection), so no audio files are
+// stored — the "clip" is really a script + AI-generated comprehension.
+export interface ListeningClipSummary {
+  id: string;
+  title: string;
+  cefrLevel: CefrLevel;
+  estimatedSeconds: number;
+}
+
+export interface ListeningClipDetail extends ListeningClipSummary {
+  transcript: string;
+  sentences: string[]; // transcript split into sentences, for dictation mode
+  summary: string;
+  vocabularyWords: string[];
+  questions: ComprehensionQuestion[];
+}
+
+export interface SubmitListeningRequest {
+  answers: string[];
+}
+
+export interface SubmitListeningResponse {
+  score: number;
+  correctCount: number;
+  totalQuestions: number;
+}
+
+export interface DictationCheckRequest {
+  target: string;
+  attempt: string;
+}
+
+export interface DictationCheckResponse {
+  score: number; // 0-100 word-level similarity
+}
+
+export interface ListeningProgressEntry {
+  clipId: string;
+  title: string;
+  cefrLevel: CefrLevel;
+  bestScore: number;
+  attempts: number;
+}
+
+export interface ListeningProgressResponse {
+  clips: ListeningProgressEntry[];
+  overallAverageScore: number;
+}

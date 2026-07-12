@@ -32,7 +32,7 @@ See [docs/04-repo-structure.md](docs/04-repo-structure.md).
 
 ## Current stage
 
-**v1.4.0 — post-v1.0.0 platform expansion, Stage 16 (AI conversation avatar + voice selection) complete.** All 12 originally-planned stages shipped as v1.0.0; development continues in further scoped stages per a master development brief expanding this into a full AI English Tutor platform (listening/writing modules, quiz generator, multi-tenancy, and more — tracked stage by stage, same methodology as Stages 1–12). See [docs/23-stage16-plan.md](docs/23-stage16-plan.md) and [CHANGELOG.md](CHANGELOG.md) for the latest, or [docs/03-roadmap.md](docs/03-roadmap.md) for the original 12-stage history.
+**v1.5.0 — post-v1.0.0 platform expansion, Stage 17 (Listening module) complete.** All 12 originally-planned stages shipped as v1.0.0; development continues in further scoped stages per a master development brief expanding this into a full AI English Tutor platform (writing module, quiz generator, multi-tenancy, and more — tracked stage by stage, same methodology as Stages 1–12). See [docs/24-stage17-plan.md](docs/24-stage17-plan.md) and [CHANGELOG.md](CHANGELOG.md) for the latest, or [docs/03-roadmap.md](docs/03-roadmap.md) for the original 12-stage history.
 
 ## Guides
 

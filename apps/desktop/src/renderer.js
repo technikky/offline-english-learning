@@ -67,6 +67,7 @@ function showLoggedIn(user) {
   loadStudentAnalytics();
   loadGrammarTopics();
   loadReadingPassages();
+  loadListeningClips();
 }
 
 function showLoggedOut() {
@@ -110,6 +111,11 @@ function showLoggedOut() {
   document.getElementById("readingPassageDetail").classList.add("hidden");
   document.getElementById("readingQuestions").innerHTML = "";
   document.getElementById("readingResult").innerHTML = "";
+  document.getElementById("listeningClipList").innerHTML = "";
+  document.getElementById("listeningClipDetail").classList.add("hidden");
+  document.getElementById("listeningQuestions").innerHTML = "";
+  document.getElementById("listeningResult").innerHTML = "";
+  document.getElementById("dictationResult").innerHTML = "";
   showChatTab();
 }
 
@@ -1225,6 +1231,7 @@ function showMainTab(tabName) {
     conversation: { btn: "tabConversationBtn", panel: "chatPanel" },
     grammar: { btn: "tabGrammarBtn", panel: "grammarPanel" },
     reading: { btn: "tabReadingBtn", panel: "readingPanel" },
+    listening: { btn: "tabListeningBtn", panel: "listeningPanel" },
   };
   for (const [name, ids] of Object.entries(tabs)) {
     const isActive = name === tabName;
@@ -1243,6 +1250,10 @@ function showGrammarTab() {
 
 function showReadingTab() {
   showMainTab("reading");
+}
+
+function showListeningTab() {
+  showMainTab("listening");
 }
 
 async function loadGrammarTopics() {
@@ -1572,6 +1583,230 @@ document.getElementById("tabReadingBtn").addEventListener("click", showReadingTa
 document.getElementById("readingBackBtn").addEventListener("click", closeReadingPassage);
 document.getElementById("readingListenBtn").addEventListener("click", listenToReadingPassage);
 document.getElementById("readingSubmitBtn").addEventListener("click", submitReadingAnswers);
+
+// --- Listening Module (Stage 17) ---
+
+let currentListeningClip = null; // full detail object
+let currentDictationIndex = 0;
+let listeningAudio = null; // the currently-playing HTMLAudioElement
+
+async function loadListeningClips() {
+  const container = document.getElementById("listeningClipList");
+  try {
+    const [clipsRes, progressRes] = await Promise.all([
+      fetch(`${API_BASE}/listening/clips`, { headers: authHeaders() }),
+      fetch(`${API_BASE}/listening/progress`, { headers: authHeaders() }),
+    ]);
+    if (!clipsRes.ok) return;
+    const clips = await clipsRes.json();
+    const progress = progressRes.ok ? await progressRes.json() : { clips: [] };
+    const progressByClip = new Map(progress.clips.map((c) => [c.clipId, c]));
+
+    container.innerHTML = "";
+    for (const clip of clips) {
+      const p = progressByClip.get(clip.id);
+      const card = document.createElement("div");
+      card.className = "grammar-topic-card";
+      card.innerHTML = `
+        <span class="badge">${clip.cefrLevel}</span>
+        <h4>${clip.title}</h4>
+        <div style="font-size: 12px; opacity: 0.75">~${clip.estimatedSeconds}s${
+          p ? ` · best score ${p.bestScore}%` : " · not started"
+        }</div>
+        <div class="topic-progress-bar"><div class="topic-progress-fill" style="width: ${p ? p.bestScore : 0}%"></div></div>
+      `;
+      card.addEventListener("click", () => openListeningClip(clip.id));
+      container.appendChild(card);
+    }
+  } catch (err) {
+    container.innerHTML = "Could not reach the backend.";
+  }
+}
+
+function stopListeningAudio() {
+  if (listeningAudio) {
+    listeningAudio.pause();
+    listeningAudio = null;
+  }
+}
+
+async function synthesizeToAudio(text) {
+  const res = await fetch(`${API_BASE}/speech/synthesize`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ text, voice: getSelectedVoice() }),
+  });
+  if (!res.ok) throw new Error("synthesize failed");
+  const data = await res.json();
+  return new Audio(`data:audio/wav;base64,${data.audioBase64}`);
+}
+
+async function openListeningClip(clipId) {
+  const listEl = document.getElementById("listeningClipList");
+  const detailEl = document.getElementById("listeningClipDetail");
+  listEl.classList.add("hidden");
+  detailEl.classList.remove("hidden");
+  document.getElementById("listeningClipTitle").textContent = "Loading…";
+  document.getElementById("listeningQuestions").innerHTML = "";
+  document.getElementById("listeningResult").innerHTML = "";
+  document.getElementById("dictationResult").innerHTML = "";
+  document.getElementById("dictationInput").value = "";
+  const transcriptEl = document.getElementById("listeningTranscript");
+  transcriptEl.classList.add("hidden");
+  document.getElementById("listeningToggleTranscriptBtn").textContent = "Show transcript";
+
+  try {
+    const res = await fetch(`${API_BASE}/listening/clips/${clipId}`, { headers: authHeaders() });
+    if (!res.ok) {
+      document.getElementById("listeningClipTitle").textContent = "Could not load this clip.";
+      return;
+    }
+    const clip = await res.json();
+    currentListeningClip = clip;
+    currentDictationIndex = 0;
+
+    document.getElementById("listeningClipTitle").textContent = `${clip.title} (${clip.cefrLevel})`;
+    transcriptEl.textContent = clip.transcript;
+
+    const questionsEl = document.getElementById("listeningQuestions");
+    clip.questions.forEach((q, index) => {
+      const block = document.createElement("div");
+      block.className = "reading-question";
+      const questionText = document.createElement("p");
+      questionText.textContent = `${index + 1}. ${q.question}`;
+      block.appendChild(questionText);
+      for (const option of q.options) {
+        const label = document.createElement("label");
+        label.style.display = "block";
+        const input = document.createElement("input");
+        input.type = "radio";
+        input.name = `listeningQuestion${index}`;
+        input.value = option;
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(" " + option));
+        block.appendChild(label);
+      }
+      questionsEl.appendChild(block);
+    });
+
+    updateDictationProgress();
+  } catch (err) {
+    document.getElementById("listeningClipTitle").textContent = "Could not reach the backend.";
+  }
+}
+
+function closeListeningClip() {
+  stopListeningAudio();
+  document.getElementById("listeningClipList").classList.remove("hidden");
+  document.getElementById("listeningClipDetail").classList.add("hidden");
+  currentListeningClip = null;
+  loadListeningClips();
+}
+
+async function playListeningClip() {
+  if (!currentListeningClip) return;
+  stopListeningAudio();
+  try {
+    listeningAudio = await synthesizeToAudio(currentListeningClip.transcript);
+    listeningAudio.playbackRate = parseFloat(document.getElementById("listeningSpeed").value);
+    listeningAudio.loop = document.getElementById("listeningLoop").checked;
+    await listeningAudio.play();
+  } catch (err) {
+    // non-critical
+  }
+}
+
+function toggleListeningTranscript() {
+  const el = document.getElementById("listeningTranscript");
+  const btn = document.getElementById("listeningToggleTranscriptBtn");
+  const hidden = el.classList.toggle("hidden");
+  btn.textContent = hidden ? "Show transcript" : "Hide transcript";
+}
+
+async function submitListeningAnswers() {
+  if (!currentListeningClip) return;
+  const resultEl = document.getElementById("listeningResult");
+  resultEl.textContent = "";
+  const answers = currentListeningClip.questions.map((_, index) => {
+    const sel = document.querySelector(`input[name="listeningQuestion${index}"]:checked`);
+    return sel ? sel.value : "";
+  });
+  try {
+    const res = await fetch(`${API_BASE}/listening/clips/${currentListeningClip.id}/submit`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ answers }),
+    });
+    if (!res.ok) {
+      resultEl.textContent = "Could not submit answers.";
+      return;
+    }
+    const result = await res.json();
+    resultEl.textContent = `Score: ${result.score}% (${result.correctCount}/${result.totalQuestions} correct)`;
+  } catch (err) {
+    resultEl.textContent = "Could not reach the backend.";
+  }
+}
+
+function updateDictationProgress() {
+  const total = currentListeningClip ? currentListeningClip.sentences.length : 0;
+  document.getElementById("dictationProgress").textContent =
+    total > 0 ? `Sentence ${currentDictationIndex + 1} of ${total}` : "";
+}
+
+async function playDictationSentence() {
+  if (!currentListeningClip) return;
+  const sentence = currentListeningClip.sentences[currentDictationIndex];
+  if (!sentence) return;
+  stopListeningAudio();
+  try {
+    listeningAudio = await synthesizeToAudio(sentence);
+    await listeningAudio.play();
+  } catch (err) {
+    // non-critical
+  }
+}
+
+async function checkDictation() {
+  if (!currentListeningClip) return;
+  const target = currentListeningClip.sentences[currentDictationIndex];
+  const attempt = document.getElementById("dictationInput").value;
+  const resultEl = document.getElementById("dictationResult");
+  if (!attempt.trim()) return;
+  try {
+    const res = await fetch(`${API_BASE}/listening/dictation/check`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ target, attempt }),
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    resultEl.innerHTML = `Accuracy: ${data.score}%<br><span style="opacity:0.75">Correct: ${target}</span>`;
+  } catch (err) {
+    resultEl.textContent = "Could not reach the backend.";
+  }
+}
+
+function nextDictationSentence() {
+  if (!currentListeningClip) return;
+  if (currentDictationIndex < currentListeningClip.sentences.length - 1) {
+    currentDictationIndex++;
+  } else {
+    currentDictationIndex = 0;
+  }
+  document.getElementById("dictationInput").value = "";
+  document.getElementById("dictationResult").innerHTML = "";
+  updateDictationProgress();
+}
+
+document.getElementById("tabListeningBtn").addEventListener("click", showListeningTab);
+document.getElementById("listeningBackBtn").addEventListener("click", closeListeningClip);
+document.getElementById("listeningPlayBtn").addEventListener("click", playListeningClip);
+document.getElementById("listeningToggleTranscriptBtn").addEventListener("click", toggleListeningTranscript);
+document.getElementById("listeningSubmitBtn").addEventListener("click", submitListeningAnswers);
+document.getElementById("dictationPlayBtn").addEventListener("click", playDictationSentence);
+document.getElementById("dictationCheckBtn").addEventListener("click", checkDictation);
+document.getElementById("dictationNextBtn").addEventListener("click", nextDictationSentence);
 
 // --- Admin console (Stage 12) ---
 

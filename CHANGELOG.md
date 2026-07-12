@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.5.0 — Stage 17: Listening module
+
+- **New Listening Module**: 4 curated audio clips across CEFR A1–B2, each with an AI-generated comprehension quiz, a dictation mode, and playback controls (speed 0.75x–1.5x, loop, hidden-by-default transcript).
+- **Fully offline via TTS, no audio files/codecs**: a clip is a curated script whose audio is synthesized client-side through the existing Piper `/speech/synthesize` — which means the Stage 16 male/female voice selection applies here too. Teacher-uploaded MP3/FLAC/etc. is deferred (documented) since decoding those offline needs codecs the project doesn't bundle.
+- **Reuse over duplication**: comprehension questions come from the same generic AI generator the Reading module uses (no duplicate endpoint); dictation scoring reuses the pronunciation module's word-level similarity, now extracted into a shared `speech/textSimilarity.ts` used by both. Comprehension is generated once per clip and cached (`listening_comprehension_cache`), consistent with reading.
+- New `listening_results` table + `GET /listening/progress` for per-clip best score and overall average.
+- **Desktop**: new "🎧 Listening" tab — clip cards with progress, an audio panel (play/speed/loop/show-transcript), a comprehension quiz, and sentence-by-sentence dictation (play a sentence → type it → word-level accuracy + correct answer revealed).
+- Verified end-to-end with the live stack: real AI comprehension generated + cached, both full-clip and per-sentence audio synthesized (200 OK), dictation scored a typed attempt at 88%, comprehension submit scored 100% (4/4), progress updated.
+- Backend: 76 tests passing (10 new). AI service: 28 pytest tests (unchanged — listening reuses the reading endpoint).
+
 ## v1.4.0 — Stage 16: AI conversation avatar with male/female voice selection
 
 - **The AI conversation partner now has a visible avatar that speaks its replies aloud.** A voice selector (female/male) in the conversation sidebar swaps between a **female avatar + female voice** and a **male avatar + male voice**, exactly matching the two. The avatar bobs and its mouth animates for the duration of each spoken reply.
