@@ -89,4 +89,37 @@ export const CHINESE_PASSAGES: PassageRecord[] = [
       "twenty minutes of Chinese every day and read along out loud. After keeping it up " +
       "for six months, you'll find you have improved a great deal.",
   },
+  {
+    id: "zh-read-phones-and-life",
+    language: "chinese",
+    title: "手机改变了生活 (Phones Changed Life)",
+    cefrLevel: "B2",
+    estimatedReadingMinutes: 5,
+    content:
+      "智能手机在短短二十年里彻底改变了我们的生活方式。以前，人们出门要带地图、相机和钱包，" +
+      "现在只需要一部手机就够了。它让沟通变得前所未有的方便，也让我们随时都能获得信息。" +
+      "然而，方便的背后也有代价。很多人一有空就低头看屏幕，和身边的人反而越来越少交流。" +
+      "有研究指出，长时间使用手机会影响睡眠质量和注意力。" +
+      "因此，关键并不在于要不要用手机，而在于我们能不能控制自己的使用习惯。",
+    pinyin:
+      "Zhìnéng shǒujī zài duǎnduǎn èrshí nián lǐ chèdǐ gǎibiàn le wǒmen de shēnghuó " +
+      "fāngshì. Yǐqián, rénmen chūmén yào dài dìtú, xiàngjī hé qiánbāo, xiànzài zhǐ " +
+      "xūyào yí bù shǒujī jiù gòu le. Tā ràng gōutōng biàn de qiánsuǒwèiyǒu de " +
+      "fāngbiàn, yě ràng wǒmen suíshí dōu néng huòdé xìnxī. Rán'ér, fāngbiàn de " +
+      "bèihòu yě yǒu dàijià. Hěn duō rén yì yǒu kòng jiù dītóu kàn píngmù, hé " +
+      "shēnbiān de rén fǎn'ér yuèláiyuè shǎo jiāoliú. Yǒu yánjiū zhǐchū, chángshíjiān " +
+      "shǐyòng shǒujī huì yǐngxiǎng shuìmián zhìliàng hé zhùyìlì. Yīncǐ, guānjiàn " +
+      "bìng bú zàiyú yào bú yào yòng shǒujī, ér zàiyú wǒmen néng bù néng kòngzhì " +
+      "zìjǐ de shǐyòng xíguàn.",
+    translation:
+      "In just twenty years, smartphones have completely changed the way we live. In " +
+      "the past, people had to take a map, a camera and a wallet when they went out; " +
+      "now a single phone is enough. They have made communication more convenient than " +
+      "ever, and let us obtain information at any time. However, there is a price " +
+      "behind that convenience. Many people look down at a screen the moment they have " +
+      "a free minute, and actually communicate less and less with the people around " +
+      "them. Research indicates that prolonged phone use affects sleep quality and " +
+      "attention. The key, therefore, is not whether to use a phone, but whether we can " +
+      "control our own habits of use.",
+  },
 ];

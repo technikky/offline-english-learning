@@ -194,7 +194,10 @@ def reading_comprehension(request: ReadingComprehensionRequest) -> ReadingCompre
 @app.post("/v1/writing/analyze")
 def writing_analyze(request: WritingAnalysisRequest) -> WritingAnalysisResponse:
     messages = build_writing_analysis_prompt(
-        request.prompt, request.studentText, request.difficultyLevel
+        request.prompt,
+        request.studentText,
+        request.difficultyLevel,
+        request.targetLanguage,
     )
 
     with INFERENCE_LOCK:
@@ -209,7 +212,9 @@ def writing_analyze(request: WritingAnalysisRequest) -> WritingAnalysisResponse:
 
 @app.post("/v1/quiz/generate")
 def quiz_generate(request: QuizGenerateRequest) -> QuizGenerateResponse:
-    messages = build_quiz_prompt(request.category, request.difficultyLevel)
+    messages = build_quiz_prompt(
+        request.category, request.difficultyLevel, request.targetLanguage
+    )
 
     with INFERENCE_LOCK:
         llm = load_model()

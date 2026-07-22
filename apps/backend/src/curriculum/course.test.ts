@@ -6,7 +6,7 @@ import { getGrammarTopic } from "../grammar/curriculum";
 import { getReadingPassage } from "../reading/passages";
 import { getListeningClip } from "../listening/clips";
 import { getWritingPrompt } from "../writing/prompts";
-import { QUIZ_CATEGORIES } from "../quiz/aiQuizClient";
+import { listQuizCategories } from "../quiz/aiQuizClient";
 
 // The whole point of these tests: the curriculum references content by id, so
 // a typo or a removed passage must fail here rather than ship a dead lesson.
@@ -37,9 +37,11 @@ test("every lesson in every course references content that actually exists", () 
             );
             break;
           case "quiz":
+            // Categories are per-language: "everyday_english" is meaningless in
+            // the Chinese course, which has "everyday_chinese"/"characters".
             assert.ok(
-              (QUIZ_CATEGORIES as readonly string[]).includes(lesson.refId),
-              `unknown quiz category: ${where}`,
+              listQuizCategories(language).includes(lesson.refId),
+              `unknown quiz category for ${language}: ${where}`,
             );
             break;
           default:
@@ -91,6 +93,23 @@ test("the Chinese course only references Chinese content", () => {
         const passage = getReadingPassage(lesson.refId)!;
         assert.equal(passage.language, "chinese", `English passage in Chinese course: ${lesson.refId}`);
       }
+      if (lesson.type === "listening") {
+        const clip = getListeningClip(lesson.refId)!;
+        assert.equal(clip.language, "chinese", `English clip in Chinese course: ${lesson.refId}`);
+      }
+      if (lesson.type === "writing") {
+        const prompt = getWritingPrompt(lesson.refId)!;
+        assert.equal(prompt.language, "chinese", `English prompt in Chinese course: ${lesson.refId}`);
+      }
+    }
+  }
+});
+
+test("every Chinese unit now covers all six lesson types", () => {
+  for (const unit of CHINESE_COURSE.units) {
+    const types = new Set(unit.lessons.map((l) => l.type));
+    for (const expected of ["grammar", "reading", "listening", "writing", "conversation", "quiz"]) {
+      assert.ok(types.has(expected as never), `${unit.id} is missing a ${expected} lesson`);
     }
   }
 });

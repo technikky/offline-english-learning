@@ -506,10 +506,62 @@ WRITING_ANALYSIS_MARKERS = (
 )
 
 
-def build_writing_analysis_prompt(prompt: str, student_text: str, difficulty_level: str) -> list[dict]:
+def _build_chinese_writing_analysis_prompt(
+    prompt: str, student_text: str, difficulty_text: str
+) -> list[dict]:
+    """Stage 31: feedback on Mandarin writing.
+
+    Deliberately different from the English version: the mistakes that matter in
+    Chinese are different (measure words, the three de, 了 placement, wrong
+    homophone characters), and the feedback itself is written in English so a
+    beginner can actually read it while their *writing* stays Chinese.
+    """
+    system = (
+        "You are a supportive but honest Chinese (Mandarin) writing teacher "
+        "giving feedback on a student's written response. The student is writing "
+        "in Chinese; write your FEEDBACK IN ENGLISH so they can read it, but "
+        "quote Chinese examples in simplified characters with pinyin.\n"
+        "Judge the writing against this expected level: " + difficulty_text + "\n\n"
+        "Pay particular attention to the mistakes Chinese learners actually "
+        "make: wrong or missing measure words, confusing de (的/得/地), misplaced "
+        "or missing 了, wrong word order (time and place go before the verb), "
+        "overusing 是, and characters that sound the same but are wrong.\n\n"
+        "Score GRAMMAR on Chinese sentence structure and particles, VOCABULARY "
+        "on word choice and range of characters used, and COHERENCE on how well "
+        "the ideas connect.\n\n"
+        "Give scores from 0 to 100 for each dimension. Be encouraging in tone "
+        "but specific. Respond in exactly this format, with nothing before or "
+        "after:\n"
+        "OVERALL: <2-3 sentence overall assessment, in English>\n"
+        "GRAMMAR: <0-100>\n"
+        "VOCABULARY: <0-100>\n"
+        "COHERENCE: <0-100>\n"
+        "STRENGTHS: <2-3 things the student did well, separated by semicolons>\n"
+        "IMPROVEMENTS: <2-3 specific, actionable suggestions, separated by semicolons>\n"
+        "MODEL: <a short improved version of the response IN CHINESE, 2-4 sentences>"
+    )
+    user = (
+        'Writing prompt: "' + prompt + '"\n\nStudent response (Chinese):\n' + student_text
+    )
+    return [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
+
+
+def build_writing_analysis_prompt(
+    prompt: str,
+    student_text: str,
+    difficulty_level: str,
+    target_language: str = "english",
+) -> list[dict]:
     difficulty_text = DIFFICULTY_INSTRUCTIONS.get(
         difficulty_level, DIFFICULTY_INSTRUCTIONS["B1"]
     )
+    if target_language == "chinese":
+        return _build_chinese_writing_analysis_prompt(
+            prompt, student_text, difficulty_text
+        )
     system = (
         "You are a supportive but honest English writing teacher giving feedback "
         "on a student's response to a writing prompt. "
@@ -578,12 +630,56 @@ QUIZ_CATEGORY_GUIDANCE = {
     "everyday_english": "Test practical everyday English: common phrases, situations, idioms.",
 }
 
+# Stage 31: Chinese quiz categories. "everyday_english" is meaningless for a
+# Chinese learner, and Chinese needs a category English has no equivalent of --
+# character/radical knowledge.
+CHINESE_QUIZ_CATEGORY_GUIDANCE = {
+    "grammar": (
+        "Test Chinese grammar: word order, measure words (量词), the particle 了, "
+        "把 and 被 constructions, comparisons with 比, complements with 得."
+    ),
+    "vocabulary": (
+        "Test Chinese vocabulary: word meanings, near-synonyms, and correct word "
+        "choice in context."
+    ),
+    "everyday_chinese": (
+        "Test practical everyday Chinese: common set phrases, polite expressions, "
+        "and what to say in ordinary situations (shopping, directions, meals)."
+    ),
+    "characters": (
+        "Test Chinese characters: recognising the meaning of a 汉字, identifying "
+        "radicals (部首), distinguishing visually similar characters, and matching "
+        "a character to its pinyin."
+    ),
+}
 
-def build_quiz_prompt(category: str, difficulty_level: str) -> list[dict]:
+
+def build_chinese_quiz_instructions() -> str:
+    """Stage 31: makes the quiz writer produce Mandarin questions."""
+    return (
+        "Write the quiz in Mandarin Chinese using SIMPLIFIED characters. "
+        "Every question and every option must be about Chinese, not English. "
+        "Where a question or option contains Chinese, append its pinyin in "
+        "parentheses so a learner can read it, e.g. 你好 (nǐ hǎo). "
+        "Keep the English words TRUE and FALSE exactly as-is for true_false options."
+    )
+
+
+def build_quiz_prompt(
+    category: str, difficulty_level: str, target_language: str = "english"
+) -> list[dict]:
     difficulty_text = DIFFICULTY_INSTRUCTIONS.get(
         difficulty_level, DIFFICULTY_INSTRUCTIONS["B1"]
     )
-    category_text = QUIZ_CATEGORY_GUIDANCE.get(category, QUIZ_CATEGORY_GUIDANCE["grammar"])
+    if target_language == "chinese":
+        guidance = CHINESE_QUIZ_CATEGORY_GUIDANCE
+        category_text = guidance.get(category, guidance["grammar"])
+        subject, language_rules = "Chinese", build_chinese_quiz_instructions()
+    else:
+        category_text = QUIZ_CATEGORY_GUIDANCE.get(
+            category, QUIZ_CATEGORY_GUIDANCE["grammar"]
+        )
+        subject, language_rules = "English", ""
 
     per_question = "\n".join(
         f"Q{i}_TYPE: <multiple_choice or true_false>\n"
@@ -596,9 +692,10 @@ def build_quiz_prompt(category: str, difficulty_level: str) -> list[dict]:
     )
 
     system = (
-        f"You are an English quiz writer. Create a {QUIZ_QUESTION_COUNT}-question "
+        f"You are a {subject} quiz writer. Create a {QUIZ_QUESTION_COUNT}-question "
         f"quiz. {category_text} {difficulty_text}\n\n"
-        "Mix multiple_choice and true_false question types. Make each question "
+        + (f"{language_rules}\n\n" if language_rules else "")
+        + "Mix multiple_choice and true_false question types. Make each question "
         "different and use varied vocabulary. Respond in exactly this format, "
         "with nothing before or after:\n"
         f"{per_question}"

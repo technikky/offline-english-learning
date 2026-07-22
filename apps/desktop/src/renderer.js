@@ -74,6 +74,7 @@ function showLoggedIn(user) {
   document.getElementById("profileEmail").textContent = user.email;
   renderAvatar();
   loadTargetLanguage();
+  loadQuizCategories();
   loadConversationTopics();
   loadNotebook();
   loadStudentAnalytics();
@@ -2233,7 +2234,7 @@ async function loadWritingPrompts() {
       card.innerHTML = `
         <span class="badge">${prompt.cefrLevel}</span>
         <h4>${prompt.title}</h4>
-        <div style="font-size: 12px; opacity: 0.75">${prompt.wordCountTarget} words${
+        <div style="font-size: 12px; opacity: 0.75">${prompt.wordCountTarget} ${writingUnitLabel()}${
           count > 0 ? ` · ${count} submission${count === 1 ? "" : "s"}` : " · not started"
         }</div>
       `;
@@ -2266,7 +2267,8 @@ async function openWritingPrompt(promptId) {
     document.getElementById("writingPromptText").textContent = p.prompt;
     document.getElementById("writingGrammarFocus").textContent = p.grammarFocus;
     document.getElementById("writingTargetVocab").textContent = p.targetVocabulary.join(", ");
-    document.getElementById("writingWordTarget").textContent = `${p.wordCountTarget} words`;
+    document.getElementById("writingWordTarget").textContent =
+      `${p.wordCountTarget} ${writingUnitLabel()}`;
     const hints = document.getElementById("writingHints");
     hints.innerHTML = "";
     for (const hint of p.hints) {
@@ -2286,10 +2288,24 @@ function closeWritingPrompt() {
   loadWritingPrompts();
 }
 
+// Chinese is written without spaces, so length is counted in characters (字数)
+// — splitting on whitespace would show "1 word" for a whole Chinese essay.
+function countWritingUnitsClient(text) {
+  if (currentTargetLanguage === "chinese") {
+    return Array.from(text).filter((ch) => /[一-鿿㐀-䶿]/.test(ch)).length;
+  }
+  return text ? text.split(/\s+/).filter((w) => w.length > 0).length : 0;
+}
+
+function writingUnitLabel() {
+  return currentTargetLanguage === "chinese" ? "characters" : "words";
+}
+
 function updateWritingWordCount() {
   const text = document.getElementById("writingTextarea").value.trim();
-  const count = text ? text.split(/\s+/).filter((w) => w.length > 0).length : 0;
-  document.getElementById("writingLiveWordCount").textContent = `(${count} words)`;
+  const count = countWritingUnitsClient(text);
+  document.getElementById("writingLiveWordCount").textContent =
+    `(${count} ${writingUnitLabel()})`;
 }
 
 function renderList(elId, items) {
@@ -2374,6 +2390,9 @@ const QUIZ_CATEGORY_LABELS = {
   grammar: "Grammar",
   vocabulary: "Vocabulary",
   everyday_english: "Everyday English",
+  // Stage 31: Chinese-only categories.
+  everyday_chinese: "Everyday Chinese",
+  characters: "Characters 汉字",
 };
 
 async function loadQuizProgress() {
@@ -3093,6 +3112,30 @@ function applyTargetLanguageToUi() {
   }
 }
 
+// The category list depends on the language being learned, so it's fetched
+// rather than hardcoded in the markup.
+async function loadQuizCategories() {
+  const select = document.getElementById("quizCategory");
+  if (!select) return;
+  try {
+    const res = await fetch(`${API_BASE}/quiz/categories`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const { categories } = await res.json();
+    if (!Array.isArray(categories) || categories.length === 0) return;
+    const previous = select.value;
+    select.innerHTML = "";
+    for (const category of categories) {
+      const option = document.createElement("option");
+      option.value = category;
+      option.textContent = QUIZ_CATEGORY_LABELS[category] || category;
+      select.appendChild(option);
+    }
+    if (categories.includes(previous)) select.value = previous;
+  } catch (err) {
+    // keep whatever options are already in the markup
+  }
+}
+
 async function loadTargetLanguage() {
   try {
     const res = await fetch(`${API_BASE}/me/language`, { headers: authHeaders() });
@@ -3123,6 +3166,8 @@ async function changeTargetLanguage(language) {
     loadGrammarTopics();
     loadReadingPassages();
     loadListeningClips();
+    loadWritingPrompts();
+    loadQuizCategories();
     loadPlacementStatus();
     if (!document.getElementById("pathPanel").classList.contains("hidden")) {
       loadCurriculum();

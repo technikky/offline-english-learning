@@ -703,7 +703,10 @@ export interface WritingPromptSummary {
   id: string;
   title: string;
   cefrLevel: CefrLevel;
+  /** Words for English; **characters** (字数) for Chinese. */
   wordCountTarget: number;
+  /** Stage 31: which language this prompt teaches (defaults to English). */
+  language?: TargetLanguage;
 }
 
 export interface WritingPromptDetail extends WritingPromptSummary {

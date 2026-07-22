@@ -4,7 +4,13 @@ import { and, desc, eq, isNotNull } from "drizzle-orm";
 import { db } from "../db/client";
 import { quizInstances } from "../db/schema";
 import { authenticate } from "../auth/middleware";
-import { aiQuizClient, isValidQuizCategory, type GeneratedQuizQuestion } from "../quiz/aiQuizClient";
+import {
+  aiQuizClient,
+  isValidQuizCategory,
+  listQuizCategories,
+  type GeneratedQuizQuestion,
+} from "../quiz/aiQuizClient";
+import { getTargetLanguage } from "../users/language";
 import type {
   CefrLevel,
   GenerateQuizRequest,
@@ -26,13 +32,14 @@ export function registerQuizRoutes(app: FastifyInstance): void {
     async (request, reply) => {
       const category = request.body?.category ?? "grammar";
       const difficultyLevel = request.body?.difficultyLevel ?? "B1";
-      if (!isValidQuizCategory(category)) {
+      const targetLanguage = await getTargetLanguage(request.authUser!.sub);
+      if (!isValidQuizCategory(category, targetLanguage)) {
         return reply.code(400).send({ error: "Invalid category" });
       }
 
       let questions: GeneratedQuizQuestion[];
       try {
-        questions = await aiQuizClient.generate(category, difficultyLevel);
+        questions = await aiQuizClient.generate(category, difficultyLevel, targetLanguage);
       } catch {
         return reply.code(502).send({ error: "AI service unavailable" });
       }
@@ -112,6 +119,12 @@ export function registerQuizRoutes(app: FastifyInstance): void {
       return response;
     },
   );
+
+  // Stage 31: the category list depends on the language being learned.
+  app.get("/quiz/categories", { preHandler: authenticate }, async (request) => {
+    const targetLanguage = await getTargetLanguage(request.authUser!.sub);
+    return { categories: listQuizCategories(targetLanguage) };
+  });
 
   app.get("/quiz/progress", { preHandler: authenticate }, async (request) => {
     const rows = await db

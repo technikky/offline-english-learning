@@ -1,4 +1,9 @@
-import type { WritingPromptDetail, WritingPromptSummary } from "@englishclass/types";
+import type {
+  TargetLanguage,
+  WritingPromptDetail,
+  WritingPromptSummary,
+} from "@englishclass/types";
+import { CHINESE_WRITING_PROMPTS } from "../chinese/prompts";
 
 // Stage 18: curated writing prompts. Per the master brief, every prompt is
 // scaffolded (topic, target vocabulary, grammar focus, word-count target,
@@ -65,19 +70,49 @@ const PROMPTS: WritingPromptDetail[] = [
   },
 ];
 
-export function listWritingPrompts(): WritingPromptSummary[] {
-  return PROMPTS.map(({ id, title, cefrLevel, wordCountTarget }) => ({
+// Stage 31: prompts for the language being learned. Ids stay globally unique
+// across languages, so only listing filters (the Stage 28 rule).
+export function listWritingPrompts(
+  language: TargetLanguage = "english",
+): WritingPromptSummary[] {
+  const catalog = language === "chinese" ? CHINESE_WRITING_PROMPTS : PROMPTS;
+  return catalog.map(({ id, title, cefrLevel, wordCountTarget, language: lang }) => ({
     id,
     title,
     cefrLevel,
     wordCountTarget,
+    language: lang,
   }));
 }
 
 export function getWritingPrompt(id: string): WritingPromptDetail | undefined {
-  return PROMPTS.find((p) => p.id === id);
+  return (
+    PROMPTS.find((p) => p.id === id) ?? CHINESE_WRITING_PROMPTS.find((p) => p.id === id)
+  );
 }
 
 export function countWords(text: string): number {
   return text.trim().split(/\s+/).filter((w) => w.length > 0).length;
+}
+
+const CJK_CHARACTER = /[一-鿿㐀-䶿]/;
+
+/** Counts Chinese characters (字数) -- the conventional measure of Chinese
+ * writing length. Punctuation and whitespace are excluded. */
+export function countChineseCharacters(text: string): number {
+  return Array.from(text).filter((ch) => CJK_CHARACTER.test(ch)).length;
+}
+
+/**
+ * Stage 31: length of a submission in the units that language actually uses.
+ *
+ * Chinese is written without spaces, so the English word-splitter would score
+ * an entire Chinese essay as 1 "word" -- making every submission look far below
+ * its length target.
+ */
+export function countWritingUnits(
+  text: string,
+  language: TargetLanguage = "english",
+): number {
+  return language === "chinese" ? countChineseCharacters(text) : countWords(text);
 }

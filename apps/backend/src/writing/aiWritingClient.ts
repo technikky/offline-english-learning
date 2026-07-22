@@ -17,11 +17,12 @@ export const aiWritingClient = {
     prompt: string,
     studentText: string,
     difficultyLevel: string,
+    targetLanguage: string = "english",
   ): Promise<WritingAnalysisResult> {
     const res = await fetch(`${AI_SERVICE_URL}/v1/writing/analyze`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, studentText, difficultyLevel }),
+      body: JSON.stringify({ prompt, studentText, difficultyLevel, targetLanguage }),
     });
     if (!res.ok) throw new Error(`AI service returned ${res.status}`);
     return (await res.json()) as WritingAnalysisResult;

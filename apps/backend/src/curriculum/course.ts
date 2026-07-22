@@ -113,10 +113,9 @@ export const ENGLISH_COURSE: Course = {
 // Chinese lesson name and an English gloss. Levels stay on the CEFR scale
 // internally (the UI shows the HSK equivalent for Chinese learners).
 //
-// Stage 29 added listening (the zh_CN Piper voice is now vendored). Writing
-// prompts and quiz categories are still English-specific, so Chinese units
-// omit them -- tracked as follow-ups in docs/36-stage29-plan.md; appending
-// lessons here is all that's needed once that content exists.
+// Stage 29 added listening (the zh_CN Piper voice is now vendored) and Stage 31
+// added Chinese writing prompts and Chinese quiz categories, so every unit now
+// covers all six lesson types. HSK 5-6 content is still to be written.
 export const CHINESE_COURSE: Course = {
   title: "中文 Chinese: HSK 1 to HSK 4",
   units: [
@@ -134,6 +133,8 @@ export const CHINESE_COURSE: Course = {
           title: "Listen: 自我介绍 (Introducing Yourself)",
         },
         { type: "conversation", refId: "daily_life", title: "Talk: Daily Life" },
+        { type: "writing", refId: "zh-write-my-family", title: "Write: 我的家 (My Family)" },
+        { type: "quiz", refId: "characters", title: "Quiz: Characters 汉字" },
       ],
     },
     {
@@ -154,6 +155,8 @@ export const CHINESE_COURSE: Course = {
           title: "Listen: 问路 (Asking for Directions)",
         },
         { type: "conversation", refId: "restaurant", title: "Talk: Restaurant" },
+        { type: "writing", refId: "zh-write-my-weekend", title: "Write: 我的周末 (My Weekend)" },
+        { type: "quiz", refId: "everyday_chinese", title: "Quiz: Everyday Chinese" },
       ],
     },
     {
@@ -174,6 +177,8 @@ export const CHINESE_COURSE: Course = {
           title: "Listen: 春节 (Spring Festival)",
         },
         { type: "conversation", refId: "free_talk", title: "Talk: Free Conversation" },
+        { type: "writing", refId: "zh-write-my-city", title: "Write: 我住的城市 (My City)" },
+        { type: "quiz", refId: "grammar", title: "Quiz: Grammar 语法" },
       ],
     },
     {
@@ -182,7 +187,23 @@ export const CHINESE_COURSE: Course = {
       title: "进阶表达 Advanced Expression",
       lessons: [
         { type: "grammar", refId: "zh-complement-degree", title: "Degree Complements with 得" },
+        {
+          type: "reading",
+          refId: "zh-read-phones-and-life",
+          title: "Read: 手机改变了生活 (Phones Changed Life)",
+        },
+        {
+          type: "listening",
+          refId: "zh-listen-recycling",
+          title: "Listen: 垃圾分类 (Waste Sorting)",
+        },
         { type: "conversation", refId: "debate", title: "Talk: Debate Practice" },
+        {
+          type: "writing",
+          refId: "zh-write-learning-opinion",
+          title: "Write: 学外语的看法 (Views on Language Learning)",
+        },
+        { type: "quiz", refId: "vocabulary", title: "Quiz: Vocabulary 词汇" },
       ],
     },
   ],

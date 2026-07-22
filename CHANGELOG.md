@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.19.0 — Stage 31: Chinese writing prompts and quiz categories
+
+- **Writing and Quiz now follow the learner's language**, closing the last two English-only modules. Every Chinese course unit now covers all six lesson types.
+- **Four curated Chinese writing prompts** (A1–B2: 我的家, 我的周末, 我住的城市, 学外语的看法), each scaffolded with target vocabulary as 汉字 + pinyin + gloss, a Chinese-specific grammar focus, and bilingual hints.
+- **Fixed a third latent English-only bug**: `countWords()` splits on whitespace, so an entire Chinese essay counted as **1 word** — every Chinese submission would have looked far below its length target. Chinese now counts **characters (字数)**, the conventional measure, with punctuation excluded; the live counter in the editor relabels itself accordingly.
+- **LanguageTool is skipped for Chinese.** The vendored rule set is English-only, so running it over 汉字 produces noise rather than corrections; Chinese submissions get the LLM analysis alone.
+- **Chinese writing feedback targets Chinese mistakes** — wrong or missing measure words, confusing 的/得/地, misplaced 了, word order, overusing 是, homophone character errors — rather than being a translation of the English rubric. Feedback is written **in English** so a beginner can read it, while the model answer comes back **in Chinese**.
+- **Quiz categories are per language**: English keeps `grammar`/`vocabulary`/`everyday_english`; Chinese gets `grammar`/`vocabulary`/`everyday_chinese` plus **`characters`** — a category English has no equivalent of, testing 汉字 meaning, radicals (部首), similar-looking characters, and character↔pinyin matching. Chinese quizzes are generated in simplified characters with pinyin, while `True`/`False` stay in English so the marker-based parser still works. New `GET /quiz/categories` drives the dropdown instead of hardcoded markup, and category validation is language-scoped (a Chinese learner requesting `everyday_english` gets a 400).
+- **Two new B2 Chinese items** (reading 手机改变了生活 with pinyin + translation, and listening 垃圾分类) — added because the new "every Chinese unit covers all six lesson types" test caught the B2 unit having no reading or listening, and filling the gap beat weakening the assertion.
+- Verified: backend **161 tests passing** (+9), AI service **80 pytest passing** (+9), backend `tsc` clean, types build clean, `renderer.js` `node --check` clean.
+
 ## v1.18.0 — Stage 30: Mandarin tone scoring
 
 - **Chinese pronunciation is now scored from pitch, not from the transcript.** Previously a learner could say 妈 (mā) with a falling tone, have Whisper still transcribe 妈, and score 100% while being clearly wrong to a native ear — tone *is* the phoneme in Mandarin, so it has to be judged from the audio.

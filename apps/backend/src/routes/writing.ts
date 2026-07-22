@@ -3,7 +3,12 @@ import { desc, eq } from "drizzle-orm";
 import { db } from "../db/client";
 import { writingSubmissions } from "../db/schema";
 import { authenticate } from "../auth/middleware";
-import { listWritingPrompts, getWritingPrompt, countWords } from "../writing/prompts";
+import {
+  listWritingPrompts,
+  getWritingPrompt,
+  countWritingUnits,
+} from "../writing/prompts";
+import { getTargetLanguage } from "../users/language";
 import { aiWritingClient } from "../writing/aiWritingClient";
 import { languageToolClient, type GrammarMatch } from "../grammar/languageToolClient";
 import type {
@@ -14,8 +19,8 @@ import type {
 } from "@englishclass/types";
 
 export function registerWritingRoutes(app: FastifyInstance): void {
-  app.get("/writing/prompts", { preHandler: authenticate }, async () => {
-    return listWritingPrompts();
+  app.get("/writing/prompts", { preHandler: authenticate }, async (request) => {
+    return listWritingPrompts(await getTargetLanguage(request.authUser!.sub));
   });
 
   app.get<{ Params: { id: string } }>(
@@ -40,19 +45,32 @@ export function registerWritingRoutes(app: FastifyInstance): void {
         return reply.code(400).send({ error: "text is required" });
       }
 
+      const targetLanguage = await getTargetLanguage(request.authUser!.sub);
+
       // Concrete grammar/spelling issues come from LanguageTool (deterministic,
       // reused from Stage 5); higher-level analysis comes from the LLM. If
       // LanguageTool is down, degrade to just the LLM feedback rather than fail.
-      let mistakes: GrammarMatch[];
-      try {
-        mistakes = await languageToolClient.check(text);
-      } catch {
-        mistakes = [];
+      //
+      // Stage 31: the vendored LanguageTool is an English rule set, so it is
+      // skipped entirely for Chinese -- running it over 汉字 produces noise, not
+      // corrections. Chinese writers get the LLM analysis only.
+      let mistakes: GrammarMatch[] = [];
+      if (targetLanguage !== "chinese") {
+        try {
+          mistakes = await languageToolClient.check(text);
+        } catch {
+          mistakes = [];
+        }
       }
 
       let analysis;
       try {
-        analysis = await aiWritingClient.analyze(prompt.prompt, text, prompt.cefrLevel);
+        analysis = await aiWritingClient.analyze(
+          prompt.prompt,
+          text,
+          prompt.cefrLevel,
+          targetLanguage,
+        );
       } catch {
         return reply.code(502).send({ error: "AI service unavailable" });
       }
@@ -71,7 +89,7 @@ export function registerWritingRoutes(app: FastifyInstance): void {
           ruleDescription: m.ruleDescription,
           category: m.category,
         })),
-        wordCount: countWords(text),
+        wordCount: countWritingUnits(text, targetLanguage),
       };
 
       await db.insert(writingSubmissions).values({

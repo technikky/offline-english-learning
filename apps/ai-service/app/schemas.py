@@ -122,6 +122,8 @@ class ReadingComprehensionResponse(BaseModel):
 
 
 class WritingAnalysisRequest(BaseModel):
+    # Stage 31: Chinese writing gets Chinese-specific feedback criteria.
+    targetLanguage: Literal["english", "chinese"] = "english"
     prompt: str
     studentText: str
     difficultyLevel: str = "B1"
@@ -138,6 +140,8 @@ class WritingAnalysisResponse(BaseModel):
 
 
 class QuizGenerateRequest(BaseModel):
+    # Stage 31: quiz categories and question language follow the learner.
+    targetLanguage: Literal["english", "chinese"] = "english"
     category: str = "grammar"
     difficultyLevel: str = "B1"
 
