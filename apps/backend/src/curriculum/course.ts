@@ -1,0 +1,115 @@
+import type { CefrLevel, LessonType } from "@englishclass/types";
+
+// Stage 27: the structured learning path. A single curated course that
+// sequences the existing practice modules into an ordered A1->C1 route. Each
+// lesson points at content that already exists (a grammar topic, reading
+// passage, listening clip, writing prompt, conversation scenario, or quiz
+// category) by id -- the curriculum is a pure overlay, adding *ordering and
+// progression* on top of the modules without duplicating their content.
+//
+// Curated/static for the same reason as the grammar curriculum and passages
+// (Stages 14/15): the learning sequence is a pedagogical decision that should
+// be reliable and deliberate. Referenced ids are validated against the real
+// content modules by course.test.ts, so a typo or a removed passage fails the
+// build rather than shipping a broken path. Adding a unit/lesson is just
+// appending here (and, ideally, adding the referenced content).
+
+export interface CourseLesson {
+  type: LessonType;
+  /** Content id / scenario / quiz category the lesson opens. */
+  refId: string;
+  title: string;
+}
+
+export interface CourseUnit {
+  id: string;
+  level: CefrLevel;
+  title: string;
+  lessons: CourseLesson[];
+}
+
+export interface Course {
+  title: string;
+  units: CourseUnit[];
+}
+
+export const COURSE: Course = {
+  title: "English: A1 to C1",
+  units: [
+    {
+      id: "unit-a1",
+      level: "A1",
+      title: "Everyday Basics",
+      lessons: [
+        { type: "grammar", refId: "present-tense", title: "Present Simple Tense" },
+        { type: "grammar", refId: "past-tense", title: "Past Simple Tense" },
+        { type: "reading", refId: "a-day-at-the-park", title: "Read: A Day at the Park" },
+        { type: "listening", refId: "listen-morning-routine", title: "Listen: A Morning Routine" },
+        { type: "writing", refId: "write-my-family", title: "Write: My Family" },
+        { type: "conversation", refId: "daily_life", title: "Talk: Daily Life" },
+        { type: "quiz", refId: "grammar", title: "Quiz: Grammar" },
+      ],
+    },
+    {
+      id: "unit-a2",
+      level: "A2",
+      title: "Getting Around",
+      lessons: [
+        { type: "grammar", refId: "articles", title: "Articles: a, an, the" },
+        { type: "grammar", refId: "prepositions", title: "Prepositions" },
+        { type: "reading", refId: "the-new-neighbor", title: "Read: The New Neighbor" },
+        { type: "listening", refId: "listen-weekend-plans", title: "Listen: Weekend Plans" },
+        { type: "writing", refId: "write-a-memorable-trip", title: "Write: A Memorable Trip" },
+        { type: "conversation", refId: "shopping", title: "Talk: Shopping" },
+        { type: "quiz", refId: "everyday_english", title: "Quiz: Everyday English" },
+      ],
+    },
+    {
+      id: "unit-b1",
+      level: "B1",
+      title: "Expressing Yourself",
+      lessons: [
+        { type: "grammar", refId: "present-perfect", title: "Present Perfect Tense" },
+        { type: "grammar", refId: "passive-voice", title: "The Passive Voice" },
+        { type: "reading", refId: "working-from-home", title: "Read: Working from Home" },
+        { type: "listening", refId: "listen-office-meeting", title: "Listen: An Office Meeting" },
+        { type: "writing", refId: "write-technology-opinion", title: "Write: Technology Opinion" },
+        { type: "conversation", refId: "business_meeting", title: "Talk: Business Meeting" },
+        { type: "quiz", refId: "vocabulary", title: "Quiz: Vocabulary" },
+      ],
+    },
+    {
+      id: "unit-b2",
+      level: "B2",
+      title: "Nuance & Argument",
+      lessons: [
+        { type: "grammar", refId: "conditionals", title: "Conditionals" },
+        { type: "grammar", refId: "modal-verbs", title: "Modal Verbs" },
+        { type: "reading", refId: "the-power-of-habits", title: "Read: The Power of Habits" },
+        { type: "listening", refId: "listen-climate-report", title: "Listen: A Climate Report" },
+        { type: "writing", refId: "write-environment-essay", title: "Write: Environment Essay" },
+        { type: "conversation", refId: "debate", title: "Talk: Debate Practice" },
+        { type: "quiz", refId: "grammar", title: "Quiz: Grammar" },
+      ],
+    },
+    {
+      id: "unit-c1",
+      level: "C1",
+      title: "Mastery",
+      // C1 listening/writing content isn't authored yet (see docs/34-stage27-plan.md);
+      // the unit uses the C1 content that does exist. Adding C1 clips/prompts later
+      // and appending lessons here extends the path with no other change.
+      lessons: [
+        { type: "grammar", refId: "relative-clauses", title: "Relative Clauses" },
+        { type: "reading", refId: "the-ethics-of-artificial-intelligence", title: "Read: The Ethics of AI" },
+        { type: "conversation", refId: "culture", title: "Talk: Culture" },
+        { type: "quiz", refId: "vocabulary", title: "Quiz: Vocabulary" },
+      ],
+    },
+  ],
+};
+
+/** Stable, unique lesson id within the course. */
+export function lessonId(unitId: string, lesson: CourseLesson): string {
+  return `${unitId}:${lesson.type}:${lesson.refId}`;
+}

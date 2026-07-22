@@ -298,6 +298,47 @@ export interface PlacementStatusResponse {
   completedAt: string | null;
 }
 
+// Stage 27: structured curriculum path. A course sequences the existing
+// practice modules into an ordered A1->C1 route of units and lessons. Lesson
+// completion is derived at read time from the per-module result tables, and
+// the recommended entry unit is seeded from the placement level.
+export type LessonType =
+  | "grammar"
+  | "reading"
+  | "listening"
+  | "writing"
+  | "conversation"
+  | "quiz";
+
+export interface CurriculumLessonDto {
+  /** Stable, unique within the course. */
+  id: string;
+  type: LessonType;
+  /** The referenced content id (grammar topic, passage, clip, prompt), scenario, or quiz category. */
+  refId: string;
+  title: string;
+  completed: boolean;
+}
+
+export interface CurriculumUnitDto {
+  id: string;
+  level: CefrLevel;
+  title: string;
+  lessons: CurriculumLessonDto[];
+  completedCount: number;
+  totalCount: number;
+}
+
+export interface CurriculumResponse {
+  courseTitle: string;
+  units: CurriculumUnitDto[];
+  placementLevel: CefrLevel | null;
+  /** Unit the learner should start/continue with, from their placement level and progress. */
+  recommendedUnitId: string | null;
+  completedLessons: number;
+  totalLessons: number;
+}
+
 export interface SimilarWordsResponse {
   words: VocabularyDto[];
 }

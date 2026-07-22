@@ -181,6 +181,87 @@
       .review-rate-btn[data-rating="hard"] { background: #b45309; }
       .review-rate-btn[data-rating="good"] { background: #15803d; }
       .review-rate-btn[data-rating="easy"] { background: #0e7490; }
+      /* Stage 27: curriculum path */
+      .path-progress {
+        height: 8px;
+        background: #1e293b;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 10px;
+      }
+      .path-progress-fill {
+        height: 100%;
+        width: 0%;
+        background: #15803d;
+        transition: width 0.3s ease;
+      }
+      .path-unit {
+        margin-bottom: 14px;
+      }
+      .path-unit-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .path-unit-title {
+        font-weight: 600;
+      }
+      .path-level-badge {
+        font-size: 10px;
+        background: #334155;
+        border-radius: 4px;
+        padding: 1px 6px;
+      }
+      .path-unit-count {
+        margin-left: auto;
+        font-size: 12px;
+        opacity: 0.7;
+      }
+      .path-recommended {
+        font-size: 10px;
+        background: #4338ca;
+        border-radius: 4px;
+        padding: 1px 6px;
+      }
+      .path-unit.is-recommended {
+        outline: 1px solid #4338ca;
+        outline-offset: 6px;
+        border-radius: 4px;
+      }
+      .path-lesson {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        margin: 4px 0;
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .path-lesson:hover {
+        border-color: #4338ca;
+      }
+      .path-lesson-check {
+        width: 18px;
+        text-align: center;
+        opacity: 0.5;
+      }
+      .path-lesson.done .path-lesson-check {
+        opacity: 1;
+        color: #22c55e;
+      }
+      .path-lesson.done .path-lesson-title {
+        opacity: 0.65;
+        text-decoration: line-through;
+      }
+      .path-lesson-type {
+        margin-left: auto;
+        font-size: 10px;
+        opacity: 0.6;
+        text-transform: uppercase;
+      }
       /* Stage 26: placement test */
       #placementLevelPanel {
         font-size: 13px;
@@ -899,6 +980,7 @@
 
       <div id="main">
         <div id="mainTabs" class="main-tabs">
+          <button id="tabPathBtn" class="main-tab">🗺️ Path</button>
           <button id="tabConversationBtn" class="main-tab active">💬 Conversation</button>
           <button id="tabGrammarBtn" class="main-tab">📘 Grammar</button>
           <button id="tabReadingBtn" class="main-tab">📖 Reading</button>
@@ -907,6 +989,19 @@
           <button id="tabQuizBtn" class="main-tab">❓ Quiz</button>
           <button id="tabReviewBtn" class="main-tab">🔁 Review<span id="reviewDueBadge" class="due-badge hidden"></span></button>
           <button id="tabHistoryBtn" class="main-tab">📜 History</button>
+        </div>
+
+        <div id="pathPanel" class="hidden">
+          <div class="panel">
+            <h3 id="pathTitle">Learning path</h3>
+            <p style="font-size:12px;opacity:0.75;margin-top:-4px">
+              A step-by-step route from beginner to advanced. Finish an activity in
+              its own module and it's ticked off here automatically.
+            </p>
+            <div id="pathSummary" style="font-size:13px;opacity:0.85"></div>
+            <div class="path-progress"><div id="pathProgressFill" class="path-progress-fill"></div></div>
+          </div>
+          <div id="pathUnits"></div>
         </div>
 
         <div id="chatPanel">

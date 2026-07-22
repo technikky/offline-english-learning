@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.15.0 — Stage 27: Structured curriculum path
+
+- **The eight practice modules are now an ordered route, not an à-la-carte menu.** A curated course, `English: A1 to C1`, sequences grammar, reading, listening, writing, conversation and quiz work into five units (one per CEFR level, A1–C1), giving a learner a clear "what next" from beginner to advanced.
+- **New 🗺️ Path tab** with an overall progress bar, per-unit `done/total` counts and CEFR badges, a **START HERE** marker on the recommended unit, and lessons as tickable steps. Clicking a lesson **deep-links straight into that activity** (opens the exact grammar topic / passage / clip / prompt, or preselects the conversation scenario / quiz category).
+- **Progress is derived, not tracked separately**: completion is computed at read time from the existing per-module result tables (same approach as the Stage 22 history view), so finishing an activity in its own module ticks it off in the path automatically — and existing student progress counts retroactively. **No new tables were added.**
+- **The path is a pure overlay**: lessons reference existing content by id rather than duplicating it. A reference-integrity test validates every lesson id against the real content modules, so a typo or removed passage fails the suite instead of shipping a dead lesson.
+- **Seeded by the placement test** (Stage 26): `recommendedUnitId` is the first unfinished unit at or above the learner's placement level, with sensible fallbacks. New route `GET /curriculum`.
+- Known limitations, documented in the plan doc: quiz completion is by category (shared across units), the C1 unit is thinner because no C1 listening/writing content exists yet, and units are advisory rather than locked.
+- Verified: backend **133 tests passing** (+12: 3 reference-integrity, 5 pure progress/recommendation, 4 end-to-end), backend `tsc` clean, types build clean, `renderer.js` `node --check` clean. Live boot against a throwaway DB confirmed `GET /curriculum` is registered and reachable (401 unauthenticated vs 404 for unknown paths) with `dbConnected: true`.
+
 ## v1.14.0 — Stage 26: Adaptive CEFR placement test
 
 - **Learners now get a real starting level instead of a hardcoded B1 guess.** A short adaptive placement test assesses a student in ~1 minute and stores the result, which seeds their conversation difficulty (and, in a later stage, the structured learning path). Entirely offline — no new models or vendored assets.

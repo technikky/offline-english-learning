@@ -1581,6 +1581,7 @@ const GRAMMAR_LEVEL_LABELS = {
 
 function showMainTab(tabName) {
   const tabs = {
+    path: { btn: "tabPathBtn", panel: "pathPanel" },
     conversation: { btn: "tabConversationBtn", panel: "chatPanel" },
     grammar: { btn: "tabGrammarBtn", panel: "grammarPanel" },
     reading: { btn: "tabReadingBtn", panel: "readingPanel" },
@@ -2843,6 +2844,152 @@ function showPlacementResult(level) {
 document.getElementById("placementStartBtn").addEventListener("click", startPlacementTest);
 document.getElementById("placementSubmitBtn").addEventListener("click", submitPlacementAnswers);
 document.getElementById("placementCloseBtn").addEventListener("click", closePlacementModal);
+
+// --- Structured learning path (Stage 27) ---
+
+const LESSON_TYPE_LABELS = {
+  grammar: "Grammar",
+  reading: "Reading",
+  listening: "Listening",
+  writing: "Writing",
+  conversation: "Talk",
+  quiz: "Quiz",
+};
+
+function showPathTab() {
+  showMainTab("path");
+  loadCurriculum();
+}
+
+// Clicking a lesson takes the student straight to that activity in its own
+// module, rather than making them hunt for it in the relevant tab.
+function openLesson(lesson) {
+  switch (lesson.type) {
+    case "grammar":
+      showGrammarTab();
+      openGrammarTopic(lesson.refId);
+      break;
+    case "reading":
+      showReadingTab();
+      openReadingPassage(lesson.refId);
+      break;
+    case "listening":
+      showListeningTab();
+      openListeningClip(lesson.refId);
+      break;
+    case "writing":
+      showWritingTab();
+      openWritingPrompt(lesson.refId);
+      break;
+    case "quiz": {
+      showQuizTab();
+      const select = document.getElementById("quizCategory");
+      if (select) select.value = lesson.refId;
+      break;
+    }
+    case "conversation": {
+      showChatTab();
+      const select = document.getElementById("scenarioSelect");
+      if (select) select.value = lesson.refId;
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+function renderPathLesson(lesson) {
+  const row = document.createElement("div");
+  row.className = lesson.completed ? "path-lesson done" : "path-lesson";
+
+  const check = document.createElement("span");
+  check.className = "path-lesson-check";
+  check.textContent = lesson.completed ? "✓" : "○";
+
+  const title = document.createElement("span");
+  title.className = "path-lesson-title";
+  title.textContent = lesson.title;
+
+  const type = document.createElement("span");
+  type.className = "path-lesson-type";
+  type.textContent = LESSON_TYPE_LABELS[lesson.type] || lesson.type;
+
+  row.appendChild(check);
+  row.appendChild(title);
+  row.appendChild(type);
+  row.addEventListener("click", () => openLesson(lesson));
+  return row;
+}
+
+function renderPathUnit(unit, recommendedUnitId) {
+  const box = document.createElement("div");
+  box.className = "panel path-unit" + (unit.id === recommendedUnitId ? " is-recommended" : "");
+
+  const header = document.createElement("div");
+  header.className = "path-unit-header";
+
+  const level = document.createElement("span");
+  level.className = "path-level-badge";
+  level.textContent = unit.level;
+
+  const title = document.createElement("span");
+  title.className = "path-unit-title";
+  title.textContent = unit.title;
+
+  header.appendChild(level);
+  header.appendChild(title);
+
+  if (unit.id === recommendedUnitId) {
+    const rec = document.createElement("span");
+    rec.className = "path-recommended";
+    rec.textContent = "START HERE";
+    header.appendChild(rec);
+  }
+
+  const count = document.createElement("span");
+  count.className = "path-unit-count";
+  count.textContent = `${unit.completedCount}/${unit.totalCount}`;
+  header.appendChild(count);
+
+  box.appendChild(header);
+  for (const lesson of unit.lessons) {
+    box.appendChild(renderPathLesson(lesson));
+  }
+  return box;
+}
+
+async function loadCurriculum() {
+  const container = document.getElementById("pathUnits");
+  const summary = document.getElementById("pathSummary");
+  try {
+    const res = await fetch(`${API_BASE}/curriculum`, { headers: authHeaders() });
+    if (!res.ok) {
+      summary.textContent = "Could not load your learning path.";
+      return;
+    }
+    const data = await res.json();
+
+    document.getElementById("pathTitle").textContent = data.courseTitle;
+    const pct = data.totalLessons > 0
+      ? Math.round((data.completedLessons / data.totalLessons) * 100)
+      : 0;
+    const placedText = data.placementLevel
+      ? `Placed at ${data.placementLevel}.`
+      : "Take the placement test to start at the right level.";
+    summary.textContent =
+      `${data.completedLessons} of ${data.totalLessons} steps complete (${pct}%). ${placedText}`;
+    document.getElementById("pathProgressFill").style.width = `${pct}%`;
+
+    container.innerHTML = "";
+    for (const unit of data.units) {
+      container.appendChild(renderPathUnit(unit, data.recommendedUnitId));
+    }
+  } catch (err) {
+    summary.textContent = "Could not reach the backend.";
+  }
+}
+
+document.getElementById("tabPathBtn").addEventListener("click", showPathTab);
 
 // --- Platform super-admin: school management (Stage 20) ---
 
