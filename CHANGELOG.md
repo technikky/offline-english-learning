@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.26.0 - Stage 38: Curated quiz question bank
+
+- **Quizzes were the last module still generated entirely by the LLM on every request.** That meant a several-second wait, quality that varied run to run, and - most damagingly - the occasional malformed question whose four options contained *no correct answer*, which in an assessment is worse than useless.
+- **126 curated questions**, 3 per `(language, category, level)` across all 42 buckets: English grammar/vocabulary/everyday_english and Chinese grammar/vocabulary/everyday_chinese/**characters** (which has no English counterpart - it tests radicals, confusable pairs like 日/目 and 买/卖, the 的/得/地 distinction, and character-to-pinyin matching).
+- **The AI is no longer called on the happy path.** Selection takes exact-level questions first and widens to the nearest levels until the quiz is full, so every one of the 42 buckets fills a complete 5-question quiz from curated content while staying within one level of the target. Quizzes are now instant and always well-formed; a test asserts zero AI calls for a covered bucket.
+- **An AI failure no longer breaks quiz generation.** Previously an unavailable model returned 502 and no quiz; curated questions now serve it, with 502 remaining only if the bank yields nothing *and* generation fails.
+- Repeated quizzes shuffle within a level band (Fisher-Yates with an injectable RNG, so selection stays testable), because a student re-taking a quiz shouldn't replay the same five items.
+- **Tests assert the well-formedness the AI could not guarantee**: `correctAnswer` is always among the options - exactly the failure mode that motivated this stage - plus no duplicate options, correct option counts per type, valid category-for-language, and that every bucket fills a whole quiz unaided.
+- The pre-existing grading test was **rewritten rather than deleted**: it hardcoded the AI fake's two answers, and now reads the stored answers from `quizInstances.questionsJson` - which additionally proves answers are held server-side and never sent to the client - then checks partial scoring, case-insensitive grading, answer reveal and progress aggregation.
+- Documented limitations: 3 questions per bucket fills any single quiz but repeats will show after a few attempts at the same bucket; level assignment is editorial; the AI fallback path remains unvalidated if a future category has no curated coverage.
+- Verified: backend **208 tests passing** (+11), desktop 11 passing, AI service 80 pytest passing, backend `tsc` clean.
+
 ## v1.25.0 - Stage 37: Bundled CJK font
 
 - **Removes the last dependency on the host machine for Chinese rendering.** Chinese displayed fine on Windows via system fonts, so the app *worked* - but on a minimal or non-Windows image with no CJK font installed, the entire Chinese side (interface, wordlist, reading passages) renders as tofu boxes. For a project whose defining constraint is "all required resources must exist locally", a system font was the last unexamined external dependency.

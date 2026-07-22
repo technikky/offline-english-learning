@@ -11,6 +11,7 @@ import {
   type GeneratedQuizQuestion,
 } from "../quiz/aiQuizClient";
 import { getTargetLanguage } from "../users/language";
+import { selectQuestions } from "../quiz/questionBank";
 import type {
   CefrLevel,
   GenerateQuizRequest,
@@ -20,6 +21,9 @@ import type {
   QuizResultResponse,
   SubmitQuizRequest,
 } from "@englishclass/types";
+
+// Matches QUIZ_QUESTION_COUNT in the AI service's prompt builder.
+const QUIZ_QUESTION_COUNT = 5;
 
 function normalize(value: string): string {
   return value.trim().toLowerCase();
@@ -37,12 +41,40 @@ export function registerQuizRoutes(app: FastifyInstance): void {
         return reply.code(400).send({ error: "Invalid category" });
       }
 
-      let questions: GeneratedQuizQuestion[];
-      try {
-        questions = await aiQuizClient.generate(category, difficultyLevel, targetLanguage);
-      } catch {
-        return reply.code(502).send({ error: "AI service unavailable" });
+      // Stage 38: curated questions first, AI only for any shortfall. A bucket
+      // that the bank covers never touches the model, so the quiz appears
+      // instantly and is always well-formed -- the same curated-first pattern
+      // as the Stage 33 vocabulary wordlist.
+      const curated = selectQuestions(
+        targetLanguage,
+        category,
+        difficultyLevel as CefrLevel,
+        QUIZ_QUESTION_COUNT,
+      );
+      let questions: GeneratedQuizQuestion[] = curated.map((q) => ({
+        type: q.type,
+        question: q.question,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation,
+      }));
+
+      if (questions.length < QUIZ_QUESTION_COUNT) {
+        try {
+          const generated = await aiQuizClient.generate(
+            category,
+            difficultyLevel,
+            targetLanguage,
+          );
+          questions = [...questions, ...generated].slice(0, QUIZ_QUESTION_COUNT);
+        } catch {
+          // A generation failure is only fatal if the bank gave us nothing.
+          if (questions.length === 0) {
+            return reply.code(502).send({ error: "AI service unavailable" });
+          }
+        }
       }
+
       if (questions.length === 0) {
         return reply.code(502).send({ error: "AI service could not generate a quiz" });
       }
