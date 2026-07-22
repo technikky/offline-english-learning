@@ -82,6 +82,8 @@ function showLoggedIn(user) {
   loadWritingPrompts();
   loadQuizProgress();
   loadLearningHistory();
+  refreshReviewBadge();
+  loadPlacementStatus();
 }
 
 function showLoggedOut() {
@@ -426,6 +428,7 @@ async function addWordToNotebook(word, errorEl) {
     }
 
     await loadNotebook();
+    refreshReviewBadge(); // a newly-saved word is due immediately
   } catch (err) {
     if (errorEl) errorEl.textContent = "Could not reach the backend.";
   }
@@ -438,6 +441,7 @@ async function removeFromNotebook(entryId) {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     await loadNotebook();
+    refreshReviewBadge();
   } catch (err) {
     // ignore; list will just look stale until next reload
   }
@@ -1583,6 +1587,7 @@ function showMainTab(tabName) {
     listening: { btn: "tabListeningBtn", panel: "listeningPanel" },
     writing: { btn: "tabWritingBtn", panel: "writingPanel" },
     quiz: { btn: "tabQuizBtn", panel: "quizPanel" },
+    review: { btn: "tabReviewBtn", panel: "reviewPanel" },
     history: { btn: "tabHistoryBtn", panel: "historyPanel" },
   };
   for (const [name, ids] of Object.entries(tabs)) {
@@ -1619,6 +1624,12 @@ function showQuizTab() {
 function showHistoryTab() {
   showMainTab("history");
   loadLearningHistory();
+}
+
+function showReviewTab() {
+  showMainTab("review");
+  resetReviewSession();
+  loadReviewStats();
 }
 
 async function loadGrammarTopics() {
@@ -2527,6 +2538,311 @@ async function loadLearningHistory() {
 
 document.getElementById("tabHistoryBtn").addEventListener("click", showHistoryTab);
 document.getElementById("historyRefreshBtn").addEventListener("click", loadLearningHistory);
+
+// --- Vocabulary spaced-repetition review (Stage 25) ---
+
+let reviewQueue = []; // NotebookEntryDto[] currently being worked through
+let reviewIndex = 0;
+let reviewCompleted = 0;
+
+// Updates the little count on the Review tab so a student can see at a glance
+// how many words are waiting, without opening the tab. Silent on failure — the
+// badge is a convenience, not core flow.
+async function refreshReviewBadge() {
+  const badge = document.getElementById("reviewDueBadge");
+  if (!badge) return;
+  try {
+    const res = await fetch(`${API_BASE}/vocabulary/review/stats`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const stats = await res.json();
+    if (stats.due > 0) {
+      badge.textContent = String(stats.due);
+      badge.classList.remove("hidden");
+    } else {
+      badge.classList.add("hidden");
+    }
+  } catch (err) {
+    // ignore
+  }
+}
+
+async function loadReviewStats() {
+  const el = document.getElementById("reviewStats");
+  const startBtn = document.getElementById("reviewStartBtn");
+  try {
+    const res = await fetch(`${API_BASE}/vocabulary/review/stats`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const stats = await res.json();
+    el.textContent =
+      `${stats.due} due now · ${stats.learning} still learning · ` +
+      `${stats.mature} mastered · ${stats.total} words total`;
+    startBtn.disabled = stats.due === 0;
+    startBtn.textContent = stats.due > 0 ? `Start review (${stats.due})` : "Nothing due right now";
+  } catch (err) {
+    el.textContent = "Could not load review stats.";
+  }
+}
+
+function resetReviewSession() {
+  reviewQueue = [];
+  reviewIndex = 0;
+  reviewCompleted = 0;
+  document.getElementById("reviewCardArea").classList.add("hidden");
+  document.getElementById("reviewDone").classList.add("hidden");
+}
+
+async function startReviewSession() {
+  try {
+    const res = await fetch(`${API_BASE}/vocabulary/review/queue?limit=50`, {
+      headers: authHeaders(),
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    reviewQueue = data.cards || [];
+    reviewIndex = 0;
+    reviewCompleted = 0;
+    if (reviewQueue.length === 0) {
+      document.getElementById("reviewDone").classList.remove("hidden");
+      document.getElementById("reviewCardArea").classList.add("hidden");
+      return;
+    }
+    document.getElementById("reviewDone").classList.add("hidden");
+    document.getElementById("reviewCardArea").classList.remove("hidden");
+    renderReviewCard();
+  } catch (err) {
+    document.getElementById("reviewStats").textContent = "Could not start review.";
+  }
+}
+
+function renderReviewCard() {
+  const entry = reviewQueue[reviewIndex];
+  const vocab = entry.vocabulary;
+
+  document.getElementById("reviewProgress").textContent =
+    `Card ${reviewIndex + 1} of ${reviewQueue.length}`;
+  document.getElementById("reviewWord").textContent = vocab.word;
+  document.getElementById("reviewCefr").textContent = vocab.cefrLevel;
+
+  // Reset to the "prompt" side: word shown, answer hidden until the student
+  // commits to recalling it (the core of active-recall practice).
+  const answer = document.getElementById("reviewAnswer");
+  answer.innerHTML = "";
+  const def = document.createElement("div");
+  def.textContent = vocab.definition;
+  answer.appendChild(def);
+  if (vocab.example) {
+    const ex = document.createElement("div");
+    ex.className = "example";
+    ex.textContent = vocab.example;
+    answer.appendChild(ex);
+  }
+  if (vocab.synonyms && vocab.synonyms.length > 0) {
+    const syn = document.createElement("div");
+    syn.style.marginTop = "6px";
+    syn.textContent = `Synonyms: ${vocab.synonyms.join(", ")}`;
+    answer.appendChild(syn);
+  }
+  answer.classList.add("hidden");
+  document.getElementById("reviewShowBtn").classList.remove("hidden");
+  document.getElementById("reviewRatingRow").classList.add("hidden");
+}
+
+function revealReviewAnswer() {
+  document.getElementById("reviewAnswer").classList.remove("hidden");
+  document.getElementById("reviewShowBtn").classList.add("hidden");
+  document.getElementById("reviewRatingRow").classList.remove("hidden");
+}
+
+async function gradeReviewCard(rating) {
+  const entry = reviewQueue[reviewIndex];
+  if (!entry) return;
+  try {
+    const res = await fetch(`${API_BASE}/vocabulary/review/${entry.id}`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ rating }),
+    });
+    if (!res.ok) return;
+  } catch (err) {
+    return; // leave the card in place so the student can retry
+  }
+
+  reviewCompleted += 1;
+  reviewIndex += 1;
+  if (reviewIndex >= reviewQueue.length) {
+    document.getElementById("reviewCardArea").classList.add("hidden");
+    document.getElementById("reviewDone").classList.remove("hidden");
+    loadReviewStats();
+    refreshReviewBadge();
+  } else {
+    renderReviewCard();
+  }
+}
+
+document.getElementById("tabReviewBtn").addEventListener("click", showReviewTab);
+document.getElementById("reviewStartBtn").addEventListener("click", startReviewSession);
+document.getElementById("reviewShowBtn").addEventListener("click", revealReviewAnswer);
+for (const btn of document.querySelectorAll(".review-rate-btn")) {
+  btn.addEventListener("click", () => gradeReviewCard(btn.dataset.rating));
+}
+
+// --- CEFR placement test (Stage 26) ---
+
+const CEFR_LEVEL_LABELS = {
+  A1: "Beginner",
+  A2: "Elementary",
+  B1: "Intermediate",
+  B2: "Upper-intermediate",
+  C1: "Advanced",
+  C2: "Proficient",
+};
+
+let placementSessionId = null;
+let currentPlacementBlock = null;
+
+async function loadPlacementStatus() {
+  const valueEl = document.getElementById("placementLevelValue");
+  const hintEl = document.getElementById("placementLevelHint");
+  const startBtn = document.getElementById("placementStartBtn");
+  try {
+    const res = await fetch(`${API_BASE}/placement/status`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const status = await res.json();
+    if (status.placementLevel) {
+      const label = CEFR_LEVEL_LABELS[status.placementLevel] || "";
+      valueEl.textContent = `${status.placementLevel} · ${label}`;
+      hintEl.textContent = "Your lessons and conversations start at this level.";
+      startBtn.textContent = "Retake placement test";
+    } else {
+      valueEl.textContent = "Not assessed yet";
+      hintEl.textContent = "Take a 1-minute test so your practice starts at the right level.";
+      startBtn.textContent = "Take placement test";
+    }
+  } catch (err) {
+    // sidebar convenience; ignore failures
+  }
+}
+
+function openPlacementModal() {
+  document.getElementById("placementError").textContent = "";
+  document.getElementById("placementResult").classList.add("hidden");
+  document.getElementById("placementResult").innerHTML = "";
+  document.getElementById("placementQuestions").innerHTML = "";
+  document.getElementById("placementProgress").textContent = "";
+  document.getElementById("placementSubmitBtn").classList.remove("hidden");
+  document.getElementById("placementModal").classList.remove("hidden");
+}
+
+function closePlacementModal() {
+  document.getElementById("placementModal").classList.add("hidden");
+  placementSessionId = null;
+}
+
+function renderPlacementBlock(block) {
+  placementSessionId = block.sessionId;
+  currentPlacementBlock = block;
+  document.getElementById("placementProgress").textContent =
+    `Section ${block.blockNumber} · level ${block.level}`;
+  const container = document.getElementById("placementQuestions");
+  container.innerHTML = "";
+  block.items.forEach((item, i) => {
+    const wrap = document.createElement("div");
+    wrap.className = "placement-item";
+    const q = document.createElement("div");
+    q.className = "q";
+    q.textContent = `${i + 1}. ${item.question}`;
+    wrap.appendChild(q);
+    for (const option of item.options) {
+      const label = document.createElement("label");
+      label.className = "placement-option";
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = `placement-${item.id}`;
+      radio.value = option;
+      label.appendChild(radio);
+      label.appendChild(document.createTextNode(option));
+      wrap.appendChild(label);
+    }
+    container.appendChild(wrap);
+  });
+}
+
+async function startPlacementTest() {
+  openPlacementModal();
+  try {
+    const res = await fetch(`${API_BASE}/placement/start`, {
+      method: "POST",
+      headers: authHeaders(),
+    });
+    if (!res.ok) {
+      document.getElementById("placementError").textContent = "Could not start the test.";
+      return;
+    }
+    renderPlacementBlock(await res.json());
+  } catch (err) {
+    document.getElementById("placementError").textContent = "Could not reach the backend.";
+  }
+}
+
+function collectPlacementAnswers(block) {
+  const answers = {};
+  for (const item of block.items) {
+    const chosen = document.querySelector(`input[name="placement-${item.id}"]:checked`);
+    if (chosen) answers[item.id] = chosen.value;
+  }
+  return answers;
+}
+
+async function submitPlacementAnswers() {
+  if (!placementSessionId || !currentPlacementBlock) return;
+  const errorEl = document.getElementById("placementError");
+  const answers = collectPlacementAnswers(currentPlacementBlock);
+  if (Object.keys(answers).length < currentPlacementBlock.items.length) {
+    errorEl.textContent = "Please answer every question before continuing.";
+    return;
+  }
+  errorEl.textContent = "";
+
+  try {
+    const res = await fetch(`${API_BASE}/placement/${placementSessionId}/answer`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ answers }),
+    });
+    if (!res.ok) {
+      errorEl.textContent = "Could not submit answers.";
+      return;
+    }
+    const body = await res.json();
+    if (body.complete) {
+      showPlacementResult(body.resultLevel);
+    } else {
+      currentPlacementBlock = body.block;
+      renderPlacementBlock(body.block);
+    }
+  } catch (err) {
+    errorEl.textContent = "Could not reach the backend.";
+  }
+}
+
+function showPlacementResult(level) {
+  document.getElementById("placementQuestions").innerHTML = "";
+  document.getElementById("placementProgress").textContent = "";
+  document.getElementById("placementSubmitBtn").classList.add("hidden");
+  const label = CEFR_LEVEL_LABELS[level] || "";
+  const resultEl = document.getElementById("placementResult");
+  resultEl.innerHTML =
+    `<p>Your assessed level is</p>` +
+    `<div class="placement-result-level">${level} · ${label}</div>` +
+    `<p style="opacity:0.85">Your conversations and practice will now start here. ` +
+    `You can retake the test any time.</p>`;
+  resultEl.classList.remove("hidden");
+  loadPlacementStatus();
+}
+
+document.getElementById("placementStartBtn").addEventListener("click", startPlacementTest);
+document.getElementById("placementSubmitBtn").addEventListener("click", submitPlacementAnswers);
+document.getElementById("placementCloseBtn").addEventListener("click", closePlacementModal);
 
 // --- Platform super-admin: school management (Stage 20) ---
 

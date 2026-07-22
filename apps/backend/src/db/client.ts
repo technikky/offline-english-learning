@@ -45,6 +45,8 @@ export function ensureSchema(): void {
       display_name TEXT NOT NULL,
       school_id INTEGER REFERENCES schools(id),
       must_change_password INTEGER NOT NULL DEFAULT 0,
+      placement_level TEXT,
+      placement_completed_at TEXT,
       created_at TEXT NOT NULL DEFAULT (current_timestamp)
     );
 
@@ -117,6 +119,12 @@ export function ensureSchema(): void {
       vocabulary_id INTEGER NOT NULL REFERENCES vocabulary(id),
       source TEXT NOT NULL CHECK (source IN ('manual', 'recommended')),
       created_at TEXT NOT NULL DEFAULT (current_timestamp),
+      repetitions INTEGER NOT NULL DEFAULT 0,
+      ease_factor REAL NOT NULL DEFAULT 2.5,
+      interval_days INTEGER NOT NULL DEFAULT 0,
+      lapses INTEGER NOT NULL DEFAULT 0,
+      due_at TEXT NOT NULL DEFAULT (current_timestamp),
+      last_reviewed_at TEXT,
       UNIQUE (student_id, vocabulary_id)
     );
 
@@ -230,6 +238,17 @@ export function ensureSchema(): void {
       prompt TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (current_timestamp)
     );
+
+    CREATE TABLE IF NOT EXISTS placement_sessions (
+      id TEXT PRIMARY KEY,
+      student_id INTEGER NOT NULL REFERENCES users(id),
+      state_json TEXT NOT NULL,
+      served_item_ids_json TEXT NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('in_progress', 'complete')),
+      result_level TEXT,
+      created_at TEXT NOT NULL DEFAULT (current_timestamp),
+      completed_at TEXT
+    );
   `);
 
   runMigrations();
@@ -245,5 +264,42 @@ function runMigrations(): void {
     .all() as Array<{ name: string }>;
   if (!userColumns.some((c) => c.name === "school_id")) {
     sqlite.exec("ALTER TABLE users ADD COLUMN school_id INTEGER REFERENCES schools(id)");
+  }
+  // Stage 26: placement-test result columns on users. (The placement_sessions
+  // table itself is handled by CREATE TABLE IF NOT EXISTS above.)
+  if (!userColumns.some((c) => c.name === "placement_level")) {
+    sqlite.exec("ALTER TABLE users ADD COLUMN placement_level TEXT");
+  }
+  if (!userColumns.some((c) => c.name === "placement_completed_at")) {
+    sqlite.exec("ALTER TABLE users ADD COLUMN placement_completed_at TEXT");
+  }
+
+  // Stage 25: SM-2 spaced-repetition columns on the vocabulary notebook. DBs
+  // created before this stage won't have them. SQLite's ALTER TABLE ADD COLUMN
+  // forbids a `current_timestamp` default, so `due_at` is added nullable and
+  // backfilled from `created_at` -- which makes every pre-existing saved word
+  // due for review immediately, the behaviour we want when SRS is first turned on.
+  const notebookColumns = sqlite
+    .prepare("PRAGMA table_info(vocabulary_notebook)")
+    .all() as Array<{ name: string }>;
+  const hasColumn = (name: string) => notebookColumns.some((c) => c.name === name);
+  if (!hasColumn("repetitions")) {
+    sqlite.exec("ALTER TABLE vocabulary_notebook ADD COLUMN repetitions INTEGER NOT NULL DEFAULT 0");
+  }
+  if (!hasColumn("ease_factor")) {
+    sqlite.exec("ALTER TABLE vocabulary_notebook ADD COLUMN ease_factor REAL NOT NULL DEFAULT 2.5");
+  }
+  if (!hasColumn("interval_days")) {
+    sqlite.exec("ALTER TABLE vocabulary_notebook ADD COLUMN interval_days INTEGER NOT NULL DEFAULT 0");
+  }
+  if (!hasColumn("lapses")) {
+    sqlite.exec("ALTER TABLE vocabulary_notebook ADD COLUMN lapses INTEGER NOT NULL DEFAULT 0");
+  }
+  if (!hasColumn("due_at")) {
+    sqlite.exec("ALTER TABLE vocabulary_notebook ADD COLUMN due_at TEXT");
+    sqlite.exec("UPDATE vocabulary_notebook SET due_at = created_at WHERE due_at IS NULL");
+  }
+  if (!hasColumn("last_reviewed_at")) {
+    sqlite.exec("ALTER TABLE vocabulary_notebook ADD COLUMN last_reviewed_at TEXT");
   }
 }

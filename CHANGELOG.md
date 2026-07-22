@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.14.0 — Stage 26: Adaptive CEFR placement test
+
+- **Learners now get a real starting level instead of a hardcoded B1 guess.** A short adaptive placement test assesses a student in ~1 minute and stores the result, which seeds their conversation difficulty (and, in a later stage, the structured learning path). Entirely offline — no new models or vendored assets.
+- **Adaptive up/down staircase** (`placement/staircase.ts`): the test starts mid-scale at B1 and serves one block of questions per CEFR rung — passing a rung moves up, failing moves down — concluding as soon as the pass/fail boundary is found (or a level is topped out at C2 / floored at A1). Placement usually takes only 2–4 blocks. The scheduler is a pure, DB-free module, unit-tested in isolation.
+- **Curated item bank** (`placement/items.ts`): static CEFR-tagged multiple-choice items, ≥3 per level A1–C2, curated for reliability like the grammar curriculum and reading passages. No item repeats within a test.
+- **Answers graded server-side** (mirrors the quiz pattern): new `placement_sessions` table stores the staircase state and the served item ids, so the client never sees correct answers. New routes `POST /placement/start`, `POST /placement/:sessionId/answer`, `GET /placement/status`.
+- **Seeds conversation difficulty**: `estimateDifficultyLevel()` now uses the placement result when a student has no message history yet, instead of assuming B1; the existing history-based heuristic still takes over once there's conversation data.
+- **New "My level" sidebar section** with a Take/Retake button; the test runs in a modal (one block of questions at a time) and shows the assessed CEFR level with a friendly label. New `users.placement_level` / `placement_completed_at` columns (additive migration).
+- Verified: backend **121 tests passing** (+12: 7 staircase + 5 route), backend `tsc` clean, types build clean, `renderer.js` `node --check` clean, and the DB migration validated on a real SQLite file with a pre-existing users table.
+
+## v1.13.0 — Stage 25: Spaced-repetition vocabulary review (SRS)
+
+- **The vocabulary notebook is now a spaced-repetition system, not just a saved-word list.** Each saved word carries an SM-2 schedule (the algorithm behind Anki); words come back for review just before they'd be forgotten, which is the key mechanism for growing vocabulary toward an advanced level. Entirely offline — the scheduler is a few lines of arithmetic with no models or vendored assets.
+- **New 🔁 Review tab** with a due-count badge. It runs a flashcard flow — the word is shown first (active recall), "Show answer" reveals the definition/example/synonyms, and four **Again / Hard / Good / Easy** buttons grade recall and schedule the next review (1 day → 6 days → `interval × ease`, ease floored at 1.3; "Again" resets the card to relearn tomorrow and counts a lapse).
+- **New routes**: `GET /vocabulary/review/queue` (due cards, oldest-due first), `GET /vocabulary/review/stats` (`due`/`learning`/`mature`/`total`), `POST /vocabulary/review/:id` (grade a card; own-only → 404 otherwise, unknown rating → 400). The notebook responses now embed the SRS schedule with a server-computed `due` flag.
+- **Schema**: six additive columns on `vocabulary_notebook` (`repetitions`, `ease_factor`, `interval_days`, `lapses`, `due_at`, `last_reviewed_at`). A guarded, idempotent migration adds them to existing DBs and backfills `due_at` from `created_at`, so every previously-saved word becomes due for review immediately the first time SRS is enabled.
+- The SM-2 scheduler lives in a pure, DB-free `vocabulary/srs.ts` so it is unit-tested in isolation and swappable later without touching callers.
+- Verified: backend **109 tests passing** (+10: 8 scheduler + 2 route), backend `tsc` clean, types build clean, `renderer.js` `node --check` clean, and the DB migration validated on a real SQLite file simulating a pre-Stage-25 database.
+
 ## v1.12.0 — Stage 24: Vendor Qwen3-8B + model choice
 
 - **A second, production-sized model is now available**: Qwen3-8B (Q4_K_M, ~5.0 GB) is vendored alongside the default Qwen2.5-1.5B, so a deployment can pick the right one for its hardware. Verified it loads and generates under llama-cpp-python 0.3.33.

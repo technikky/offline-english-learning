@@ -220,11 +220,82 @@ export interface LookupWordRequest {
 
 export type NotebookSource = "manual" | "recommended";
 
+// Stage 25: spaced-repetition scheduling. Each notebook card carries an SM-2
+// schedule; `dueAt` is when it next comes up for review.
+export type ReviewRating = "again" | "hard" | "good" | "easy";
+
+export interface SrsScheduleDto {
+  repetitions: number;
+  easeFactor: number;
+  intervalDays: number;
+  lapses: number;
+  dueAt: string;
+  lastReviewedAt: string | null;
+  /** Convenience flag computed server-side: is this card due now? */
+  due: boolean;
+}
+
 export interface NotebookEntryDto {
   id: number;
   source: NotebookSource;
   createdAt: string;
   vocabulary: VocabularyDto;
+  srs: SrsScheduleDto;
+}
+
+export interface SubmitReviewRequest {
+  rating: ReviewRating;
+}
+
+export interface SubmitReviewResponse {
+  entryId: number;
+  srs: SrsScheduleDto;
+}
+
+export interface ReviewStatsResponse {
+  /** Cards due for review now (dueAt <= now). */
+  due: number;
+  /** Cards still in the early learning phase (repetitions < 2). */
+  learning: number;
+  /** Cards that have graduated to a long interval (>= 21 days). */
+  mature: number;
+  /** Total cards in the notebook. */
+  total: number;
+}
+
+export interface ReviewQueueResponse {
+  cards: NotebookEntryDto[];
+}
+
+// Stage 26: adaptive CEFR placement test. The server drives an up/down
+// staircase, serving one block of items per rung. Items sent to the client
+// never include the correct answer (graded server-side, like quizzes).
+export interface PlacementItemDto {
+  id: string;
+  question: string;
+  options: string[];
+}
+
+export interface PlacementBlockDto {
+  sessionId: string;
+  level: CefrLevel;
+  /** 1-based index of this block within the test, for a progress hint. */
+  blockNumber: number;
+  items: PlacementItemDto[];
+}
+
+export interface SubmitPlacementRequest {
+  /** Map of item id -> the option the student chose. */
+  answers: Record<string, string>;
+}
+
+export type SubmitPlacementResponse =
+  | { complete: false; block: PlacementBlockDto }
+  | { complete: true; resultLevel: CefrLevel };
+
+export interface PlacementStatusResponse {
+  placementLevel: CefrLevel | null;
+  completedAt: string | null;
 }
 
 export interface SimilarWordsResponse {

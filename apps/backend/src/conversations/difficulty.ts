@@ -1,13 +1,22 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { CefrLevel } from "@englishclass/types";
 import { db } from "../db/client";
-import { conversations, messages } from "../db/schema";
+import { conversations, messages, users } from "../db/schema";
+
+const CEFR_LEVELS: CefrLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
+
+function isCefrLevel(value: string | null | undefined): value is CefrLevel {
+  return value != null && (CEFR_LEVELS as string[]).includes(value);
+}
 
 /**
  * v1 heuristic: estimates a CEFR band from a student's own message history
  * (average sentence length + vocabulary diversity). A real implementation
  * would also weigh in grammar-error frequency (Stage 5) and vocabulary
  * notebook data (Stage 6) once those exist — see docs/07-stage4-plan.md.
+ *
+ * Stage 26: with no message history to go on, seed from the student's
+ * placement-test result (if they've taken it) rather than assuming B1.
  */
 export async function estimateDifficultyLevel(studentId: number): Promise<CefrLevel> {
   const recentMessages = await db
@@ -18,7 +27,10 @@ export async function estimateDifficultyLevel(studentId: number): Promise<CefrLe
     .orderBy(desc(messages.createdAt))
     .limit(20);
 
-  if (recentMessages.length === 0) return "B1";
+  if (recentMessages.length === 0) {
+    const user = await db.query.users.findFirst({ where: eq(users.id, studentId) });
+    return isCefrLevel(user?.placementLevel) ? user!.placementLevel : "B1";
+  }
 
   let totalWords = 0;
   let totalSentences = 0;

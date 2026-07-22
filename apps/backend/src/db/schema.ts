@@ -1,4 +1,4 @@
-import { sqliteTable, integer, text, blob } from "drizzle-orm/sqlite-core";
+import { sqliteTable, integer, text, blob, real } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 // Placeholder table proving the migration pipeline end-to-end (Stage 1).
@@ -28,6 +28,10 @@ export const users = sqliteTable("users", {
   mustChangePassword: integer("must_change_password", { mode: "boolean" })
     .notNull()
     .default(false),
+  // Stage 26: result of the adaptive placement test (null until taken). Seeds
+  // the learner's starting difficulty instead of the old hardcoded B1 default.
+  placementLevel: text("placement_level"),
+  placementCompletedAt: text("placement_completed_at"),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),
@@ -138,6 +142,17 @@ export const vocabularyNotebook = sqliteTable("vocabulary_notebook", {
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),
+  // Stage 25: SM-2 spaced-repetition schedule (see vocabulary/srs.ts). A new
+  // card is due immediately (dueAt defaults to now), so freshly-saved words
+  // enter the review queue right away.
+  repetitions: integer("repetitions").notNull().default(0),
+  easeFactor: real("ease_factor").notNull().default(2.5),
+  intervalDays: integer("interval_days").notNull().default(0),
+  lapses: integer("lapses").notNull().default(0),
+  dueAt: text("due_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+  lastReviewedAt: text("last_reviewed_at"),
 });
 
 export const assignments = sqliteTable("assignments", {
@@ -292,6 +307,25 @@ export const customTopics = sqliteTable("custom_topics", {
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),
+});
+
+// Stage 26: adaptive placement-test session. `stateJson` holds the staircase
+// state (see placement/staircase.ts); `servedItemIdsJson` is the current block's
+// item ids, so the server grades against exactly what it served (the client
+// never sees correct answers). One in-progress session per student at a time.
+export const placementSessions = sqliteTable("placement_sessions", {
+  id: text("id").primaryKey(), // uuid
+  studentId: integer("student_id")
+    .notNull()
+    .references(() => users.id),
+  stateJson: text("state_json").notNull(),
+  servedItemIdsJson: text("served_item_ids_json").notNull(),
+  status: text("status", { enum: ["in_progress", "complete"] }).notNull(),
+  resultLevel: text("result_level"),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+  completedAt: text("completed_at"),
 });
 
 // Stage 19: Quiz Generator. A generated quiz is stored with its questions

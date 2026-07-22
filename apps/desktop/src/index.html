@@ -128,6 +128,110 @@
         border-color: #4338ca;
         opacity: 1;
       }
+      /* Stage 25: spaced-repetition review */
+      .due-badge {
+        display: inline-block;
+        margin-left: 6px;
+        min-width: 16px;
+        padding: 0 5px;
+        font-size: 11px;
+        line-height: 16px;
+        text-align: center;
+        border-radius: 8px;
+        background: #b45309;
+        color: white;
+      }
+      .review-card {
+        text-align: center;
+        padding: 28px 16px;
+      }
+      .review-word {
+        font-size: 30px;
+        font-weight: 700;
+      }
+      .review-cefr {
+        display: inline-block;
+        margin-top: 6px;
+        font-size: 11px;
+        background: #334155;
+        border-radius: 4px;
+        padding: 1px 6px;
+        opacity: 0.85;
+      }
+      .review-answer {
+        margin-top: 16px;
+        text-align: left;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .review-answer .example {
+        opacity: 0.8;
+        font-style: italic;
+        margin-top: 6px;
+      }
+      .review-rating-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .review-rate-btn {
+        flex: 1;
+      }
+      .review-rate-btn[data-rating="again"] { background: #b91c1c; }
+      .review-rate-btn[data-rating="hard"] { background: #b45309; }
+      .review-rate-btn[data-rating="good"] { background: #15803d; }
+      .review-rate-btn[data-rating="easy"] { background: #0e7490; }
+      /* Stage 26: placement test */
+      #placementLevelPanel {
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      #placementLevelValue {
+        font-weight: 700;
+        font-size: 18px;
+      }
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+      }
+      .modal {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 22px;
+        width: 560px;
+        max-width: 92vw;
+        max-height: 88vh;
+        overflow-y: auto;
+      }
+      .placement-item {
+        margin: 14px 0;
+      }
+      .placement-item .q {
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .placement-option {
+        display: block;
+        padding: 6px 8px;
+        margin: 4px 0;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      .placement-option input {
+        margin-right: 8px;
+      }
+      .placement-result-level {
+        font-size: 26px;
+        font-weight: 700;
+        margin: 8px 0;
+      }
       #chatPanel {
         flex: 1;
         display: flex;
@@ -727,6 +831,13 @@
         <div class="profile-row"><span>Email</span><span id="profileEmail"></span></div>
         <button id="logoutBtn" class="secondary">Log out</button>
 
+        <h3>My level</h3>
+        <div id="placementLevelPanel">
+          <div><span id="placementLevelValue">—</span></div>
+          <div id="placementLevelHint" style="opacity:0.8;margin-top:4px"></div>
+          <button id="placementStartBtn" style="margin-top:8px">Take placement test</button>
+        </div>
+
         <h3>New conversation</h3>
         <select id="scenarioSelect">
           <option value="free_talk">Free Talk</option>
@@ -794,6 +905,7 @@
           <button id="tabListeningBtn" class="main-tab">🎧 Listening</button>
           <button id="tabWritingBtn" class="main-tab">✍️ Writing</button>
           <button id="tabQuizBtn" class="main-tab">❓ Quiz</button>
+          <button id="tabReviewBtn" class="main-tab">🔁 Review<span id="reviewDueBadge" class="due-badge hidden"></span></button>
           <button id="tabHistoryBtn" class="main-tab">📜 History</button>
         </div>
 
@@ -1027,6 +1139,57 @@
               </thead>
               <tbody id="historyBody"></tbody>
             </table>
+          </div>
+        </div>
+
+        <div id="reviewPanel" class="hidden">
+          <div class="panel">
+            <h3>Vocabulary review</h3>
+            <p style="font-size:12px;opacity:0.75;margin-top:-4px">
+              Spaced repetition brings each saved word back just before you'd forget it.
+              Rate how well you remembered — that sets when you'll see it next.
+            </p>
+            <div id="reviewStats" style="font-size:13px;opacity:0.85"></div>
+            <button id="reviewStartBtn" style="margin-top:8px">Start review</button>
+          </div>
+
+          <div id="reviewCardArea" class="panel hidden">
+            <div id="reviewProgress" style="font-size:12px;opacity:0.7;margin-bottom:8px"></div>
+            <div id="reviewCard" class="review-card">
+              <div id="reviewWord" class="review-word"></div>
+              <div id="reviewCefr" class="review-cefr"></div>
+              <button id="reviewShowBtn" class="secondary" style="margin-top:14px">Show answer</button>
+              <div id="reviewAnswer" class="review-answer hidden"></div>
+            </div>
+            <div id="reviewRatingRow" class="review-rating-row hidden">
+              <button class="review-rate-btn" data-rating="again">Again</button>
+              <button class="review-rate-btn" data-rating="hard">Hard</button>
+              <button class="review-rate-btn" data-rating="good">Good</button>
+              <button class="review-rate-btn" data-rating="easy">Easy</button>
+            </div>
+          </div>
+
+          <div id="reviewDone" class="panel hidden">
+            <p>🎉 All caught up — no more cards due right now. Come back later, or save more words from the Vocabulary notebook.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="placementModal" class="modal-backdrop hidden">
+        <div class="modal">
+          <h3>Placement test</h3>
+          <p id="placementModalIntro" style="font-size:13px;opacity:0.85">
+            Answer a few short questions. The test adapts to you — it gets harder
+            when you're right and easier when you're not — so it only takes a
+            minute to find your level.
+          </p>
+          <div id="placementProgress" style="font-size:12px;opacity:0.7;margin:8px 0"></div>
+          <div id="placementQuestions"></div>
+          <div id="placementError" class="error"></div>
+          <div id="placementResult" class="hidden"></div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button id="placementSubmitBtn">Submit answers</button>
+            <button id="placementCloseBtn" class="secondary">Close</button>
           </div>
         </div>
       </div>

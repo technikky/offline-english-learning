@@ -147,3 +147,113 @@ test("a student cannot delete another student's notebook entry", async () => {
     restore();
   }
 });
+
+// --- Stage 25: spaced-repetition review flow ---
+
+test("a newly-saved word is immediately due for review and grading schedules it forward", async () => {
+  ensureSchema();
+  const restore = fakeAiVocab();
+  const passwordHash = await hashPassword("studentpass123");
+  const [student] = await db
+    .insert(users)
+    .values({ email: "srsstu@x.com", passwordHash, role: "student", displayName: "Srs" })
+    .returning();
+
+  try {
+    const app = buildApp();
+    const token = signAccessToken({ sub: student.id, role: "student" });
+
+    const added = await app.inject({
+      method: "POST",
+      url: "/vocabulary/notebook",
+      headers: { authorization: `Bearer ${token}` },
+      payload: { word: "meticulous" },
+    });
+    const entryId = added.json().id;
+    // The POST response carries the SRS schedule, and a fresh card is due now.
+    assert.equal(added.json().srs.due, true);
+    assert.equal(added.json().srs.repetitions, 0);
+
+    // It shows up in the due queue and the stats.
+    const queue1 = await app.inject({
+      method: "GET",
+      url: "/vocabulary/review/queue",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    assert.equal(queue1.json().cards.length, 1);
+
+    const stats1 = await app.inject({
+      method: "GET",
+      url: "/vocabulary/review/stats",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    assert.deepEqual(stats1.json(), { total: 1, due: 1, learning: 1, mature: 0 });
+
+    // Grade it "good" -> it moves out of the due queue (next review in the future).
+    const graded = await app.inject({
+      method: "POST",
+      url: `/vocabulary/review/${entryId}`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { rating: "good" },
+    });
+    assert.equal(graded.statusCode, 200);
+    assert.equal(graded.json().srs.repetitions, 1);
+    assert.equal(graded.json().srs.due, false);
+    assert.equal(graded.json().srs.intervalDays, 1);
+
+    const queue2 = await app.inject({
+      method: "GET",
+      url: "/vocabulary/review/queue",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    assert.equal(queue2.json().cards.length, 0);
+  } finally {
+    restore();
+  }
+});
+
+test("review rejects an unknown rating and refuses another student's card", async () => {
+  ensureSchema();
+  const restore = fakeAiVocab();
+  const passwordHash = await hashPassword("studentpass123");
+  const [owner] = await db
+    .insert(users)
+    .values({ email: "srsowner@x.com", passwordHash, role: "student", displayName: "O" })
+    .returning();
+  const [intruder] = await db
+    .insert(users)
+    .values({ email: "srsintruder@x.com", passwordHash, role: "student", displayName: "I" })
+    .returning();
+
+  try {
+    const app = buildApp();
+    const ownerToken = signAccessToken({ sub: owner.id, role: "student" });
+    const intruderToken = signAccessToken({ sub: intruder.id, role: "student" });
+
+    const added = await app.inject({
+      method: "POST",
+      url: "/vocabulary/notebook",
+      headers: { authorization: `Bearer ${ownerToken}` },
+      payload: { word: "tenacious" },
+    });
+    const entryId = added.json().id;
+
+    const badRating = await app.inject({
+      method: "POST",
+      url: `/vocabulary/review/${entryId}`,
+      headers: { authorization: `Bearer ${ownerToken}` },
+      payload: { rating: "sometimes" },
+    });
+    assert.equal(badRating.statusCode, 400);
+
+    const crossStudent = await app.inject({
+      method: "POST",
+      url: `/vocabulary/review/${entryId}`,
+      headers: { authorization: `Bearer ${intruderToken}` },
+      payload: { rating: "good" },
+    });
+    assert.equal(crossStudent.statusCode, 404);
+  } finally {
+    restore();
+  }
+});
