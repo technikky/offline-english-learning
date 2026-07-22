@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.21.0 - Stage 33: Curated CEFR vocabulary wordlist
+
+- **Closes the largest remaining content gap.** The only wordlist in the system was a 75-word *stoplist*, which left vocabulary recommendations as a crude heuristic and left the spaced-repetition notebook with nothing to seed from. New `vocabulary/wordlist.ts` adds **160 curated CEFR-graded entries** (30/30/30/30/25/15 across A1-C2), each with an authored definition, natural example, synonyms and antonyms.
+- **Curated words now skip the LLM entirely.** `lookupOrCreateVocabulary()` checks the list first and uses the authored definition - instant, and far more reliable than a 1.5B model's guess. The AI remains the fallback for words outside the list; embeddings are still generated either way for similar-word search.
+- **Recommendations are CEFR-graded instead of length-guessed.** The old rule was "7+ letters and not a stopword", so *restaurant* and *yesterday* scored the same as *inevitable*. A word is now recommended if it is graded **at or above** the student's level; words below are skipped as already-known, and ungraded words fall back to the length heuristic so rare vocabulary is still surfaced. Candidates are ranked so graded words come first, nearest-level-first.
+- **The SRS deck can finally be seeded.** New `POST /vocabulary/notebook/seed` adds a level's starter pack to the notebook, where the Stage 25 scheduler makes every card **due immediately** - so a learner has something to practise on day one instead of an empty deck. Idempotent (already-saved words are skipped and reported, never duplicated) and capped at 30 per call. New `GET /vocabulary/wordlist?level=` browses the list and marks saved words.
+- **New "Starter word pack" panel** in the Review tab: pick a level and size, press Add to deck, and the review badge and notebook refresh immediately.
+- Tests pin the behaviour that matters: every entry's example actually contains its word; a word below the student's level is *not* recommended; a long ordinary word no longer outranks genuinely useful vocabulary; seeded cards are immediately due; re-seeding doesn't duplicate; and a curated word is defined **without calling the LLM**.
+- Documented limitations: 160 words is a core list rather than comprehensive coverage, grading is editorial rather than corpus-derived, and the list is **English only** - Chinese still has no HSK vocabulary seed.
+- Verified: backend **180 tests passing** (+14), AI service 80 pytest passing, backend `tsc` clean, types build clean, `renderer.js` `node --check` clean.
+
 ## v1.20.0 — Stage 32: English content depth
 
 - **The English path now runs all the way to C2.** Previously it stopped at C1 — and that C1 unit had no listening or writing content — so the "advanced" end of beginner-to-advanced was unreachable by construction. There is now one unit per CEFR level A1–C2, every unit covering all six lesson types: **6 units, 50 lessons** (was 5 units, 33).

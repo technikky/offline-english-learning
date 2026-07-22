@@ -9,8 +9,12 @@ import type {
   ReviewStatsResponse,
   SimilarWordsResponse,
   SrsScheduleDto,
+  SeedNotebookRequest,
+  SeedNotebookResponse,
   SubmitReviewRequest,
   SubmitReviewResponse,
+  WordlistEntryDto,
+  WordlistResponse,
   VocabularyDto,
   CefrLevel,
 } from "@englishclass/types";
@@ -22,8 +26,12 @@ import { lookupOrCreateVocabulary } from "../vocabulary/lookup";
 import { findSimilarWords } from "../vocabulary/similarity";
 import { getRecommendationsForConversation } from "../vocabulary/recommendations";
 import { scheduleReview } from "../vocabulary/srs";
+import { listWordlist } from "../vocabulary/wordlist";
 
 const REVIEW_RATINGS: ReviewRating[] = ["again", "hard", "good", "easy"];
+const LEVELS: string[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
+const DEFAULT_SEED_COUNT = 10;
+const MAX_SEED_COUNT = 30;
 const MATURE_INTERVAL_DAYS = 21;
 const DEFAULT_REVIEW_LIMIT = 20;
 
@@ -268,6 +276,89 @@ export function registerVocabularyRoutes(app: FastifyInstance): void {
     },
   );
 
+  // Stage 33: browse the curated CEFR wordlist, marking which words the
+  // student has already saved.
+  app.get<{ Querystring: { level?: string } }>(
+    "/vocabulary/wordlist",
+    { preHandler: authenticate },
+    async (request) => {
+      const level = LEVELS.includes(request.query.level ?? "")
+        ? (request.query.level as CefrLevel)
+        : undefined;
+      const entries = listWordlist(level);
+
+      const savedRows = await db
+        .select({ word: vocabulary.word })
+        .from(vocabularyNotebook)
+        .innerJoin(vocabulary, eq(vocabularyNotebook.vocabularyId, vocabulary.id))
+        .where(eq(vocabularyNotebook.studentId, request.authUser!.sub));
+      const saved = new Set(savedRows.map((r) => r.word));
+
+      const response: WordlistResponse = {
+        level: level ?? null,
+        entries: entries.map<WordlistEntryDto>((e) => ({
+          word: e.word,
+          cefrLevel: e.cefrLevel,
+          definition: e.definition,
+          example: e.example,
+          saved: saved.has(e.word),
+        })),
+        totalSaved: entries.filter((e) => saved.has(e.word)).length,
+      };
+      return response;
+    },
+  );
+
+  // Stage 33: seed the spaced-repetition notebook with a starter pack. Before
+  // this, SRS only ever saw words a student happened to look up, so the most
+  // effective retention mechanism in the platform sat idle until they went
+  // hunting for words themselves.
+  app.post<{ Body: SeedNotebookRequest }>(
+    "/vocabulary/notebook/seed",
+    { preHandler: authenticate },
+    async (request, reply) => {
+      const { level, count } = request.body ?? {};
+      if (!level || !LEVELS.includes(level)) {
+        return reply.code(400).send({ error: `level must be one of: ${LEVELS.join(", ")}` });
+      }
+      const limit = Math.min(Math.max(Number(count) || DEFAULT_SEED_COUNT, 1), MAX_SEED_COUNT);
+      const studentId = request.authUser!.sub;
+
+      const savedRows = await db
+        .select({ word: vocabulary.word })
+        .from(vocabularyNotebook)
+        .innerJoin(vocabulary, eq(vocabularyNotebook.vocabularyId, vocabulary.id))
+        .where(eq(vocabularyNotebook.studentId, studentId));
+      const saved = new Set(savedRows.map((r) => r.word));
+
+      const candidates = listWordlist(level).filter((e) => !saved.has(e.word));
+      const skipped = listWordlist(level).length - candidates.length;
+
+      let added = 0;
+      // Sequential: each word still needs an embedding from the single-threaded
+      // AI service. Curated words skip the LLM, so this is embed-only and fast.
+      for (const entry of candidates.slice(0, limit)) {
+        const vocabEntry = await lookupOrCreateVocabulary(entry.word, level);
+        const existing = await db.query.vocabularyNotebook.findFirst({
+          where: and(
+            eq(vocabularyNotebook.studentId, studentId),
+            eq(vocabularyNotebook.vocabularyId, vocabEntry.id),
+          ),
+        });
+        if (existing) continue;
+        await db.insert(vocabularyNotebook).values({
+          studentId,
+          vocabularyId: vocabEntry.id,
+          source: "recommended",
+        });
+        added += 1;
+      }
+
+      const response: SeedNotebookResponse = { added, skipped, level };
+      return response;
+    },
+  );
+
   app.delete<{ Params: { id: string } }>(
     "/vocabulary/notebook/:id",
     { preHandler: authenticate },
@@ -301,9 +392,13 @@ export function registerVocabularyRoutes(app: FastifyInstance): void {
         return reply.code(404).send({ error: "Conversation not found" });
       }
 
+      // Stage 33: the student's level decides which words are worth
+      // recommending, so it has to be threaded through.
+      const studentLevel = await estimateDifficultyLevel(request.authUser!.sub);
       const words = await getRecommendationsForConversation(
         conversationId,
         request.authUser!.sub,
+        studentLevel,
       );
       const response: RecommendationsResponse = { words };
       return response;

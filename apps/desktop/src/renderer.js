@@ -2720,6 +2720,42 @@ async function gradeReviewCard(rating) {
   }
 }
 
+// Stage 33: seed the review deck from the curated CEFR wordlist, so a new
+// learner has cards to practise before they've looked anything up themselves.
+async function seedStarterPack() {
+  const level = document.getElementById("seedLevelSelect").value;
+  const count = Number(document.getElementById("seedCountSelect").value);
+  const resultEl = document.getElementById("seedResult");
+  const button = document.getElementById("seedBtn");
+
+  button.disabled = true;
+  resultEl.textContent = "Adding words…";
+  try {
+    const res = await fetch(`${API_BASE}/vocabulary/notebook/seed`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ level, count }),
+    });
+    if (!res.ok) {
+      resultEl.textContent = "Could not add the starter pack.";
+      return;
+    }
+    const data = await res.json();
+    resultEl.textContent =
+      data.added > 0
+        ? `Added ${data.added} ${level} word${data.added === 1 ? "" : "s"} to your review deck.`
+        : `You already have every ${level} word in this pack.`;
+    loadReviewStats();
+    refreshReviewBadge();
+    loadNotebook();
+  } catch (err) {
+    resultEl.textContent = "Could not reach the backend.";
+  } finally {
+    button.disabled = false;
+  }
+}
+
+document.getElementById("seedBtn").addEventListener("click", seedStarterPack);
 document.getElementById("tabReviewBtn").addEventListener("click", showReviewTab);
 document.getElementById("reviewStartBtn").addEventListener("click", startReviewSession);
 document.getElementById("reviewShowBtn").addEventListener("click", revealReviewAnswer);

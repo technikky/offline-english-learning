@@ -384,6 +384,34 @@ export interface RecommendationsResponse {
   words: VocabularyDto[];
 }
 
+// Stage 33: the curated CEFR-graded core wordlist.
+export interface WordlistEntryDto {
+  word: string;
+  cefrLevel: CefrLevel;
+  definition: string;
+  example: string;
+  /** Whether this word is already in the student's notebook. */
+  saved: boolean;
+}
+
+export interface WordlistResponse {
+  level: CefrLevel | null;
+  entries: WordlistEntryDto[];
+  totalSaved: number;
+}
+
+export interface SeedNotebookRequest {
+  level: CefrLevel;
+  /** How many words to add (defaults to 10, capped server-side). */
+  count?: number;
+}
+
+export interface SeedNotebookResponse {
+  added: number;
+  skipped: number;
+  level: CefrLevel;
+}
+
 export interface StudentSummary {
   id: number;
   email: string;

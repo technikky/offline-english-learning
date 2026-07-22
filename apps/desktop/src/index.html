@@ -181,6 +181,20 @@
       .review-rate-btn[data-rating="hard"] { background: #b45309; }
       .review-rate-btn[data-rating="good"] { background: #15803d; }
       .review-rate-btn[data-rating="easy"] { background: #0e7490; }
+      /* Stage 33: starter word pack */
+      .seed-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .seed-row select {
+        margin: 0;
+      }
+      .seed-row button {
+        width: auto;
+        white-space: nowrap;
+        margin-top: 0;
+      }
       /* Stage 30: Mandarin tone score block */
       .tone-result {
         margin-top: 8px;
@@ -1312,6 +1326,31 @@
               <button class="review-rate-btn" data-rating="good">Good</button>
               <button class="review-rate-btn" data-rating="easy">Easy</button>
             </div>
+          </div>
+
+          <div class="panel">
+            <h3>Starter word pack</h3>
+            <p style="font-size:12px;opacity:0.75;margin-top:-4px">
+              Add a set of core words for a level straight into your review deck,
+              so you have something to practise from day one.
+            </p>
+            <div class="seed-row">
+              <select id="seedLevelSelect">
+                <option value="A1">A1 — Beginner</option>
+                <option value="A2">A2 — Elementary</option>
+                <option value="B1" selected>B1 — Intermediate</option>
+                <option value="B2">B2 — Upper-intermediate</option>
+                <option value="C1">C1 — Advanced</option>
+                <option value="C2">C2 — Proficient</option>
+              </select>
+              <select id="seedCountSelect">
+                <option value="5">5 words</option>
+                <option value="10" selected>10 words</option>
+                <option value="20">20 words</option>
+              </select>
+              <button id="seedBtn">Add to deck</button>
+            </div>
+            <div id="seedResult" style="font-size:13px;opacity:0.85;margin-top:6px"></div>
           </div>
 
           <div id="reviewDone" class="panel hidden">

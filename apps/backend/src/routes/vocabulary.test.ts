@@ -257,3 +257,137 @@ test("review rejects an unknown rating and refuses another student's card", asyn
     restore();
   }
 });
+
+// --- Stage 33: curated wordlist + SRS seeding ---
+
+test("the curated wordlist is browsable per level and marks saved words", async () => {
+  ensureSchema();
+  const restore = fakeAiVocab();
+  const passwordHash = await hashPassword("studentpass123");
+  const [student] = await db
+    .insert(users)
+    .values({ email: "wl1@x.com", passwordHash, role: "student", displayName: "W" })
+    .returning();
+
+  try {
+    const app = buildApp();
+    const token = signAccessToken({ sub: student.id, role: "student" });
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/vocabulary/wordlist?level=A1",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    assert.equal(res.statusCode, 200);
+    const body = res.json();
+    assert.equal(body.level, "A1");
+    assert.ok(body.entries.length >= 15);
+    assert.ok(body.entries.every((e: { cefrLevel: string }) => e.cefrLevel === "A1"));
+    assert.ok(body.entries.every((e: { saved: boolean }) => e.saved === false));
+    assert.equal(body.totalSaved, 0);
+  } finally {
+    restore();
+  }
+});
+
+test("seeding fills the SRS notebook with a level's starter pack", async () => {
+  ensureSchema();
+  const restore = fakeAiVocab();
+  const passwordHash = await hashPassword("studentpass123");
+  const [student] = await db
+    .insert(users)
+    .values({ email: "wl2@x.com", passwordHash, role: "student", displayName: "W" })
+    .returning();
+
+  try {
+    const app = buildApp();
+    const token = signAccessToken({ sub: student.id, role: "student" });
+
+    const seeded = await app.inject({
+      method: "POST",
+      url: "/vocabulary/notebook/seed",
+      headers: { authorization: `Bearer ${token}` },
+      payload: { level: "A2", count: 5 },
+    });
+    assert.equal(seeded.statusCode, 200);
+    assert.equal(seeded.json().added, 5);
+    assert.equal(seeded.json().level, "A2");
+
+    // Seeded words become due SRS cards immediately — the whole point.
+    const stats = await app.inject({
+      method: "GET",
+      url: "/vocabulary/review/stats",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    assert.equal(stats.json().total, 5);
+    assert.equal(stats.json().due, 5);
+
+    // Seeding again skips what's already saved rather than duplicating.
+    const again = await app.inject({
+      method: "POST",
+      url: "/vocabulary/notebook/seed",
+      headers: { authorization: `Bearer ${token}` },
+      payload: { level: "A2", count: 5 },
+    });
+    assert.equal(again.json().skipped, 5);
+    const after = await app.inject({
+      method: "GET",
+      url: "/vocabulary/review/stats",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    assert.equal(after.json().total, 10, "second seed adds 5 different words");
+  } finally {
+    restore();
+  }
+});
+
+test("seeding rejects an invalid level", async () => {
+  ensureSchema();
+  const restore = fakeAiVocab();
+  const passwordHash = await hashPassword("studentpass123");
+  const [student] = await db
+    .insert(users)
+    .values({ email: "wl3@x.com", passwordHash, role: "student", displayName: "W" })
+    .returning();
+  try {
+    const app = buildApp();
+    const token = signAccessToken({ sub: student.id, role: "student" });
+    const res = await app.inject({
+      method: "POST",
+      url: "/vocabulary/notebook/seed",
+      headers: { authorization: `Bearer ${token}` },
+      payload: { level: "Z9" },
+    });
+    assert.equal(res.statusCode, 400);
+  } finally {
+    restore();
+  }
+});
+
+test("a curated word is defined without calling the LLM", async () => {
+  ensureSchema();
+  const restore = fakeAiVocab();
+  const passwordHash = await hashPassword("studentpass123");
+  const [student] = await db
+    .insert(users)
+    .values({ email: "wl4@x.com", passwordHash, role: "student", displayName: "W" })
+    .returning();
+
+  try {
+    const app = buildApp();
+    const token = signAccessToken({ sub: student.id, role: "student" });
+    const res = await app.inject({
+      method: "POST",
+      url: "/vocabulary/lookup",
+      headers: { authorization: `Bearer ${token}` },
+      payload: { word: "ubiquitous" },
+    });
+    assert.equal(res.statusCode, 200);
+    // The fake LLM would have returned "definition of ubiquitous"; the curated
+    // entry must win, so the authored definition is what comes back.
+    assert.match(res.json().definition, /everywhere/i);
+    assert.equal(res.json().cefrLevel, "C2");
+  } finally {
+    restore();
+  }
+});

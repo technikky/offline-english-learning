@@ -3,6 +3,7 @@ import type { CefrLevel, VocabularyDto } from "@englishclass/types";
 import { db } from "../db/client";
 import { vocabulary } from "../db/schema";
 import { aiVocabClient } from "./aiVocabClient";
+import { getWordlistEntry } from "./wordlist";
 import { encodeEmbedding } from "./embeddingCodec";
 
 function normalizeWord(word: string): string {
@@ -34,9 +35,23 @@ export async function lookupOrCreateVocabulary(
   });
   if (existing) return toDto(existing);
 
-  // Sequential, not Promise.all: the AI service runs a single CPU-bound
-  // llama.cpp instance that doesn't handle concurrent requests well.
-  const explanation = await aiVocabClient.explain(normalized, difficultyLevel);
+  // Stage 33: if the word is in the curated CEFR wordlist, use the authored
+  // definition instead of asking the LLM. That is both instant and far more
+  // reliable than a 1.5B model's guess -- the AI stays the fallback for words
+  // outside the list. The embedding is still generated either way, since
+  // similar-word search depends on it.
+  const curated = getWordlistEntry(normalized);
+  const explanation = curated
+    ? {
+        definition: curated.definition,
+        example: curated.example,
+        synonyms: curated.synonyms,
+        antonyms: curated.antonyms,
+        cefrLevel: curated.cefrLevel as string,
+      }
+    : // Sequential, not Promise.all: the AI service runs a single CPU-bound
+      // llama.cpp instance that doesn't handle concurrent requests well.
+      await aiVocabClient.explain(normalized, difficultyLevel);
   const embedding = await aiVocabClient.embed(normalized);
 
   const [created] = await db
