@@ -4,11 +4,26 @@
     <meta charset="utf-8" />
     <title>Offline English Learning — Stage 9</title>
     <style>
+      /* Stage 37: bundled CJK font (Noto Sans SC, SIL OFL 1.1 - see
+         fonts/OFL.txt). Guarantees Chinese renders on any machine rather than
+         relying on a system CJK font being installed. A variable font, so every
+         weight comes from one file and bold is real rather than synthesised.
+         If the file is absent (fresh clone - it is gitignored like other
+         vendored binaries), the stack simply falls back to system fonts. */
+      @font-face {
+        font-family: "Noto Sans SC";
+        src: url("fonts/NotoSansSC-VF.ttf") format("truetype-variations"),
+             url("fonts/NotoSansSC-VF.ttf") format("truetype");
+        font-weight: 100 900;
+        font-display: swap;
+      }
       * {
         box-sizing: border-box;
       }
       body {
-        font-family: system-ui, sans-serif;
+        /* system-ui first so Latin text keeps the native UI face; CJK glyphs
+           it lacks fall through per-glyph to Noto Sans SC. */
+        font-family: system-ui, "Noto Sans SC", sans-serif;
         background: #0f172a;
         color: #e2e8f0;
         margin: 0;
@@ -224,9 +239,11 @@
         border-left: 2px solid #334155;
         padding-left: 10px;
       }
-      /* Chinese text needs a little more size/leading to be legible. */
+      /* Chinese text needs a little more size/leading to be legible, and is
+         set in the CJK face directly rather than falling through to it. */
       .reading-content:lang(zh),
       .lang-chinese .reading-content {
+        font-family: "Noto Sans SC", system-ui, sans-serif;
         font-size: 17px;
         line-height: 1.9;
       }

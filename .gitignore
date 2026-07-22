@@ -29,3 +29,10 @@ offline-sdk/ai-models/piper-voices/*.onnx.json
 # issues; this directory is leftover from before that and should not be
 # committed regardless of why it reappeared).
 offline-sdk/dev-sdks/
+
+# Stage 37: bundled CJK font. Large vendored binary, restored per
+# apps/desktop/src/fonts/README.md rather than committed. The OFL license text
+# beside it IS committed -- it must accompany any redistribution of the font.
+apps/desktop/src/fonts/*.ttf
+apps/desktop/src/fonts/*.otf
+apps/desktop/src/fonts/*.woff2

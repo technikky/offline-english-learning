@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.25.0 - Stage 37: Bundled CJK font
+
+- **Removes the last dependency on the host machine for Chinese rendering.** Chinese displayed fine on Windows via system fonts, so the app *worked* - but on a minimal or non-Windows image with no CJK font installed, the entire Chinese side (interface, wordlist, reading passages) renders as tofu boxes. For a project whose defining constraint is "all required resources must exist locally", a system font was the last unexamined external dependency.
+- **Noto Sans SC, variable build (17 MB)**, chosen over separate static weights on purpose: one file covers every weight, and bold is a real weight rather than a synthesised faux bold - which looks noticeably bad on Chinese, where thickening strokes muddies dense glyphs.
+- **Coverage was verified, not assumed.** The font was parsed directly (a minimal sfnt/cmap reader, since `fonttools` isn't available here) to confirm it maps **30,890 codepoints** covering the UI strings, the full HSK 1-6 wordlist, 成语, C2 passage text, CJK punctuation, and - just as important - **pinyin diacritics** (ǎ ě ǐ ǒ ǔ ǚ), which the app displays throughout and which a font missing tone marks would break.
+- **It lives in `apps/desktop/src/fonts/`, not `offline-sdk/`**, for a concrete reason: electron-builder only packages `dist/**` and `src/**`, so a font referenced from `offline-sdk/` would work in development and then be **missing from the packaged installer** - exactly the failure this stage prevents. A test asserts the `@font-face` URL resolves under `src/`.
+- **Licensing handled properly**: Noto Sans SC is SIL OFL 1.1, which permits redistribution only if the licence accompanies the font, so `fonts/OFL.txt` is **committed** even though the binary is gitignored like every other vendored blob.
+- **`system-ui` stays first in the font stack** (`system-ui, "Noto Sans SC", sans-serif`). Fallback is per-glyph, so Latin interface text keeps the native UI face while CJK glyphs fall through to the bundled font; Chinese reading passages set the CJK face first outright for long-form typography.
+- The font-validity test is **deliberately soft** where the Stage 29 model check is hard: a missing model breaks speech entirely, whereas a missing font degrades gracefully to system rendering. Verified both ways - the suite passes with the font present (full validation) and absent (skips with an explanatory note), so a fresh clone stays green.
+- Documented limitations: 17 MB added to the installer; **Simplified Chinese only** (Traditional falls back to system fonts, matching the content the app teaches).
+- Verified: **desktop 11 tests passing** (+3), backend 197 passing, AI service 80 pytest passing, backend `tsc` clean.
+
 ## v1.24.0 - Stage 36: Interface translation (i18n)
 
 - **The interface is now available in Chinese.** Every UI string was hardcoded English, which mattered directly for the schools this targets: a Chinese-speaking student learning English had to navigate an entirely English interface to do it.

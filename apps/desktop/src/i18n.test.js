@@ -103,3 +103,49 @@ test("applyTranslations actually rewrites tagged elements and placeholders", () 
   assert.equal(textEl.textContent, STRINGS.en["btn.send"]);
   assert.equal(inputEl.placeholder, STRINGS.en["ph.typeMessage"]);
 });
+
+// --- Stage 37: bundled CJK font ---
+
+test("the CJK @font-face resolves to a path that will be packaged", () => {
+  const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+  const m = html.match(/@font-face[\s\S]*?url\("([^"]+)"\)/);
+  assert.ok(m, "no @font-face declaration found");
+
+  const fontPath = path.join(__dirname, m[1]);
+  // It must sit under src/, because electron-builder only packages dist/** and
+  // src/** -- a font referenced from outside those works in development and
+  // then vanishes from the installer, which is the exact failure this stage
+  // exists to prevent. This holds whether or not the binary is present.
+  assert.ok(
+    !path.relative(__dirname, fontPath).startsWith(".."),
+    "font must live under src/ to survive packaging",
+  );
+
+  // The binary itself is gitignored like other vendored assets, so a fresh
+  // clone legitimately lacks it and the app falls back to system fonts. Assert
+  // its validity only when it has actually been restored -- unlike a missing
+  // speech model, a missing font degrades gracefully rather than breaking the
+  // app, so this is a soft check by design.
+  if (!fs.existsSync(fontPath)) {
+    console.log(`    (font not restored - see fonts/README.md; app falls back to system fonts)`);
+    return;
+  }
+  const head = fs.readFileSync(fontPath).subarray(0, 4);
+  assert.deepEqual([...head], [0x00, 0x01, 0x00, 0x00], "not a valid TrueType file");
+});
+
+test("the OFL licence ships alongside the font", () => {
+  // SIL OFL permits redistribution only if the licence accompanies the font,
+  // so this file is committed even though the binary is gitignored.
+  const licence = fs.readFileSync(path.join(__dirname, "fonts", "OFL.txt"), "utf8");
+  assert.match(licence, /SIL Open Font License/i);
+});
+
+test("the font stack keeps system-ui first so Latin text is unaffected", () => {
+  const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+  assert.match(
+    html,
+    /font-family:\s*system-ui,\s*"Noto Sans SC",\s*sans-serif/,
+    "body stack should fall through to the CJK face per-glyph, not replace the UI face",
+  );
+});
