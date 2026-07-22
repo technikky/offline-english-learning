@@ -1,5 +1,10 @@
 import { and, eq, isNotNull } from "drizzle-orm";
-import type { CefrLevel, CurriculumResponse, CurriculumUnitDto } from "@englishclass/types";
+import type {
+  CefrLevel,
+  CurriculumResponse,
+  CurriculumUnitDto,
+  TargetLanguage,
+} from "@englishclass/types";
 import { db } from "../db/client";
 import {
   conversations,
@@ -10,7 +15,7 @@ import {
   readingResults,
   writingSubmissions,
 } from "../db/schema";
-import { COURSE, lessonId, type CourseLesson } from "./course";
+import { getCourse, lessonId, type CourseLesson } from "./course";
 
 const LEVELS: CefrLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
@@ -96,11 +101,13 @@ export function isLessonComplete(sets: CompletionSets, lesson: CourseLesson): bo
 export function buildCurriculum(
   sets: CompletionSets,
   placementLevel: CefrLevel | null,
+  language: TargetLanguage = "english",
 ): CurriculumResponse {
+  const course = getCourse(language);
   let completedLessons = 0;
   let totalLessons = 0;
 
-  const units: CurriculumUnitDto[] = COURSE.units.map((unit) => {
+  const units: CurriculumUnitDto[] = course.units.map((unit) => {
     const lessons = unit.lessons.map((lesson) => ({
       id: lessonId(unit.id, lesson),
       type: lesson.type,
@@ -132,7 +139,7 @@ export function buildCurriculum(
     units[0];
 
   return {
-    courseTitle: COURSE.title,
+    courseTitle: course.title,
     units,
     placementLevel,
     recommendedUnitId: recommended ? recommended.id : null,

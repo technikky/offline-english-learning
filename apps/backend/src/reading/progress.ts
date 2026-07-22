@@ -3,6 +3,7 @@ import type { ReadingProgressEntry, ReadingProgressResponse } from "@englishclas
 import { db } from "../db/client";
 import { readingResults } from "../db/schema";
 import { listReadingPassages } from "./passages";
+import { getTargetLanguage } from "../users/language";
 
 export async function getReadingProgress(studentId: number): Promise<ReadingProgressResponse> {
   const results = await db
@@ -10,7 +11,8 @@ export async function getReadingProgress(studentId: number): Promise<ReadingProg
     .from(readingResults)
     .where(eq(readingResults.studentId, studentId));
 
-  const passages: ReadingProgressEntry[] = listReadingPassages()
+  const language = await getTargetLanguage(studentId);
+  const passages: ReadingProgressEntry[] = listReadingPassages(language)
     .map((passage) => {
       const passageResults = results.filter((r) => r.passageId === passage.id);
       const bestScore =

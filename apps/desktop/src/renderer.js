@@ -73,6 +73,7 @@ function showLoggedIn(user) {
   document.getElementById("profileRole").textContent = user.role;
   document.getElementById("profileEmail").textContent = user.email;
   renderAvatar();
+  loadTargetLanguage();
   loadConversationTopics();
   loadNotebook();
   loadStudentAnalytics();
@@ -1865,8 +1866,10 @@ async function openReadingPassage(passageId) {
     currentReadingPassageId = passageId;
     currentReadingQuestions = passage.questions;
 
-    document.getElementById("readingPassageTitle").textContent = `${passage.title} (${passage.cefrLevel})`;
+    document.getElementById("readingPassageTitle").textContent =
+      `${passage.title} (${levelLabel(passage.cefrLevel)})`;
     document.getElementById("readingPassageContent").textContent = passage.content;
+    renderReadingScaffold(passage);
     document.getElementById("readingPassageSummary").textContent = passage.summary;
 
     const vocabList = document.getElementById("readingVocabList");
@@ -2930,7 +2933,7 @@ function renderPathUnit(unit, recommendedUnitId) {
 
   const level = document.createElement("span");
   level.className = "path-level-badge";
-  level.textContent = unit.level;
+  level.textContent = levelLabel(unit.level);
 
   const title = document.createElement("span");
   title.className = "path-unit-title";
@@ -2990,6 +2993,129 @@ async function loadCurriculum() {
 }
 
 document.getElementById("tabPathBtn").addEventListener("click", showPathTab);
+
+// Chinese passages ship with pinyin and a translation. Both stay hidden
+// behind toggles so the learner tries the characters first, but can always
+// fall back — without that, a beginner who can't read hanzi is simply stuck.
+function renderReadingScaffold(passage) {
+  const scaffold = document.getElementById("readingScaffold");
+  const pinyinEl = document.getElementById("readingPinyin");
+  const translationEl = document.getElementById("readingTranslation");
+  const pinyinBtn = document.getElementById("readingPinyinBtn");
+  const translationBtn = document.getElementById("readingTranslationBtn");
+
+  const hasPinyin = Boolean(passage.pinyin);
+  const hasTranslation = Boolean(passage.translation);
+  if (!hasPinyin && !hasTranslation) {
+    scaffold.classList.add("hidden");
+    return;
+  }
+
+  pinyinEl.textContent = passage.pinyin || "";
+  translationEl.textContent = passage.translation || "";
+  // Reset to hidden each time a passage is opened.
+  pinyinEl.classList.add("hidden");
+  translationEl.classList.add("hidden");
+  pinyinBtn.textContent = "Show pinyin";
+  translationBtn.textContent = "Show translation";
+  pinyinBtn.classList.toggle("hidden", !hasPinyin);
+  translationBtn.classList.toggle("hidden", !hasTranslation);
+  scaffold.classList.remove("hidden");
+}
+
+function toggleReadingScaffoldSection(elId, btnId, showLabel, hideLabel) {
+  const el = document.getElementById(elId);
+  const btn = document.getElementById(btnId);
+  const nowHidden = el.classList.toggle("hidden");
+  btn.textContent = nowHidden ? showLabel : hideLabel;
+}
+
+document.getElementById("readingPinyinBtn").addEventListener("click", () => {
+  toggleReadingScaffoldSection("readingPinyin", "readingPinyinBtn", "Show pinyin", "Hide pinyin");
+});
+document.getElementById("readingTranslationBtn").addEventListener("click", () => {
+  toggleReadingScaffoldSection(
+    "readingTranslation",
+    "readingTranslationBtn",
+    "Show translation",
+    "Hide translation",
+  );
+});
+
+// --- Target language: English or Chinese (Stage 28) ---
+
+let currentTargetLanguage = "english";
+
+const HSK_LABELS = {
+  A1: "HSK 1",
+  A2: "HSK 2",
+  B1: "HSK 3",
+  B2: "HSK 4",
+  C1: "HSK 5",
+  C2: "HSK 6",
+};
+
+// CEFR stays the internal scale for every language; Chinese learners just see
+// the equivalent HSK band, which is the scale they'll actually recognise.
+function levelLabel(cefrLevel) {
+  if (currentTargetLanguage === "chinese" && HSK_LABELS[cefrLevel]) {
+    return HSK_LABELS[cefrLevel];
+  }
+  return cefrLevel;
+}
+
+function applyTargetLanguageToUi() {
+  const isChinese = currentTargetLanguage === "chinese";
+  document.body.classList.toggle("lang-chinese", isChinese);
+  const hint = document.getElementById("targetLanguageHint");
+  if (hint) {
+    hint.textContent = isChinese
+      ? "Your lessons, reading and AI conversations are in Mandarin Chinese."
+      : "Your lessons, reading and AI conversations are in English.";
+  }
+}
+
+async function loadTargetLanguage() {
+  try {
+    const res = await fetch(`${API_BASE}/me/language`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    currentTargetLanguage = data.targetLanguage || "english";
+    const select = document.getElementById("targetLanguageSelect");
+    if (select) select.value = currentTargetLanguage;
+    applyTargetLanguageToUi();
+  } catch (err) {
+    // sidebar convenience; ignore
+  }
+}
+
+// Switching language changes which content catalogs the backend serves, so
+// every content view has to be reloaded.
+async function changeTargetLanguage(language) {
+  try {
+    const res = await fetch(`${API_BASE}/me/language`, {
+      method: "PUT",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ targetLanguage: language }),
+    });
+    if (!res.ok) return;
+    currentTargetLanguage = language;
+    applyTargetLanguageToUi();
+
+    loadGrammarTopics();
+    loadReadingPassages();
+    loadPlacementStatus();
+    if (!document.getElementById("pathPanel").classList.contains("hidden")) {
+      loadCurriculum();
+    }
+  } catch (err) {
+    // ignore; the select will be re-synced on next login
+  }
+}
+
+document.getElementById("targetLanguageSelect").addEventListener("change", (e) => {
+  changeTargetLanguage(e.target.value);
+});
 
 // --- Platform super-admin: school management (Stage 20) ---
 

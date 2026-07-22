@@ -8,6 +8,34 @@ export interface HealthResponse {
 // manages schools and their admins; "admin" is a school-scoped administrator.
 export type UserRole = "super_admin" | "admin" | "teacher" | "student";
 
+// Stage 28: the language a student is learning. The platform's internal
+// proficiency scale stays CEFR for every language (so all existing level
+// handling keeps working); for Chinese the UI simply *labels* those bands with
+// the equivalent HSK level -- see HSK_LABELS.
+export type TargetLanguage = "english" | "chinese";
+
+export const TARGET_LANGUAGES: TargetLanguage[] = ["english", "chinese"];
+
+export const TARGET_LANGUAGE_LABELS: Record<TargetLanguage, string> = {
+  english: "English",
+  chinese: "Chinese (Mandarin)",
+};
+
+/** Display labels for the CEFR bands when the target language is Chinese. */
+export const HSK_LABELS: Record<CefrLevel, string> = {
+  A1: "HSK 1",
+  A2: "HSK 2",
+  B1: "HSK 3",
+  B2: "HSK 4",
+  C1: "HSK 5",
+  C2: "HSK 6",
+};
+
+/** The level label to show a learner, given their target language. */
+export function levelLabel(level: CefrLevel, language: TargetLanguage): string {
+  return language === "chinese" ? HSK_LABELS[level] : level;
+}
+
 export interface UserProfile {
   id: number;
   email: string;
@@ -16,6 +44,15 @@ export interface UserProfile {
   mustChangePassword: boolean;
   schoolId: number | null; // null for the platform super_admin
   schoolName: string | null;
+  targetLanguage: TargetLanguage;
+}
+
+export interface SetTargetLanguageRequest {
+  targetLanguage: TargetLanguage;
+}
+
+export interface TargetLanguageResponse {
+  targetLanguage: TargetLanguage;
 }
 
 export interface LoginRequest {
@@ -498,6 +535,8 @@ export interface GrammarTopicSummary {
   level: GrammarLevel;
   title: string;
   cefrLevel: CefrLevel;
+  /** Stage 28: which language this topic teaches (defaults to English). */
+  language?: TargetLanguage;
 }
 
 export interface GrammarTopicDetail extends GrammarTopicSummary {
@@ -549,6 +588,12 @@ export interface ReadingPassageSummary {
   title: string;
   cefrLevel: CefrLevel;
   estimatedReadingMinutes: number;
+  /** Stage 28: which language this passage teaches (defaults to English). */
+  language?: TargetLanguage;
+  /** Stage 28: romanisation for Chinese passages, shown behind a toggle. */
+  pinyin?: string;
+  /** Stage 28: English translation for Chinese passages, shown behind a toggle. */
+  translation?: string;
 }
 
 export interface ComprehensionQuestion {

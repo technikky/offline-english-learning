@@ -1,4 +1,4 @@
-import type { CefrLevel, LessonType } from "@englishclass/types";
+import type { CefrLevel, LessonType, TargetLanguage } from "@englishclass/types";
 
 // Stage 27: the structured learning path. A single curated course that
 // sequences the existing practice modules into an ordered A1->C1 route. Each
@@ -33,7 +33,7 @@ export interface Course {
   units: CourseUnit[];
 }
 
-export const COURSE: Course = {
+export const ENGLISH_COURSE: Course = {
   title: "English: A1 to C1",
   units: [
     {
@@ -108,6 +108,80 @@ export const COURSE: Course = {
     },
   ],
 };
+
+// Stage 28: the Mandarin Chinese path. Units are labelled with both the
+// Chinese lesson name and an English gloss. Levels stay on the CEFR scale
+// internally (the UI shows the HSK equivalent for Chinese learners).
+//
+// Chinese units currently use grammar, reading and conversation only:
+// listening needs a Chinese TTS voice, and the writing prompts and quiz
+// categories are still English-specific. Those are tracked as follow-ups in
+// docs/35-stage28-plan.md -- appending lessons here is all that's needed once
+// the content exists.
+export const CHINESE_COURSE: Course = {
+  title: "中文 Chinese: HSK 1 to HSK 4",
+  units: [
+    {
+      id: "unit-zh-a1",
+      level: "A1",
+      title: "日常生活 Everyday Life",
+      lessons: [
+        { type: "grammar", refId: "zh-basic-sentence", title: "Basic Sentence Order (主谓宾)" },
+        { type: "grammar", refId: "zh-questions-ma", title: "Yes/No Questions with 吗" },
+        { type: "reading", refId: "zh-read-my-day", title: "Read: 我的一天 (My Day)" },
+        { type: "conversation", refId: "daily_life", title: "Talk: Daily Life" },
+      ],
+    },
+    {
+      id: "unit-zh-a2",
+      level: "A2",
+      title: "出去吃饭 Eating Out",
+      lessons: [
+        { type: "grammar", refId: "zh-measure-words", title: "Measure Words (量词)" },
+        { type: "grammar", refId: "zh-le-particle", title: "The Particle 了" },
+        {
+          type: "reading",
+          refId: "zh-read-at-the-restaurant",
+          title: "Read: 在饭馆 (At the Restaurant)",
+        },
+        { type: "conversation", refId: "restaurant", title: "Talk: Restaurant" },
+      ],
+    },
+    {
+      id: "unit-zh-b1",
+      level: "B1",
+      title: "学习与表达 Study & Expression",
+      lessons: [
+        { type: "grammar", refId: "zh-ba-construction", title: "The 把 Construction" },
+        { type: "grammar", refId: "zh-comparisons-bi", title: "Comparisons with 比" },
+        {
+          type: "reading",
+          refId: "zh-read-learning-chinese",
+          title: "Read: 学中文难吗？(Is Chinese Hard?)",
+        },
+        { type: "conversation", refId: "free_talk", title: "Talk: Free Conversation" },
+      ],
+    },
+    {
+      id: "unit-zh-b2",
+      level: "B2",
+      title: "进阶表达 Advanced Expression",
+      lessons: [
+        { type: "grammar", refId: "zh-complement-degree", title: "Degree Complements with 得" },
+        { type: "conversation", refId: "debate", title: "Talk: Debate Practice" },
+      ],
+    },
+  ],
+};
+
+export const COURSES: Record<TargetLanguage, Course> = {
+  english: ENGLISH_COURSE,
+  chinese: CHINESE_COURSE,
+};
+
+export function getCourse(language: TargetLanguage = "english"): Course {
+  return COURSES[language] ?? ENGLISH_COURSE;
+}
 
 /** Stable, unique lesson id within the course. */
 export function lessonId(unitId: string, lesson: CourseLesson): string {

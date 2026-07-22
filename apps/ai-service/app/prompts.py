@@ -149,8 +149,45 @@ DIFFICULTY_INSTRUCTIONS = {
 }
 
 
+# Stage 28: HSK labels for the CEFR bands, used when coaching a Chinese
+# learner so the model pitches vocabulary at a level they'd recognise.
+HSK_FOR_CEFR = {
+    "A1": "HSK 1",
+    "A2": "HSK 2",
+    "B1": "HSK 3",
+    "B2": "HSK 4",
+    "C1": "HSK 5",
+    "C2": "HSK 6",
+}
+
+
+def build_chinese_language_instructions(difficulty_level: str) -> str:
+    """Stage 28: turn the tutor into a Mandarin Chinese conversation partner.
+
+    Qwen is a Chinese-native model, so this is a prompting change rather than a
+    new model. Pinyin is required alongside characters because a learner who
+    can't yet read hanzi would otherwise be unable to follow the reply at all.
+    """
+    hsk = HSK_FOR_CEFR.get(difficulty_level, "HSK 3")
+    return (
+        "IMPORTANT: The student is learning Mandarin Chinese, not English. "
+        "Conduct the conversation in Mandarin Chinese using SIMPLIFIED characters.\n"
+        "- After each Chinese sentence you write, give its pinyin (with tone marks) "
+        "in parentheses, then a short English translation. Format each line as: "
+        "中文句子。(Zhōngwén jùzi.) — English translation.\n"
+        f"- Keep your vocabulary and grammar around {hsk} level "
+        f"(CEFR {difficulty_level}).\n"
+        "- If the student writes in English or makes a mistake, gently give the "
+        "natural Chinese way to say it, then continue the conversation in Chinese.\n"
+        "- Never reply only in English."
+    )
+
+
 def build_system_prompt(
-    scenario: str, difficulty_level: str, custom_prompt: str | None = None
+    scenario: str,
+    difficulty_level: str,
+    custom_prompt: str | None = None,
+    target_language: str = "english",
 ) -> str:
     # Stage 23: a teacher-authored custom topic supplies its own scenario text;
     # otherwise fall back to the built-in scenario prompts.
@@ -162,6 +199,19 @@ def build_system_prompt(
     difficulty_text = DIFFICULTY_INSTRUCTIONS.get(
         difficulty_level, DIFFICULTY_INSTRUCTIONS["B1"]
     )
+
+    # Stage 28: for a Chinese learner the language instructions come first, so
+    # they dominate the (English-authored) scenario text that follows.
+    if target_language == "chinese":
+        return (
+            f"{build_chinese_language_instructions(difficulty_level)}\n\n"
+            f"{scenario_text}\n\n"
+            f"{PEDAGOGY_INSTRUCTIONS}\n\n"
+            "Keep replies conversational and not too long (2-4 sentences plus "
+            "your follow-up question), since this is a spoken-style practice "
+            "conversation, not an essay."
+        )
+
     return (
         f"{scenario_text}\n\n"
         f"Adapt your English to the student's level: {difficulty_text}\n\n"

@@ -12,10 +12,18 @@ export function requestAiChatStream(
   scenario: string,
   difficultyLevel: string,
   customPrompt?: string | null,
+  targetLanguage: string = "english",
 ): Promise<Response> {
   return fetch(`${AI_SERVICE_URL}/v1/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages, scenario, difficultyLevel, customPrompt: customPrompt ?? null }),
+    body: JSON.stringify({
+      messages,
+      scenario,
+      difficultyLevel,
+      customPrompt: customPrompt ?? null,
+      // Stage 28: makes the AI partner converse in the student's target language.
+      targetLanguage,
+    }),
   });
 }

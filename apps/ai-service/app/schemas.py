@@ -12,6 +12,9 @@ class ChatRequest(BaseModel):
     scenario: str = "free_talk"
     difficultyLevel: str = "B1"
     customPrompt: str | None = None  # Stage 23: teacher-authored topic prompt
+    # Stage 28: which language the student is learning. Defaults to English so
+    # existing callers are unaffected.
+    targetLanguage: Literal["english", "chinese"] = "english"
 
 
 class GrammarExplainRequest(BaseModel):

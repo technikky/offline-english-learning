@@ -181,6 +181,35 @@
       .review-rate-btn[data-rating="hard"] { background: #b45309; }
       .review-rate-btn[data-rating="good"] { background: #15803d; }
       .review-rate-btn[data-rating="easy"] { background: #0e7490; }
+      /* Stage 28: Chinese reading scaffolding (pinyin + translation) */
+      .reading-scaffold-buttons {
+        display: flex;
+        gap: 8px;
+        margin: 8px 0;
+      }
+      .reading-scaffold-buttons button {
+        width: auto;
+        padding: 4px 10px;
+        font-size: 12px;
+        margin-top: 0;
+      }
+      .reading-pinyin {
+        font-style: italic;
+        opacity: 0.85;
+        line-height: 1.7;
+      }
+      .reading-translation {
+        opacity: 0.8;
+        line-height: 1.7;
+        border-left: 2px solid #334155;
+        padding-left: 10px;
+      }
+      /* Chinese text needs a little more size/leading to be legible. */
+      .reading-content:lang(zh),
+      .lang-chinese .reading-content {
+        font-size: 17px;
+        line-height: 1.9;
+      }
       /* Stage 27: curriculum path */
       .path-progress {
         height: 8px;
@@ -912,6 +941,13 @@
         <div class="profile-row"><span>Email</span><span id="profileEmail"></span></div>
         <button id="logoutBtn" class="secondary">Log out</button>
 
+        <h3>I'm learning</h3>
+        <select id="targetLanguageSelect">
+          <option value="english">English</option>
+          <option value="chinese">中文 Chinese (Mandarin)</option>
+        </select>
+        <div id="targetLanguageHint" style="font-size:12px;opacity:0.75;margin-top:4px"></div>
+
         <h3>My level</h3>
         <div id="placementLevelPanel">
           <div><span id="placementLevelValue">—</span></div>
@@ -1053,6 +1089,14 @@
             <h2 id="readingPassageTitle"></h2>
             <button id="readingListenBtn">🔊 Listen to passage</button>
             <p id="readingPassageContent" class="reading-content"></p>
+            <div id="readingScaffold" class="hidden">
+              <div class="reading-scaffold-buttons">
+                <button id="readingPinyinBtn" class="secondary">Show pinyin</button>
+                <button id="readingTranslationBtn" class="secondary">Show translation</button>
+              </div>
+              <p id="readingPinyin" class="reading-pinyin hidden"></p>
+              <p id="readingTranslation" class="reading-translation hidden"></p>
+            </div>
 
             <div class="panel">
               <h3>Summary</h3>

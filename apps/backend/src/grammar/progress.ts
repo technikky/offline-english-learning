@@ -3,6 +3,7 @@ import type { GrammarProgressResponse, GrammarTopicProgress } from "@englishclas
 import { db } from "../db/client";
 import { grammarExerciseAttempts } from "../db/schema";
 import { listGrammarTopics } from "./curriculum";
+import { getTargetLanguage } from "../users/language";
 
 export async function getGrammarProgress(studentId: number): Promise<GrammarProgressResponse> {
   const attempts = await db
@@ -10,7 +11,8 @@ export async function getGrammarProgress(studentId: number): Promise<GrammarProg
     .from(grammarExerciseAttempts)
     .where(eq(grammarExerciseAttempts.studentId, studentId));
 
-  const topics: GrammarTopicProgress[] = listGrammarTopics().map((topic) => {
+  const language = await getTargetLanguage(studentId);
+  const topics: GrammarTopicProgress[] = listGrammarTopics(language).map((topic) => {
     const topicAttempts = attempts.filter((a) => a.topicId === topic.id);
     const correct = topicAttempts.filter((a) => a.isCorrect).length;
     return {

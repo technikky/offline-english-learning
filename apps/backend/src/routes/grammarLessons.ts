@@ -5,6 +5,7 @@ import { authenticate } from "../auth/middleware";
 import { listGrammarTopics, getGrammarTopic } from "../grammar/curriculum";
 import { aiExerciseClient } from "../grammar/aiExerciseClient";
 import { getGrammarProgress } from "../grammar/progress";
+import { getTargetLanguage } from "../users/language";
 import type {
   GrammarExerciseDto,
   GrammarExerciseType,
@@ -17,12 +18,14 @@ function normalizeAnswer(value: string): string {
 }
 
 export function registerGrammarLessonRoutes(app: FastifyInstance): void {
-  app.get("/grammar/topics", { preHandler: authenticate }, async () => {
-    return listGrammarTopics().map(({ id, level, title, cefrLevel }) => ({
+  app.get("/grammar/topics", { preHandler: authenticate }, async (request) => {
+    const language = await getTargetLanguage(request.authUser!.sub);
+    return listGrammarTopics(language).map(({ id, level, title, cefrLevel }) => ({
       id,
       level,
       title,
       cefrLevel,
+      language,
     }));
   });
 

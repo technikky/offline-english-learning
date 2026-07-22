@@ -1,8 +1,12 @@
-import type { ReadingPassageSummary } from "@englishclass/types";
+import type { ReadingPassageSummary, TargetLanguage } from "@englishclass/types";
 
 export interface PassageRecord extends ReadingPassageSummary {
   content: string;
 }
+
+// Imported after the interface so the Chinese catalog can reference it as a
+// type-only import (erased at compile time, so there's no runtime cycle).
+import { CHINESE_PASSAGES } from "../chinese/passages";
 
 // Stage 15: a curated set of reading passages, one per CEFR level. Curated
 // for the same reason as the Stage 14 grammar curriculum -- reliable,
@@ -97,15 +101,25 @@ const PASSAGES: PassageRecord[] = [
   },
 ];
 
-export function listReadingPassages(): ReadingPassageSummary[] {
-  return PASSAGES.map(({ id, title, cefrLevel, estimatedReadingMinutes }) => ({
+// Stage 28: passages for the language the student is learning. As with grammar
+// topics, ids are globally unique across languages, so lookups search every
+// catalog and only listing filters.
+export function listReadingPassages(
+  language: TargetLanguage = "english",
+): ReadingPassageSummary[] {
+  const catalog = language === "chinese" ? CHINESE_PASSAGES : PASSAGES;
+  return catalog.map(({ id, title, cefrLevel, estimatedReadingMinutes, language: lang }) => ({
     id,
     title,
     cefrLevel,
     estimatedReadingMinutes,
+    language: lang,
   }));
 }
 
 export function getReadingPassage(id: string): PassageRecord | undefined {
-  return PASSAGES.find((passage) => passage.id === id);
+  return (
+    PASSAGES.find((passage) => passage.id === id) ??
+    CHINESE_PASSAGES.find((passage) => passage.id === id)
+  );
 }

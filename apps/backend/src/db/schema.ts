@@ -32,6 +32,12 @@ export const users = sqliteTable("users", {
   // the learner's starting difficulty instead of the old hardcoded B1 default.
   placementLevel: text("placement_level"),
   placementCompletedAt: text("placement_completed_at"),
+  // Stage 28: which language the student is learning. CEFR remains the
+  // internal proficiency scale for every language; Chinese is only *labelled*
+  // with HSK bands in the UI.
+  targetLanguage: text("target_language", { enum: ["english", "chinese"] })
+    .notNull()
+    .default("english"),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),

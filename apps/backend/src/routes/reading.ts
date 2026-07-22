@@ -5,6 +5,7 @@ import { authenticate } from "../auth/middleware";
 import { listReadingPassages, getReadingPassage } from "../reading/passages";
 import { getOrCreateComprehension } from "../reading/comprehension";
 import { getReadingProgress } from "../reading/progress";
+import { getTargetLanguage } from "../users/language";
 import type { ReadingPassageDetail, SubmitReadingRequest, SubmitReadingResponse } from "@englishclass/types";
 
 function normalizeAnswer(value: string): string {
@@ -12,8 +13,9 @@ function normalizeAnswer(value: string): string {
 }
 
 export function registerReadingRoutes(app: FastifyInstance): void {
-  app.get("/reading/passages", { preHandler: authenticate }, async () => {
-    return listReadingPassages();
+  app.get("/reading/passages", { preHandler: authenticate }, async (request) => {
+    const language = await getTargetLanguage(request.authUser!.sub);
+    return listReadingPassages(language);
   });
 
   app.get<{ Params: { id: string } }>(

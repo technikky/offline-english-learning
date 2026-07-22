@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { buildCurriculum, type CompletionSets } from "./progress";
-import { COURSE } from "./course";
+import { ENGLISH_COURSE as COURSE } from "./course";
 
 function emptySets(): CompletionSets {
   return {

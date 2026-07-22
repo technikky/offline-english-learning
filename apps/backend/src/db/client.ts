@@ -47,6 +47,7 @@ export function ensureSchema(): void {
       must_change_password INTEGER NOT NULL DEFAULT 0,
       placement_level TEXT,
       placement_completed_at TEXT,
+      target_language TEXT NOT NULL DEFAULT 'english' CHECK (target_language IN ('english', 'chinese')),
       created_at TEXT NOT NULL DEFAULT (current_timestamp)
     );
 
@@ -272,6 +273,13 @@ function runMigrations(): void {
   }
   if (!userColumns.some((c) => c.name === "placement_completed_at")) {
     sqlite.exec("ALTER TABLE users ADD COLUMN placement_completed_at TEXT");
+  }
+  // Stage 28: target language. A constant default is allowed in ALTER TABLE
+  // ADD COLUMN, so existing users default to English with no backfill needed.
+  if (!userColumns.some((c) => c.name === "target_language")) {
+    sqlite.exec(
+      "ALTER TABLE users ADD COLUMN target_language TEXT NOT NULL DEFAULT 'english'",
+    );
   }
 
   // Stage 25: SM-2 spaced-repetition columns on the vocabulary notebook. DBs

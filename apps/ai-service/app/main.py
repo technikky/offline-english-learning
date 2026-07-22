@@ -72,7 +72,10 @@ def health() -> dict:
 
 def _stream_chat(request: ChatRequest):
     system_prompt = build_system_prompt(
-        request.scenario, request.difficultyLevel, request.customPrompt
+        request.scenario,
+        request.difficultyLevel,
+        request.customPrompt,
+        request.targetLanguage,
     )
     messages = [{"role": "system", "content": system_prompt}] + [
         {"role": m.role, "content": m.content} for m in request.messages

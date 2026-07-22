@@ -13,6 +13,7 @@ import { authenticate } from "../auth/middleware";
 import { estimateDifficultyLevel } from "../conversations/difficulty";
 import { requestAiChatStream, type AiChatMessage } from "../conversations/aiClient";
 import { checkAndPersistGrammar } from "../grammar/checkAndPersist";
+import { getTargetLanguage } from "../users/language";
 import { isValidScenario } from "../conversations/scenarios";
 import {
   isCustomScenario,
@@ -157,11 +158,13 @@ export function registerConversationRoutes(app: FastifyInstance): void {
         customPrompt = (await getCustomTopic(customTopicId))?.prompt ?? null;
       }
 
+      const targetLanguage = await getTargetLanguage(request.authUser!.sub);
       const aiResponse = await requestAiChatStream(
         aiMessages,
         conversation.scenario,
         difficultyLevel,
         customPrompt,
+        targetLanguage,
       );
 
       if (!aiResponse.ok || !aiResponse.body) {

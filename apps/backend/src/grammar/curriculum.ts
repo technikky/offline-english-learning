@@ -1,4 +1,5 @@
-import type { GrammarTopicDetail } from "@englishclass/types";
+import type { GrammarTopicDetail, TargetLanguage } from "@englishclass/types";
+import { CHINESE_GRAMMAR_TOPICS } from "../chinese/grammar";
 
 // Stage 14: a curated grammar curriculum. Deliberately static/curated rather
 // than AI-generated -- foundational lesson content (the explanation and
@@ -169,10 +170,16 @@ const CURRICULUM: GrammarTopicDetail[] = [
   },
 ];
 
-export function listGrammarTopics(): GrammarTopicDetail[] {
-  return CURRICULUM;
+// Stage 28: topics for the language the student is learning. Ids are globally
+// unique across languages, so only *listing* needs the language -- lookups can
+// stay language-agnostic and search every catalog.
+export function listGrammarTopics(language: TargetLanguage = "english"): GrammarTopicDetail[] {
+  return language === "chinese" ? CHINESE_GRAMMAR_TOPICS : CURRICULUM;
 }
 
 export function getGrammarTopic(id: string): GrammarTopicDetail | undefined {
-  return CURRICULUM.find((topic) => topic.id === id);
+  return (
+    CURRICULUM.find((topic) => topic.id === id) ??
+    CHINESE_GRAMMAR_TOPICS.find((topic) => topic.id === id)
+  );
 }

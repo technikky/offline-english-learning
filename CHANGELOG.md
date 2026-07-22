@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.16.0 — Stage 28: Chinese as a target language
+
+- **The platform now teaches Mandarin Chinese, not just English.** A new "I'm learning" selector switches a student between English and Chinese; the content catalogs, the curriculum path, and the AI conversation partner all follow the setting.
+- **The bundled model already speaks Chinese.** The vendored LLM is Qwen — a Chinese-native model family — so Chinese conversation is a *prompting* change, not a new model. The AI now replies in simplified characters with pinyin and a short English gloss on every line, pitched at the matching HSK band, and won't fall back to English-only.
+- **Curated Chinese content**: 7 grammar topics (A1–B2: word order, 吗 questions, measure words, 了, 把, 比 comparisons, 得 complements) with pinyin and glosses inline, and 3 reading passages (A1–B1) that ship with full pinyin and an English translation revealed by toggles.
+- **A Chinese learning path**: `中文 Chinese: HSK 1 to HSK 4`, four units, served by the existing `GET /curriculum` for Chinese learners.
+- **CEFR stays the internal scale; HSK is a display label** (`A1→HSK 1` … `C2→HSK 6`). This means placement, difficulty estimation, curriculum ordering and progress all keep working with no refactor.
+- **Content ids are globally unique across languages** (`zh-` prefixes), so lookups stay language-agnostic and only listing filters — a much smaller change than threading a language parameter everywhere.
+- New `users.target_language` column (additive migration, constant default, no backfill) and `GET`/`PUT /me/language`.
+- **Deferred, with reasons documented** in the plan doc: Chinese listening (needs a Chinese Piper voice) and pronunciation/speech input (bundled Whisper is `tiny.en`, English-only) both need new vendored models; Chinese writing prompts/quizzes, an HSK vocabulary seed, CJK font bundling and UI translation are follow-ups. The Chinese path currently covers HSK 1–4.
+- Verified: backend **139 tests passing** (+6), AI service **53 pytest passing** (+6), backend `tsc` clean, types build clean, `renderer.js` `node --check` clean. The reference-integrity guard now runs over every language's course and asserts the Chinese path only references Chinese-tagged content.
+
 ## v1.15.0 — Stage 27: Structured curriculum path
 
 - **The eight practice modules are now an ordered route, not an à-la-carte menu.** A curated course, `English: A1 to C1`, sequences grammar, reading, listening, writing, conversation and quiz work into five units (one per CEFR level, A1–C1), giving a learner a clear "what next" from beginner to advanced.
