@@ -27,6 +27,7 @@ import { findSimilarWords } from "../vocabulary/similarity";
 import { getRecommendationsForConversation } from "../vocabulary/recommendations";
 import { scheduleReview } from "../vocabulary/srs";
 import { listWordlist } from "../vocabulary/wordlist";
+import { getTargetLanguage } from "../users/language";
 
 const REVIEW_RATINGS: ReviewRating[] = ["again", "hard", "good", "easy"];
 const LEVELS: string[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
@@ -285,7 +286,8 @@ export function registerVocabularyRoutes(app: FastifyInstance): void {
       const level = LEVELS.includes(request.query.level ?? "")
         ? (request.query.level as CefrLevel)
         : undefined;
-      const entries = listWordlist(level);
+      const language = await getTargetLanguage(request.authUser!.sub);
+      const entries = listWordlist(level, language);
 
       const savedRows = await db
         .select({ word: vocabulary.word })
@@ -323,6 +325,7 @@ export function registerVocabularyRoutes(app: FastifyInstance): void {
       }
       const limit = Math.min(Math.max(Number(count) || DEFAULT_SEED_COUNT, 1), MAX_SEED_COUNT);
       const studentId = request.authUser!.sub;
+      const language = await getTargetLanguage(studentId);
 
       const savedRows = await db
         .select({ word: vocabulary.word })
@@ -331,8 +334,9 @@ export function registerVocabularyRoutes(app: FastifyInstance): void {
         .where(eq(vocabularyNotebook.studentId, studentId));
       const saved = new Set(savedRows.map((r) => r.word));
 
-      const candidates = listWordlist(level).filter((e) => !saved.has(e.word));
-      const skipped = listWordlist(level).length - candidates.length;
+      const levelWords = listWordlist(level, language);
+      const candidates = levelWords.filter((e) => !saved.has(e.word));
+      const skipped = levelWords.length - candidates.length;
 
       let added = 0;
       // Sequential: each word still needs an embedding from the single-threaded
@@ -395,10 +399,12 @@ export function registerVocabularyRoutes(app: FastifyInstance): void {
       // Stage 33: the student's level decides which words are worth
       // recommending, so it has to be threaded through.
       const studentLevel = await estimateDifficultyLevel(request.authUser!.sub);
+      const language = await getTargetLanguage(request.authUser!.sub);
       const words = await getRecommendationsForConversation(
         conversationId,
         request.authUser!.sub,
         studentLevel,
+        language,
       );
       const response: RecommendationsResponse = { words };
       return response;

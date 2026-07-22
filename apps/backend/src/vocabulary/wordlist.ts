@@ -1,4 +1,4 @@
-import type { CefrLevel } from "@englishclass/types";
+import type { CefrLevel, TargetLanguage } from "@englishclass/types";
 
 // Stage 33: a curated, CEFR-graded core wordlist.
 //
@@ -23,6 +23,8 @@ import type { CefrLevel } from "@englishclass/types";
 export interface WordlistEntry {
   word: string;
   cefrLevel: CefrLevel;
+  /** Stage 34: which language this word belongs to (defaults to English). */
+  language?: TargetLanguage;
   definition: string;
   example: string;
   synonyms: string[];
@@ -203,20 +205,39 @@ const WORDLIST: WordlistEntry[] = [
   { word: "ubiquitous", cefrLevel: "C2", definition: "Seeming to be everywhere at once.", example: "Smartphones have become ubiquitous.", synonyms: ["omnipresent"], antonyms: ["scarce"] },
 ];
 
-/** All curated entries, optionally filtered to one CEFR level. */
-export function listWordlist(level?: CefrLevel): WordlistEntry[] {
-  return level ? WORDLIST.filter((e) => e.cefrLevel === level) : WORDLIST;
+// Imported here (after the interface) so the Chinese list can reference the
+// shared entry type; the import is value-level but there is no cycle because
+// chinese/wordlist.ts imports only the type.
+import { CHINESE_WORDLIST } from "../chinese/wordlist";
+
+function catalogFor(language: TargetLanguage): WordlistEntry[] {
+  return language === "chinese" ? CHINESE_WORDLIST : WORDLIST;
 }
 
-/** Looks up a curated entry by word (case-insensitive). */
+/** Curated entries for a language, optionally filtered to one CEFR level. */
+export function listWordlist(
+  level?: CefrLevel,
+  language: TargetLanguage = "english",
+): WordlistEntry[] {
+  const catalog = catalogFor(language);
+  return level ? catalog.filter((e) => e.cefrLevel === level) : catalog;
+}
+
+/** Looks up a curated entry by word across every language.
+ * Chinese words are 汉字 and English words are latin, so they cannot collide --
+ * which lets lookups stay language-agnostic (the Stage 28 rule). */
 export function getWordlistEntry(word: string): WordlistEntry | undefined {
   const normalized = word.trim().toLowerCase();
-  return WORDLIST.find((e) => e.word === normalized);
+  return (
+    WORDLIST.find((e) => e.word === normalized) ??
+    CHINESE_WORDLIST.find((e) => e.word === normalized)
+  );
 }
 
-/** The CEFR level of a curated word, or undefined if it isn't in the list. */
+/** The CEFR level of a curated word, or undefined if it isn't in any list. */
 export function wordlistLevelOf(word: string): CefrLevel | undefined {
   return getWordlistEntry(word)?.cefrLevel;
 }
 
 export const WORDLIST_SIZE = WORDLIST.length;
+export const CHINESE_WORDLIST_SIZE = CHINESE_WORDLIST.length;

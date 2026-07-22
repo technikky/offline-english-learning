@@ -2722,6 +2722,24 @@ async function gradeReviewCard(rating) {
 
 // Stage 33: seed the review deck from the curated CEFR wordlist, so a new
 // learner has cards to practise before they've looked anything up themselves.
+// The seed dropdown shows HSK bands for Chinese learners, matching how levels
+// are labelled everywhere else in the UI.
+function refreshSeedLevelLabels() {
+  const select = document.getElementById("seedLevelSelect");
+  if (!select) return;
+  const friendly = {
+    A1: "Beginner",
+    A2: "Elementary",
+    B1: "Intermediate",
+    B2: "Upper-intermediate",
+    C1: "Advanced",
+    C2: "Proficient",
+  };
+  for (const option of select.options) {
+    option.textContent = `${levelLabel(option.value)} — ${friendly[option.value]}`;
+  }
+}
+
 async function seedStarterPack() {
   const level = document.getElementById("seedLevelSelect").value;
   const count = Number(document.getElementById("seedCountSelect").value);
@@ -2743,8 +2761,8 @@ async function seedStarterPack() {
     const data = await res.json();
     resultEl.textContent =
       data.added > 0
-        ? `Added ${data.added} ${level} word${data.added === 1 ? "" : "s"} to your review deck.`
-        : `You already have every ${level} word in this pack.`;
+        ? `Added ${data.added} ${levelLabel(level)} word${data.added === 1 ? "" : "s"} to your review deck.`
+        : `You already have every ${levelLabel(level)} word in this pack.`;
     loadReviewStats();
     refreshReviewBadge();
     loadNotebook();
@@ -3140,6 +3158,7 @@ function levelLabel(cefrLevel) {
 function applyTargetLanguageToUi() {
   const isChinese = currentTargetLanguage === "chinese";
   document.body.classList.toggle("lang-chinese", isChinese);
+  refreshSeedLevelLabels();
   const hint = document.getElementById("targetLanguageHint");
   if (hint) {
     hint.textContent = isChinese

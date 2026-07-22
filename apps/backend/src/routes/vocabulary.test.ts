@@ -391,3 +391,87 @@ test("a curated word is defined without calling the LLM", async () => {
     restore();
   }
 });
+
+// --- Stage 34: HSK wordlist for Chinese learners ---
+
+async function createLearner(email: string, targetLanguage: "english" | "chinese") {
+  const passwordHash = await hashPassword("studentpass123");
+  const [student] = await db
+    .insert(users)
+    .values({ email, passwordHash, role: "student", displayName: "L", targetLanguage })
+    .returning();
+  return { student, token: signAccessToken({ sub: student.id, role: "student" }) };
+}
+
+test("the wordlist served follows the learner's target language", async () => {
+  ensureSchema();
+  const restore = fakeAiVocab();
+  try {
+    const app = buildApp();
+    const { token } = await createLearner("hsk1@x.com", "chinese");
+    const res = await app.inject({
+      method: "GET",
+      url: "/vocabulary/wordlist?level=A1",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const words = res.json().entries.map((e: { word: string }) => e.word);
+    assert.ok(words.includes("你好"), "Chinese learner should get the HSK list");
+    assert.ok(!words.includes("family"), "English words must not appear");
+  } finally {
+    restore();
+  }
+});
+
+test("a Chinese learner seeds their deck from the HSK list", async () => {
+  ensureSchema();
+  const restore = fakeAiVocab();
+  try {
+    const app = buildApp();
+    const { token } = await createLearner("hsk2@x.com", "chinese");
+    const seeded = await app.inject({
+      method: "POST",
+      url: "/vocabulary/notebook/seed",
+      headers: { authorization: `Bearer ${token}` },
+      payload: { level: "A1", count: 5 },
+    });
+    assert.equal(seeded.json().added, 5);
+
+    const notebook = await app.inject({
+      method: "GET",
+      url: "/vocabulary/notebook",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const saved = notebook.json().map((e: { vocabulary: { word: string } }) => e.vocabulary.word);
+    assert.ok(saved.every((w: string) => /[一-鿿]/.test(w)), "seeded words must be Chinese");
+    // And they are due immediately, like any other new SRS card.
+    const stats = await app.inject({
+      method: "GET",
+      url: "/vocabulary/review/stats",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    assert.equal(stats.json().due, 5);
+  } finally {
+    restore();
+  }
+});
+
+test("a curated Chinese word is defined without calling the LLM", async () => {
+  ensureSchema();
+  const restore = fakeAiVocab();
+  try {
+    const app = buildApp();
+    const { token } = await createLearner("hsk3@x.com", "chinese");
+    const res = await app.inject({
+      method: "POST",
+      url: "/vocabulary/lookup",
+      headers: { authorization: `Bearer ${token}` },
+      payload: { word: "努力" },
+    });
+    assert.equal(res.statusCode, 200);
+    // The authored entry wins over the fake LLM's placeholder definition.
+    assert.match(res.json().definition, /nǔlì/);
+    assert.equal(res.json().cefrLevel, "B1");
+  } finally {
+    restore();
+  }
+});

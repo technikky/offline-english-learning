@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.22.0 - Stage 34: HSK vocabulary wordlist
+
+- **Closes the last major asymmetry between the two languages.** Stage 33 gave English a curated CEFR wordlist; Chinese learners got none of its three benefits. New `chinese/wordlist.ts` adds **120 curated HSK-graded entries** (25/25/25/20/15/10 across HSK 1-6, mapped onto the internal CEFR scale), with pinyin carried inline so they need no schema change.
+- **Fixed the fourth latent English-only bug** — and this one was invisible: `extractCandidateWords()` matched candidates with `/[a-z']+/g`, which matches **nothing** in 汉字, so Chinese learners were receiving **zero vocabulary recommendations, ever**. On a realistic AI reply the extractor went from `null` to seven correctly-graded candidates. The fix uses dictionary matching against the curated HSK list, longest-word-first (so 影响力 beats the 影响 inside it) — Chinese has no whitespace to split on, so the curated list *is* the segmenter.
+- Two related rules changed with it: the latin-only **English stoplist is no longer consulted for Chinese**, and the **length fallback does not apply to Chinese** (a long run of characters is not evidence of a word worth learning), so ungraded Chinese strings are never recommended.
+- **All three Stage 33 integrations now work for Chinese with no new plumbing** — LLM-free authored definitions (looking up 努力 returns `nǔlì — to work hard` rather than a 1.5B model's guess), CEFR-graded recommendations, and SRS deck seeding from the learner's own language list. Lookups stay language-agnostic because hanzi and latin cannot collide.
+- The C2 band deliberately includes 成语 (不言而喻, 归根结底, 举足轻重), since idiom is what separates advanced Mandarin from merely correct Mandarin.
+- The "Starter word pack" level dropdown now relabels itself with HSK bands for Chinese learners, consistent with level labelling elsewhere.
+- Documented limitations: 120 words is a core list against a real HSK 1-6 of roughly 5,000; the HSK-to-CEFR mapping is conventional but approximate; and dictionary-matching segmentation only finds words already in the list.
+- Verified: backend **191 tests passing** (+11), AI service 80 pytest passing, backend `tsc` clean, types build clean, `renderer.js` `node --check` clean.
+
 ## v1.21.0 - Stage 33: Curated CEFR vocabulary wordlist
 
 - **Closes the largest remaining content gap.** The only wordlist in the system was a 75-word *stoplist*, which left vocabulary recommendations as a crude heuristic and left the spaced-repetition notebook with nothing to seed from. New `vocabulary/wordlist.ts` adds **160 curated CEFR-graded entries** (30/30/30/30/25/15 across A1-C2), each with an authored definition, natural example, synonyms and antonyms.

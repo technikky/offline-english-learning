@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
-import type { CefrLevel, VocabularyDto } from "@englishclass/types";
+import type { CefrLevel, TargetLanguage, VocabularyDto } from "@englishclass/types";
 import { db } from "../db/client";
 import { messages, vocabularyNotebook, vocabulary } from "../db/schema";
 import { COMMON_WORDS } from "./commonWords";
 import { lookupOrCreateVocabulary } from "./lookup";
-import { wordlistLevelOf } from "./wordlist";
+import { listWordlist, wordlistLevelOf } from "./wordlist";
 
 const MIN_CANDIDATE_LENGTH = 7;
 const MAX_RECOMMENDATIONS = 5;
@@ -26,23 +26,60 @@ function levelIndex(level: CefrLevel): number {
  * are skipped as already-known, and words absent from the list fall back to the
  * old length heuristic so genuinely rare vocabulary is still surfaced.
  */
-export function isWorthRecommending(word: string, studentLevel: CefrLevel): boolean {
-  if (COMMON_WORDS.has(word)) return false;
+export function isWorthRecommending(
+  word: string,
+  studentLevel: CefrLevel,
+  language: TargetLanguage = "english",
+): boolean {
+  // The stoplist and the length rule are both English-specific.
+  if (language === "english" && COMMON_WORDS.has(word)) return false;
 
   const graded = wordlistLevelOf(word);
   if (graded) return levelIndex(graded) >= levelIndex(studentLevel);
 
+  // Chinese candidates only ever come from the curated list (see
+  // extractCandidateWords), so an ungraded Chinese "word" doesn't exist.
+  if (language === "chinese") return false;
+
   return word.length >= MIN_CANDIDATE_LENGTH;
 }
 
-function extractCandidateWords(text: string, studentLevel: CefrLevel): string[] {
-  const words = text.toLowerCase().match(/[a-z']+/g) ?? [];
+/**
+ * Stage 34: pulls candidate words out of a message.
+ *
+ * English splits on whitespace. Chinese cannot: it is written without spaces,
+ * and the latin-only regex used for English matches **nothing** in 汉字 — so
+ * before this, Chinese learners silently received zero recommendations, ever.
+ * Chinese instead uses dictionary matching against the curated HSK list, which
+ * is effectively segmentation for the words we actually care about.
+ */
+function extractCandidateWords(
+  text: string,
+  studentLevel: CefrLevel,
+  language: TargetLanguage = "english",
+): string[] {
   const seen = new Set<string>();
   const candidates: string[] = [];
 
+  if (language === "chinese") {
+    // Longest words first, so 影响力 is preferred over the 影响 inside it.
+    const entries = [...listWordlist(undefined, "chinese")].sort(
+      (a, b) => b.word.length - a.word.length,
+    );
+    for (const entry of entries) {
+      if (seen.has(entry.word)) continue;
+      if (!text.includes(entry.word)) continue;
+      if (!isWorthRecommending(entry.word, studentLevel, "chinese")) continue;
+      seen.add(entry.word);
+      candidates.push(entry.word);
+    }
+    return candidates;
+  }
+
+  const words = text.toLowerCase().match(/[a-z']+/g) ?? [];
   for (const word of words) {
     if (seen.has(word)) continue;
-    if (!isWorthRecommending(word, studentLevel)) continue;
+    if (!isWorthRecommending(word, studentLevel, "english")) continue;
     seen.add(word);
     candidates.push(word);
   }
@@ -75,6 +112,7 @@ export async function getRecommendationsForConversation(
   conversationId: number,
   studentId: number,
   studentLevel: CefrLevel = "B1",
+  language: TargetLanguage = "english",
 ): Promise<VocabularyDto[]> {
   const assistantMessages = await db
     .select({ content: messages.content })
@@ -83,7 +121,7 @@ export async function getRecommendationsForConversation(
 
   const candidateWords = new Set<string>();
   for (const message of assistantMessages) {
-    for (const word of extractCandidateWords(message.content, studentLevel)) {
+    for (const word of extractCandidateWords(message.content, studentLevel, language)) {
       candidateWords.add(word);
     }
   }
