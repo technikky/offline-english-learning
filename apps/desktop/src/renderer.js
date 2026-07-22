@@ -1529,6 +1529,24 @@ async function togglePronunciationRecording() {
     resultEl.appendChild(score);
     resultEl.appendChild(transcript);
     resultEl.appendChild(feedback);
+
+    // Stage 30: for Mandarin, tone is scored separately from whether the right
+    // words were recognised — you can say the correct syllable with the wrong
+    // tone and mean a different word entirely.
+    if (data.tone) {
+      const toneBox = document.createElement("div");
+      toneBox.className = "tone-result";
+      if (data.tone.confident) {
+        const toneScore = document.createElement("div");
+        toneScore.className = "score";
+        toneScore.textContent = `Tone: ${data.tone.toneScore}%`;
+        toneBox.appendChild(toneScore);
+      }
+      const toneFeedback = document.createElement("div");
+      toneFeedback.textContent = data.tone.feedback;
+      toneBox.appendChild(toneFeedback);
+      resultEl.appendChild(toneBox);
+    }
   } catch (err) {
     resultEl.textContent = "Could not reach the backend.";
   }

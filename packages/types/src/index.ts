@@ -483,6 +483,19 @@ export interface PronunciationPracticeResponse {
   transcript: string;
   accuracyScore: number;
   feedback: string;
+  /** Stage 30: Mandarin tone score from the pitch contour. Chinese only. */
+  tone?: ToneScoreDto;
+}
+
+// Stage 30: tone is scored from pitch, separately from whether the right words
+// were recognised -- in Mandarin a correctly-transcribed syllable can still be
+// the wrong word if the tone is wrong.
+export interface ToneScoreDto {
+  toneScore: number;
+  /** False when there wasn't enough voiced audio to judge (a recording problem). */
+  confident: boolean;
+  meanSemitoneDistance: number;
+  feedback: string;
 }
 
 // Stage 12: admin system-health / config / model-management / backup DTOs.

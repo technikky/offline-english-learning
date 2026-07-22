@@ -155,6 +155,7 @@ export function ensureSchema(): void {
       target_phrase TEXT NOT NULL,
       transcript TEXT NOT NULL,
       accuracy_score INTEGER NOT NULL,
+      tone_score INTEGER,
       created_at TEXT NOT NULL DEFAULT (current_timestamp)
     );
 
@@ -276,6 +277,14 @@ function runMigrations(): void {
   }
   // Stage 28: target language. A constant default is allowed in ALTER TABLE
   // ADD COLUMN, so existing users default to English with no backfill needed.
+  // Stage 30: Mandarin tone score on pronunciation results.
+  const pronunciationColumns = sqlite
+    .prepare("PRAGMA table_info(pronunciation_results)")
+    .all() as Array<{ name: string }>;
+  if (!pronunciationColumns.some((c) => c.name === "tone_score")) {
+    sqlite.exec("ALTER TABLE pronunciation_results ADD COLUMN tone_score INTEGER");
+  }
+
   if (!userColumns.some((c) => c.name === "target_language")) {
     sqlite.exec(
       "ALTER TABLE users ADD COLUMN target_language TEXT NOT NULL DEFAULT 'english'",

@@ -197,6 +197,9 @@ export const pronunciationResults = sqliteTable("pronunciation_results", {
   targetPhrase: text("target_phrase").notNull(),
   transcript: text("transcript").notNull(),
   accuracyScore: integer("accuracy_score").notNull(),
+  // Stage 30: Mandarin tone score (null for English, or when the recording had
+  // too little voiced audio to judge).
+  toneScore: integer("tone_score"),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),

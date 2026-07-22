@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.18.0 — Stage 30: Mandarin tone scoring
+
+- **Chinese pronunciation is now scored from pitch, not from the transcript.** Previously a learner could say 妈 (mā) with a falling tone, have Whisper still transcribe 妈, and score 100% while being clearly wrong to a native ear — tone *is* the phoneme in Mandarin, so it has to be judged from the audio.
+- **The reference contour comes from the Mandarin voice we already ship.** Synthesizing the same phrase with the vendored Piper voice means no extra model and no annotated tone corpus were needed — the TTS voice *is* the native model to imitate.
+- **Implemented in pure numpy**: autocorrelation pitch detection and dynamic time warping, ~150 lines in `app/tone.py`. Adding librosa/torch/scipy would have put hundreds of megabytes into the vendored offline SDK for one feature.
+- Three normalisations make the comparison fair: pitch is converted to **semitones relative to each speaker's own median** (so a male learner is comparable to the female reference voice), **DTW** absorbs differences in speaking rate, and only **voiced frames** are compared.
+- **The first implementation didn't work, and the real-audio check caught it**: a genuine meaning-changing tone error (买 mǎi → 卖 mài) scored 97, and a completely different phrase scored 86 — useless as feedback. Fixed by adding a **Sakoe-Chiba band** (unconstrained DTW could warp a rising contour onto a falling one), **weighting the frame-to-frame pitch slope** as a second feature (tone is carried by pitch *direction*), and **recalibrating the score mapping against measured distances** instead of synthetic sine glides. The same cases now score 100 / 39 / 0 / 13.
+- **Scores are stable across attempts**: Piper synthesis isn't bit-identical between runs, which moved scores noticeably, so reference contours are cached per phrase. The same recording now scores identically every time.
+- **Tone is reported alongside — not merged into — the accuracy score**, so a student can see which of the two they missed. A recording with too little voiced audio returns "not confident" with a re-record prompt and is stored as `null`, never as a 0% attempt.
+- New `POST /v1/speech/tone`; tone is requested **only for Chinese** and a tone-scoring failure is non-fatal (the transcript-based score still returns). New nullable `pronunciation_results.tone_score` (additive migration).
+- Documented limitations in the plan doc: calibration is based on synthesized pairs rather than real learner recordings, and scoring is whole-phrase rather than per-syllable.
+- Verified: backend **151 tests passing** (+4), AI service **71 pytest passing** (+12), backend `tsc` clean, types build clean, `renderer.js` `node --check` clean.
+
 ## v1.17.0 — Stage 29: Chinese speech (listening + pronunciation)
 
 - **Chinese is now a full four-skill language**, not read-and-type only. Two new models were vendored (with approval): multilingual Whisper `small` (466 MB) and the Mandarin Piper voice `zh_CN-huayan-medium` (61 MB). The bundled `ggml-tiny.en` is English-only and cannot transcribe Chinese at all.

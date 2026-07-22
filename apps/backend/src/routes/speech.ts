@@ -4,6 +4,7 @@ import type {
   PronunciationPracticeResponse,
   SynthesizeRequest,
   SynthesizeResponse,
+  ToneScoreDto,
   TranscribeRequest,
   TranscribeResponse,
 } from "@englishclass/types";
@@ -67,17 +68,33 @@ export function registerSpeechRoutes(app: FastifyInstance): void {
         targetLanguage,
       );
 
+      // Stage 30: for Mandarin, character accuracy alone isn't pronunciation --
+      // a correctly-transcribed syllable can still be the wrong word if the
+      // tone is wrong. Scored from pitch, and reported alongside (not merged
+      // into) the accuracy score so the student can see which one they missed.
+      // Kept non-fatal: a tone-scoring failure must not lose the whole attempt.
+      let tone: ToneScoreDto | undefined;
+      if (targetLanguage === "chinese") {
+        try {
+          tone = await aiSpeechClient.scoreTone(audioBase64, targetPhrase);
+        } catch {
+          tone = undefined;
+        }
+      }
+
       await db.insert(pronunciationResults).values({
         studentId: request.authUser!.sub,
         targetPhrase,
         transcript,
         accuracyScore,
+        toneScore: tone && tone.confident ? tone.toneScore : null,
       });
 
       const response: PronunciationPracticeResponse = {
         transcript,
         accuracyScore,
         feedback,
+        tone,
       };
       return response;
     },

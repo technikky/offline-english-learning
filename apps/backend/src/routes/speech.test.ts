@@ -191,3 +191,132 @@ test("requires authentication for all speech routes", async () => {
   });
   assert.equal(practiceRes.statusCode, 401);
 });
+
+// --- Stage 30: Mandarin tone scoring ---
+
+function fakeToneClient(transcript: string, tone: unknown, opts: { fail?: boolean } = {}) {
+  const original = {
+    transcribe: aiSpeechClient.transcribe,
+    scoreTone: aiSpeechClient.scoreTone,
+  };
+  const calls = { toneCalls: 0 };
+  aiSpeechClient.transcribe = async () => transcript;
+  aiSpeechClient.scoreTone = async () => {
+    calls.toneCalls++;
+    if (opts.fail) throw new Error("ai service down");
+    return tone as Awaited<ReturnType<typeof aiSpeechClient.scoreTone>>;
+  };
+  const restore = () => {
+    aiSpeechClient.transcribe = original.transcribe;
+    aiSpeechClient.scoreTone = original.scoreTone;
+  };
+  return Object.assign(restore, { calls });
+}
+
+async function makeStudent(email: string, targetLanguage: "english" | "chinese") {
+  const passwordHash = await hashPassword("studentpass123");
+  const [student] = await db
+    .insert(users)
+    .values({ email, passwordHash, role: "student", displayName: "Stu", targetLanguage })
+    .returning();
+  return { student, token: signAccessToken({ sub: student.id, role: "student" }) };
+}
+
+test("English pronunciation practice does not request a tone score", async () => {
+  ensureSchema();
+  const restore = fakeToneClient("hello world", null);
+  try {
+    const { token } = await makeStudent("toneen@x.com", "english");
+    const app = buildApp();
+    const res = await app.inject({
+      method: "POST",
+      url: "/pronunciation/practice",
+      headers: { authorization: `Bearer ${token}` },
+      payload: { targetPhrase: "hello world", audioBase64: "AAAA" },
+    });
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.json().tone, undefined);
+    assert.equal(restore.calls.toneCalls, 0, "tone scoring is Mandarin-only");
+  } finally {
+    restore();
+  }
+});
+
+test("Chinese pronunciation practice returns and stores a tone score", async () => {
+  ensureSchema();
+  const restore = fakeToneClient("我买书", {
+    toneScore: 78,
+    confident: true,
+    meanSemitoneDistance: 2.1,
+    feedback: "Mostly good tones.",
+  });
+  try {
+    const { student, token } = await makeStudent("tonezh@x.com", "chinese");
+    const app = buildApp();
+    const res = await app.inject({
+      method: "POST",
+      url: "/pronunciation/practice",
+      headers: { authorization: `Bearer ${token}` },
+      payload: { targetPhrase: "我买书", audioBase64: "AAAA" },
+    });
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.json().tone.toneScore, 78);
+    assert.equal(restore.calls.toneCalls, 1);
+
+    const [row] = await db
+      .select()
+      .from(pronunciationResults)
+      .where(eq(pronunciationResults.studentId, student.id));
+    assert.equal(row.toneScore, 78);
+  } finally {
+    restore();
+  }
+});
+
+test("a low-confidence tone result is not stored as a real score", async () => {
+  ensureSchema();
+  const restore = fakeToneClient("我买书", {
+    toneScore: 0,
+    confident: false,
+    meanSemitoneDistance: 0,
+    feedback: "We couldn't hear enough voiced speech.",
+  });
+  try {
+    const { student, token } = await makeStudent("tonelow@x.com", "chinese");
+    const app = buildApp();
+    await app.inject({
+      method: "POST",
+      url: "/pronunciation/practice",
+      headers: { authorization: `Bearer ${token}` },
+      payload: { targetPhrase: "我买书", audioBase64: "AAAA" },
+    });
+    const [row] = await db
+      .select()
+      .from(pronunciationResults)
+      .where(eq(pronunciationResults.studentId, student.id));
+    // A silent recording is a microphone problem, not a 0% tone attempt.
+    assert.equal(row.toneScore, null);
+  } finally {
+    restore();
+  }
+});
+
+test("a tone-scoring failure does not fail the whole attempt", async () => {
+  ensureSchema();
+  const restore = fakeToneClient("我买书", null, { fail: true });
+  try {
+    const { token } = await makeStudent("tonefail@x.com", "chinese");
+    const app = buildApp();
+    const res = await app.inject({
+      method: "POST",
+      url: "/pronunciation/practice",
+      headers: { authorization: `Bearer ${token}` },
+      payload: { targetPhrase: "我买书", audioBase64: "AAAA" },
+    });
+    assert.equal(res.statusCode, 200, "the transcript-based score must still come back");
+    assert.equal(res.json().tone, undefined);
+    assert.ok(typeof res.json().accuracyScore === "number");
+  } finally {
+    restore();
+  }
+});

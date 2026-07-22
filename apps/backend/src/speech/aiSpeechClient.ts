@@ -14,6 +14,30 @@ export const aiSpeechClient = {
     return data.transcript;
   },
 
+  /** Stage 30: Mandarin tone score by pitch-contour comparison. */
+  async scoreTone(
+    audioBase64: string,
+    targetText: string,
+  ): Promise<{
+    toneScore: number;
+    confident: boolean;
+    meanSemitoneDistance: number;
+    feedback: string;
+  }> {
+    const res = await fetch(`${AI_SERVICE_URL}/v1/speech/tone`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ audioBase64, targetText }),
+    });
+    if (!res.ok) throw new Error(`AI service returned ${res.status}`);
+    return (await res.json()) as {
+      toneScore: number;
+      confident: boolean;
+      meanSemitoneDistance: number;
+      feedback: string;
+    };
+  },
+
   async synthesize(
     text: string,
     voice: "male" | "female" = "female",

@@ -73,6 +73,23 @@ class SynthesizeResponse(BaseModel):
     audioBase64: str
 
 
+# Stage 30: Mandarin tone scoring from the pitch contour.
+class ToneScoreRequest(BaseModel):
+    audioBase64: str
+    targetText: str
+
+
+class ToneScoreResponse(BaseModel):
+    toneScore: int
+    # False when there wasn't enough voiced audio to judge -- distinguishes a
+    # recording problem from an actual tone mistake.
+    confident: bool
+    learnerVoicedFrames: int
+    referenceVoicedFrames: int
+    meanSemitoneDistance: float
+    feedback: str
+
+
 class GrammarExerciseRequest(BaseModel):
     topicTitle: str
     topicExplanation: str

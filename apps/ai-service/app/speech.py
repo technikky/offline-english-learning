@@ -8,6 +8,8 @@ import numpy as np
 from pywhispercpp.model import Model as WhisperModel
 from piper import PiperVoice
 
+from .tone import compare_contours, extract_pitch_contour
+
 WHISPER_SAMPLE_RATE = 16000
 
 WHISPER_MODELS_DIR = os.path.join(
@@ -142,6 +144,56 @@ def transcribe_audio(audio_base64: str, language: str = "english") -> str:
         return " ".join(segment.text.strip() for segment in segments).strip()
     finally:
         os.unlink(tmp_path)
+
+
+def _decode_wav_base64(audio_base64: str) -> np.ndarray:
+    """Base64 WAV -> mono float32 samples at WHISPER_SAMPLE_RATE."""
+    audio_bytes = base64.b64decode(audio_base64)
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+        tmp.write(audio_bytes)
+        tmp_path = tmp.name
+    try:
+        return _read_wav_as_float32(tmp_path)
+    finally:
+        os.unlink(tmp_path)
+
+
+# Reference pitch contours, keyed by target phrase. Piper synthesis is not
+# bit-identical between runs, so re-synthesizing the reference on every attempt
+# would make the same recording score differently each time -- unacceptable for
+# feedback a student is meant to act on. Caching also skips a ~1s synthesis per
+# attempt. Bounded so a long-running server can't grow it without limit.
+_reference_contours: dict[str, np.ndarray] = {}
+_REFERENCE_CACHE_LIMIT = 256
+
+
+def _reference_contour(target_text: str) -> np.ndarray:
+    key = target_text.strip()
+    cached = _reference_contours.get(key)
+    if cached is not None:
+        return cached
+
+    reference_base64 = synthesize_speech(target_text, "female", "chinese")
+    contour = extract_pitch_contour(
+        _decode_wav_base64(reference_base64), WHISPER_SAMPLE_RATE
+    )
+    if len(_reference_contours) >= _REFERENCE_CACHE_LIMIT:
+        _reference_contours.clear()
+    _reference_contours[key] = contour
+    return contour
+
+
+def score_tone(audio_base64: str, target_text: str) -> dict:
+    """Stage 30: scores Mandarin tones from pitch, not from the transcript.
+
+    The reference contour comes from synthesizing the same phrase with the
+    vendored Mandarin voice, so no extra model or annotated tone data is needed
+    — the TTS voice we already ship *is* the native model to imitate.
+    """
+    learner_contour = extract_pitch_contour(
+        _decode_wav_base64(audio_base64), WHISPER_SAMPLE_RATE
+    )
+    return compare_contours(learner_contour, _reference_contour(target_text))
 
 
 def synthesize_speech(text: str, voice: str = "female", language: str = "english") -> str:

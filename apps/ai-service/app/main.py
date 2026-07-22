@@ -7,6 +7,7 @@ from .embeddings import embed_text, is_embedding_model_loaded
 from .speech import (
     transcribe_audio,
     synthesize_speech,
+    score_tone,
     is_whisper_loaded,
     is_piper_loaded,
 )
@@ -39,6 +40,8 @@ from .schemas import (
     TranscribeResponse,
     SynthesizeRequest,
     SynthesizeResponse,
+    ToneScoreRequest,
+    ToneScoreResponse,
     GrammarExerciseRequest,
     GrammarExerciseResponse,
     ReadingComprehensionRequest,
@@ -232,3 +235,12 @@ def speech_synthesize(request: SynthesizeRequest) -> SynthesizeResponse:
             request.text, request.voice, request.targetLanguage
         )
     return SynthesizeResponse(audioBase64=audio_base64)
+
+
+@app.post("/v1/speech/tone")
+def speech_tone(request: ToneScoreRequest) -> ToneScoreResponse:
+    """Stage 30: scores Mandarin tones by comparing the learner's pitch contour
+    against the same phrase synthesized with the vendored Mandarin voice."""
+    with INFERENCE_LOCK:
+        result = score_tone(request.audioBase64, request.targetText)
+    return ToneScoreResponse(**result)
