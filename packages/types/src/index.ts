@@ -45,6 +45,26 @@ export interface UserProfile {
   schoolId: number | null; // null for the platform super_admin
   schoolName: string | null;
   targetLanguage: TargetLanguage;
+  /** Stage 36: interface language, independent of targetLanguage. */
+  uiLocale: UiLocale;
+}
+
+// Stage 36: the interface language, independent of the language being learned.
+export type UiLocale = "en" | "zh";
+
+export const UI_LOCALES: UiLocale[] = ["en", "zh"];
+
+export const UI_LOCALE_LABELS: Record<UiLocale, string> = {
+  en: "English",
+  zh: "中文",
+};
+
+export interface SetUiLocaleRequest {
+  uiLocale: UiLocale;
+}
+
+export interface UiLocaleResponse {
+  uiLocale: UiLocale;
 }
 
 export interface SetTargetLanguageRequest {

@@ -139,3 +139,82 @@ test("the curriculum path follows the student's target language", async () => {
   assert.equal(after.units[0].id, "unit-zh-a1");
   assert.ok(after.totalLessons > 0);
 });
+
+// --- Stage 36: interface locale (independent of target language) ---
+
+test("a user defaults to the English interface", async () => {
+  ensureSchema();
+  const { token } = await createStudent("loc1@x.com");
+  const app = buildApp();
+  const res = await app.inject({
+    method: "GET",
+    url: "/me/locale",
+    headers: { authorization: `Bearer ${token}` },
+  });
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.json().uiLocale, "en");
+});
+
+test("the interface locale persists and is independent of the target language", async () => {
+  ensureSchema();
+  const { token } = await createStudent("loc2@x.com");
+  const app = buildApp();
+
+  // A Chinese speaker learning English: Chinese UI, English target.
+  const put = await app.inject({
+    method: "PUT",
+    url: "/me/locale",
+    headers: { authorization: `Bearer ${token}` },
+    payload: { uiLocale: "zh" },
+  });
+  assert.equal(put.json().uiLocale, "zh");
+
+  const language = await app.inject({
+    method: "GET",
+    url: "/me/language",
+    headers: { authorization: `Bearer ${token}` },
+  });
+  assert.equal(
+    language.json().targetLanguage,
+    "english",
+    "changing the interface language must not change what the student is learning",
+  );
+
+  const locale = await app.inject({
+    method: "GET",
+    url: "/me/locale",
+    headers: { authorization: `Bearer ${token}` },
+  });
+  assert.equal(locale.json().uiLocale, "zh");
+});
+
+test("changing the target language does not change the interface locale", async () => {
+  ensureSchema();
+  const { token } = await createStudent("loc3@x.com");
+  const app = buildApp();
+  await app.inject({
+    method: "PUT",
+    url: "/me/language",
+    headers: { authorization: `Bearer ${token}` },
+    payload: { targetLanguage: "chinese" },
+  });
+  const locale = await app.inject({
+    method: "GET",
+    url: "/me/locale",
+    headers: { authorization: `Bearer ${token}` },
+  });
+  assert.equal(locale.json().uiLocale, "en", "the two settings are orthogonal");
+});
+
+test("an unknown interface locale is rejected", async () => {
+  ensureSchema();
+  const { token } = await createStudent("loc4@x.com");
+  const app = buildApp();
+  const res = await app.inject({
+    method: "PUT",
+    url: "/me/locale",
+    headers: { authorization: `Bearer ${token}` },
+    payload: { uiLocale: "fr" },
+  });
+  assert.equal(res.statusCode, 400);
+});

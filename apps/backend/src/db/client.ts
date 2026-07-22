@@ -48,6 +48,7 @@ export function ensureSchema(): void {
       placement_level TEXT,
       placement_completed_at TEXT,
       target_language TEXT NOT NULL DEFAULT 'english' CHECK (target_language IN ('english', 'chinese')),
+      ui_locale TEXT NOT NULL DEFAULT 'en' CHECK (ui_locale IN ('en', 'zh')),
       created_at TEXT NOT NULL DEFAULT (current_timestamp)
     );
 
@@ -285,6 +286,10 @@ function runMigrations(): void {
     sqlite.exec("ALTER TABLE pronunciation_results ADD COLUMN tone_score INTEGER");
   }
 
+  // Stage 36: interface locale.
+  if (!userColumns.some((c) => c.name === "ui_locale")) {
+    sqlite.exec("ALTER TABLE users ADD COLUMN ui_locale TEXT NOT NULL DEFAULT 'en'");
+  }
   if (!userColumns.some((c) => c.name === "target_language")) {
     sqlite.exec(
       "ALTER TABLE users ADD COLUMN target_language TEXT NOT NULL DEFAULT 'english'",

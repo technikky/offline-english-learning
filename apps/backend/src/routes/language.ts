@@ -1,10 +1,20 @@
 import type { FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
-import type { SetTargetLanguageRequest, TargetLanguageResponse } from "@englishclass/types";
+import type {
+  SetTargetLanguageRequest,
+  SetUiLocaleRequest,
+  TargetLanguageResponse,
+  UiLocaleResponse,
+} from "@englishclass/types";
 import { db } from "../db/client";
 import { users } from "../db/schema";
 import { authenticate } from "../auth/middleware";
-import { getTargetLanguage, isTargetLanguage } from "../users/language";
+import {
+  getTargetLanguage,
+  getUiLocale,
+  isTargetLanguage,
+  isUiLocale,
+} from "../users/language";
 
 // Stage 28: the learner chooses which language they are studying. This drives
 // the content catalogs (grammar topics, reading passages), the curriculum
@@ -32,6 +42,28 @@ export function registerLanguageRoutes(app: FastifyInstance): void {
         .where(eq(users.id, request.authUser!.sub));
 
       const response: TargetLanguageResponse = { targetLanguage };
+      return response;
+    },
+  );
+
+  // Stage 36: the interface language, independent of the target language.
+  app.get("/me/locale", { preHandler: authenticate }, async (request) => {
+    const response: UiLocaleResponse = {
+      uiLocale: await getUiLocale(request.authUser!.sub),
+    };
+    return response;
+  });
+
+  app.put<{ Body: SetUiLocaleRequest }>(
+    "/me/locale",
+    { preHandler: authenticate },
+    async (request, reply) => {
+      const { uiLocale } = request.body ?? {};
+      if (!isUiLocale(uiLocale)) {
+        return reply.code(400).send({ error: "uiLocale must be 'en' or 'zh'" });
+      }
+      await db.update(users).set({ uiLocale }).where(eq(users.id, request.authUser!.sub));
+      const response: UiLocaleResponse = { uiLocale };
       return response;
     },
   );

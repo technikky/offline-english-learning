@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.24.0 - Stage 36: Interface translation (i18n)
+
+- **The interface is now available in Chinese.** Every UI string was hardcoded English, which mattered directly for the schools this targets: a Chinese-speaking student learning English had to navigate an entirely English interface to do it.
+- **Interface language and target language are deliberately independent settings.** A Chinese student studying English wants a 中文 interface with an English target; an English speaker studying Mandarin wants the reverse. Conflating them would make the app unusable for its main audience, so `users.ui_locale` is a separate column with its own `GET`/`PUT /me/locale` - and a test asserts the two are orthogonal **in both directions**.
+- **Non-invasive approach**: the DOM is tagged with `data-i18n` / `data-i18n-placeholder` attributes and translated in place, rather than rebuilt. All existing markup structure and every element id is untouched, so no other renderer code changed. Strings live client-side, so translation needs no round trip and works before the backend is even reachable.
+- **Fallback is English, never a raw key** - a half-finished translation degrades to English rather than showing `btn.send` to a student.
+- **Scope is the student interface**: navigation, sidebar, every button and placeholder, panel headings, review ratings, and descriptive copy. The teacher/admin/super-admin consoles stay English - a deliberate decision (staff are a small trained audience; students are the many), not an oversight.
+- **Tests guard the ways a translation layer silently rots**: key parity in both directions; **no Chinese string left identical to its English source** (which a parity check alone would miss); the fallback chain; every `data-i18n` and `t()` key used in markup or renderer actually exists, so nothing can render a raw key; and `applyTranslations()` verified against a fake DOM, proving the *mechanism* rather than just the data.
+- Added a `test` script to `apps/desktop/package.json`, which previously had none.
+- Documented limitations: staff consoles untranslated; translations not yet reviewed by a native speaker; learning *content* deliberately not translated (a reading passage is the material, not interface furniture); no CJK font bundled (system fonts cover it on Windows).
+- Verified: backend **197 tests passing** (+4), **desktop 8 tests passing** (new suite), AI service 80 pytest passing, backend `tsc` clean, types build clean.
+
 ## v1.23.0 - Stage 35: HSK 5-6 course units
 
 - **Removes the last structural ceiling in the platform.** The Chinese path stopped at HSK 4 (B2) - two whole bands below where the English path reached - so a Chinese learner literally could not be taken to an advanced level. It now runs **HSK 1 to HSK 6: 6 units, 42 lessons**, every unit covering all six lesson types, matching the English A1-C2 ladder.

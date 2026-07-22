@@ -73,6 +73,7 @@ function showLoggedIn(user) {
   document.getElementById("profileRole").textContent = user.role;
   document.getElementById("profileEmail").textContent = user.email;
   renderAvatar();
+  loadUiLocale();
   loadTargetLanguage();
   loadQuizCategories();
   loadConversationTopics();
@@ -2298,7 +2299,7 @@ function countWritingUnitsClient(text) {
 }
 
 function writingUnitLabel() {
-  return currentTargetLanguage === "chinese" ? "characters" : "words";
+  return currentTargetLanguage === "chinese" ? t("copy.characters") : t("copy.words");
 }
 
 function updateWritingWordCount() {
@@ -2806,12 +2807,12 @@ async function loadPlacementStatus() {
     if (status.placementLevel) {
       const label = CEFR_LEVEL_LABELS[status.placementLevel] || "";
       valueEl.textContent = `${status.placementLevel} · ${label}`;
-      hintEl.textContent = "Your lessons and conversations start at this level.";
-      startBtn.textContent = "Retake placement test";
+      hintEl.textContent = t("copy.levelHintAssessed");
+      startBtn.textContent = t("btn.retakePlacementTest");
     } else {
-      valueEl.textContent = "Not assessed yet";
-      hintEl.textContent = "Take a 1-minute test so your practice starts at the right level.";
-      startBtn.textContent = "Take placement test";
+      valueEl.textContent = t("copy.notAssessed");
+      hintEl.textContent = t("copy.levelHintUnassessed");
+      startBtn.textContent = t("btn.takePlacementTest");
     }
   } catch (err) {
     // sidebar convenience; ignore failures
@@ -3036,7 +3037,7 @@ function renderPathUnit(unit, recommendedUnitId) {
   if (unit.id === recommendedUnitId) {
     const rec = document.createElement("span");
     rec.className = "path-recommended";
-    rec.textContent = "START HERE";
+    rec.textContent = t("copy.startHere");
     header.appendChild(rec);
   }
 
@@ -3107,8 +3108,8 @@ function renderReadingScaffold(passage) {
   // Reset to hidden each time a passage is opened.
   pinyinEl.classList.add("hidden");
   translationEl.classList.add("hidden");
-  pinyinBtn.textContent = "Show pinyin";
-  translationBtn.textContent = "Show translation";
+  pinyinBtn.textContent = t("btn.showPinyin");
+  translationBtn.textContent = t("btn.showTranslation");
   pinyinBtn.classList.toggle("hidden", !hasPinyin);
   translationBtn.classList.toggle("hidden", !hasTranslation);
   scaffold.classList.remove("hidden");
@@ -3122,15 +3123,66 @@ function toggleReadingScaffoldSection(elId, btnId, showLabel, hideLabel) {
 }
 
 document.getElementById("readingPinyinBtn").addEventListener("click", () => {
-  toggleReadingScaffoldSection("readingPinyin", "readingPinyinBtn", "Show pinyin", "Hide pinyin");
+  toggleReadingScaffoldSection(
+    "readingPinyin",
+    "readingPinyinBtn",
+    t("btn.showPinyin"),
+    t("btn.hidePinyin"),
+  );
 });
 document.getElementById("readingTranslationBtn").addEventListener("click", () => {
   toggleReadingScaffoldSection(
     "readingTranslation",
     "readingTranslationBtn",
-    "Show translation",
-    "Hide translation",
+    t("btn.showTranslation"),
+    t("btn.hideTranslation"),
   );
+});
+
+// --- Interface language (Stage 36) ---
+//
+// Separate from the target language: a Chinese speaker learning English wants
+// a Chinese interface. Changing it re-applies translations to the existing DOM
+// and re-renders the views whose text is built in JS.
+async function loadUiLocale() {
+  try {
+    const res = await fetch(`${API_BASE}/me/locale`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const { uiLocale } = await res.json();
+    setLocale(uiLocale || "en");
+    const select = document.getElementById("uiLocaleSelect");
+    if (select) select.value = getLocale();
+    applyTranslations();
+  } catch (err) {
+    // fall back to the English strings already in the markup
+  }
+}
+
+async function changeUiLocale(locale) {
+  try {
+    const res = await fetch(`${API_BASE}/me/locale`, {
+      method: "PUT",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ uiLocale: locale }),
+    });
+    if (!res.ok) return;
+    setLocale(locale);
+    applyTranslations();
+    // Re-render the parts whose text is generated in JS rather than markup.
+    refreshSeedLevelLabels();
+    loadPlacementStatus();
+    applyTargetLanguageToUi();
+    loadReviewStats();
+    if (!document.getElementById("pathPanel").classList.contains("hidden")) {
+      loadCurriculum();
+    }
+  } catch (err) {
+    // ignore; the select re-syncs on next login
+  }
+}
+
+document.getElementById("uiLocaleSelect").addEventListener("change", (e) => {
+  changeUiLocale(e.target.value);
 });
 
 // --- Target language: English or Chinese (Stage 28) ---
@@ -3161,9 +3213,7 @@ function applyTargetLanguageToUi() {
   refreshSeedLevelLabels();
   const hint = document.getElementById("targetLanguageHint");
   if (hint) {
-    hint.textContent = isChinese
-      ? "Your lessons, reading and AI conversations are in Mandarin Chinese."
-      : "Your lessons, reading and AI conversations are in English.";
+    hint.textContent = t(isChinese ? "copy.learningChinese" : "copy.learningEnglish");
   }
 }
 

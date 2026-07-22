@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsc -p tsconfig.json && electron .",
     "build": "tsc -p tsconfig.json",
-    "package": "electron-builder"
+    "package": "electron-builder",
+    "test": "node --test src/*.test.js"
   },
   "dependencies": {
     "@englishclass/types": "workspace:*"

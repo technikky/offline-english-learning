@@ -959,23 +959,29 @@
         <div class="profile-row"><span>Name</span><span id="profileName"></span></div>
         <div class="profile-row"><span>Role</span><span id="profileRole"></span></div>
         <div class="profile-row"><span>Email</span><span id="profileEmail"></span></div>
-        <button id="logoutBtn" class="secondary">Log out</button>
+        <button id="logoutBtn" class="secondary" data-i18n="nav.logout">Log out</button>
 
-        <h3>I'm learning</h3>
+        <h3 data-i18n="sidebar.interfaceLanguage">Interface language</h3>
+        <select id="uiLocaleSelect">
+          <option value="en">English</option>
+          <option value="zh">中文</option>
+        </select>
+
+        <h3 data-i18n="sidebar.imLearning">I'm learning</h3>
         <select id="targetLanguageSelect">
           <option value="english">English</option>
           <option value="chinese">中文 Chinese (Mandarin)</option>
         </select>
         <div id="targetLanguageHint" style="font-size:12px;opacity:0.75;margin-top:4px"></div>
 
-        <h3>My level</h3>
+        <h3 data-i18n="sidebar.myLevel">My level</h3>
         <div id="placementLevelPanel">
           <div><span id="placementLevelValue">—</span></div>
           <div id="placementLevelHint" style="opacity:0.8;margin-top:4px"></div>
-          <button id="placementStartBtn" style="margin-top:8px">Take placement test</button>
+          <button id="placementStartBtn" style="margin-top:8px" data-i18n="btn.takePlacementTest">Take placement test</button>
         </div>
 
-        <h3>New conversation</h3>
+        <h3 data-i18n="sidebar.newConversation">New conversation</h3>
         <select id="scenarioSelect">
           <option value="free_talk">Free Talk</option>
           <option value="role_play">Role Play</option>
@@ -1008,26 +1014,26 @@
           <input id="autoSpeakToggle" type="checkbox" checked />
           Speak replies aloud
         </label>
-        <button id="startConversationBtn" style="margin-top:10px">Start conversation</button>
+        <button id="startConversationBtn" style="margin-top:10px" data-i18n="btn.startConversation">Start conversation</button>
         <div id="conversationError" class="error"></div>
 
-        <h3>Vocabulary notebook</h3>
+        <h3 data-i18n="sidebar.vocabularyNotebook">Vocabulary notebook</h3>
         <div id="notebookAddRow">
-          <input id="notebookWordInput" type="text" placeholder="Look up a word…" />
-          <button id="notebookAddBtn">Add</button>
+          <input id="notebookWordInput" type="text" placeholder="Look up a word…" / data-i18n-placeholder="ph.lookUpWord">
+          <button id="notebookAddBtn" data-i18n="btn.add">Add</button>
         </div>
         <div id="notebookError" class="error"></div>
         <div id="notebookList"></div>
 
-        <h3>My progress</h3>
+        <h3 data-i18n="sidebar.myProgress">My progress</h3>
         <div id="studentAnalyticsPanel">Loading…</div>
 
-        <h3>Pronunciation practice</h3>
+        <h3 data-i18n="sidebar.pronunciationPractice">Pronunciation practice</h3>
         <div id="pronunciationPanel">
-          <input id="pronunciationTarget" type="text" placeholder="Type a phrase to practice…" />
+          <input id="pronunciationTarget" type="text" placeholder="Type a phrase to practice…" / data-i18n-placeholder="ph.practicePhrase">
           <div class="pronunciation-buttons">
-            <button id="pronunciationListenBtn">🔊 Listen</button>
-            <button id="pronunciationRecordBtn" class="mic-btn">🎤 Record</button>
+            <button id="pronunciationListenBtn" data-i18n="btn.listen">🔊 Listen</button>
+            <button id="pronunciationRecordBtn" class="mic-btn" data-i18n="btn.record">🎤 Record</button>
           </div>
           <div id="pronunciationError" class="error"></div>
           <div id="pronunciationResult" class="hidden"></div>
@@ -1036,15 +1042,15 @@
 
       <div id="main">
         <div id="mainTabs" class="main-tabs">
-          <button id="tabPathBtn" class="main-tab">🗺️ Path</button>
-          <button id="tabConversationBtn" class="main-tab active">💬 Conversation</button>
-          <button id="tabGrammarBtn" class="main-tab">📘 Grammar</button>
-          <button id="tabReadingBtn" class="main-tab">📖 Reading</button>
-          <button id="tabListeningBtn" class="main-tab">🎧 Listening</button>
-          <button id="tabWritingBtn" class="main-tab">✍️ Writing</button>
-          <button id="tabQuizBtn" class="main-tab">❓ Quiz</button>
+          <button id="tabPathBtn" class="main-tab" data-i18n="tab.path">🗺️ Path</button>
+          <button id="tabConversationBtn" class="main-tab active" data-i18n="tab.conversation">💬 Conversation</button>
+          <button id="tabGrammarBtn" class="main-tab" data-i18n="tab.grammar">📘 Grammar</button>
+          <button id="tabReadingBtn" class="main-tab" data-i18n="tab.reading">📖 Reading</button>
+          <button id="tabListeningBtn" class="main-tab" data-i18n="tab.listening">🎧 Listening</button>
+          <button id="tabWritingBtn" class="main-tab" data-i18n="tab.writing">✍️ Writing</button>
+          <button id="tabQuizBtn" class="main-tab" data-i18n="tab.quiz">❓ Quiz</button>
           <button id="tabReviewBtn" class="main-tab">🔁 Review<span id="reviewDueBadge" class="due-badge hidden"></span></button>
-          <button id="tabHistoryBtn" class="main-tab">📜 History</button>
+          <button id="tabHistoryBtn" class="main-tab" data-i18n="tab.history">📜 History</button>
         </div>
 
         <div id="pathPanel" class="hidden">
@@ -1066,35 +1072,35 @@
             <div id="avatarName" class="avatar-name">Your AI partner</div>
           </div>
           <div id="voiceModeBar" class="voice-mode-bar hidden">
-            <button id="voiceModeBtn" class="secondary">🎙️ Start hands-free voice chat</button>
+            <button id="voiceModeBtn" class="secondary" data-i18n="btn.voiceMode">🎙️ Start hands-free voice chat</button>
             <span id="voiceModeStatus" class="voice-mode-status"></span>
           </div>
           <div id="chatLog"></div>
           <div id="wordsToLearn" class="words-to-learn hidden"></div>
           <div id="composer">
             <button id="micBtn" class="mic-btn">🎤</button>
-            <input id="messageInput" type="text" placeholder="Type a message and press Enter…" disabled />
-            <button id="sendBtn" disabled>Send</button>
+            <input id="messageInput" type="text" placeholder="Type a message and press Enter…" disabled / data-i18n-placeholder="ph.typeMessage">
+            <button id="sendBtn" disabled data-i18n="btn.send">Send</button>
           </div>
         </div>
 
         <div id="grammarPanel" class="hidden">
           <div id="grammarTopicList" class="grammar-topic-list"></div>
           <div id="grammarLessonDetail" class="hidden">
-            <button id="grammarBackBtn" class="secondary">← Back to topics</button>
+            <button id="grammarBackBtn" class="secondary" data-i18n="btn.backToTopics">← Back to topics</button>
             <h2 id="grammarLessonTitle"></h2>
             <p id="grammarLessonExplanation"></p>
             <h4>Examples</h4>
             <ul id="grammarLessonExamples"></ul>
 
             <div class="panel">
-              <h3>Practice</h3>
+              <h3 data-i18n="heading.practice">Practice</h3>
               <div class="inline-form">
                 <select id="grammarExerciseType">
                   <option value="multiple_choice">Multiple Choice</option>
                   <option value="fill_blank">Fill in the Blank</option>
                 </select>
-                <button id="grammarNewExerciseBtn">New exercise</button>
+                <button id="grammarNewExerciseBtn" data-i18n="btn.newExercise">New exercise</button>
               </div>
               <div id="grammarExerciseArea"></div>
               <div id="grammarExerciseError" class="error"></div>
@@ -1105,33 +1111,33 @@
         <div id="readingPanel" class="hidden">
           <div id="readingPassageList" class="grammar-topic-list"></div>
           <div id="readingPassageDetail" class="hidden">
-            <button id="readingBackBtn" class="secondary">← Back to passages</button>
+            <button id="readingBackBtn" class="secondary" data-i18n="btn.backToPassages">← Back to passages</button>
             <h2 id="readingPassageTitle"></h2>
-            <button id="readingListenBtn">🔊 Listen to passage</button>
+            <button id="readingListenBtn" data-i18n="btn.listenToPassage">🔊 Listen to passage</button>
             <p id="readingPassageContent" class="reading-content"></p>
             <div id="readingScaffold" class="hidden">
               <div class="reading-scaffold-buttons">
-                <button id="readingPinyinBtn" class="secondary">Show pinyin</button>
-                <button id="readingTranslationBtn" class="secondary">Show translation</button>
+                <button id="readingPinyinBtn" class="secondary" data-i18n="btn.showPinyin">Show pinyin</button>
+                <button id="readingTranslationBtn" class="secondary" data-i18n="btn.showTranslation">Show translation</button>
               </div>
               <p id="readingPinyin" class="reading-pinyin hidden"></p>
               <p id="readingTranslation" class="reading-translation hidden"></p>
             </div>
 
             <div class="panel">
-              <h3>Summary</h3>
+              <h3 data-i18n="heading.summary">Summary</h3>
               <p id="readingPassageSummary"></p>
             </div>
 
             <div class="panel">
-              <h3>Key vocabulary</h3>
+              <h3 data-i18n="heading.keyVocabulary">Key vocabulary</h3>
               <div id="readingVocabList"></div>
             </div>
 
             <div class="panel">
-              <h3>Comprehension check</h3>
+              <h3 data-i18n="heading.comprehensionCheck">Comprehension check</h3>
               <div id="readingQuestions"></div>
-              <button id="readingSubmitBtn">Submit answers</button>
+              <button id="readingSubmitBtn" data-i18n="btn.submitAnswers">Submit answers</button>
               <div id="readingResult"></div>
             </div>
           </div>
@@ -1140,13 +1146,13 @@
         <div id="listeningPanel" class="hidden">
           <div id="listeningClipList" class="grammar-topic-list"></div>
           <div id="listeningClipDetail" class="hidden">
-            <button id="listeningBackBtn" class="secondary">← Back to clips</button>
+            <button id="listeningBackBtn" class="secondary" data-i18n="btn.backToClips">← Back to clips</button>
             <h2 id="listeningClipTitle"></h2>
 
             <div class="panel">
-              <h3>Audio</h3>
+              <h3 data-i18n="heading.audio">Audio</h3>
               <div class="inline-form">
-                <button id="listeningPlayBtn">▶ Play</button>
+                <button id="listeningPlayBtn" data-i18n="btn.play">▶ Play</button>
                 <label style="font-size:12px;display:flex;align-items:center;gap:4px">Speed
                   <select id="listeningSpeed">
                     <option value="0.75">0.75x</option>
@@ -1160,28 +1166,28 @@
                 </label>
               </div>
               <p style="font-size:12px;opacity:0.7">Listen first, then answer — reveal the transcript only if you need it.</p>
-              <button id="listeningToggleTranscriptBtn" class="secondary">Show transcript</button>
+              <button id="listeningToggleTranscriptBtn" class="secondary" data-i18n="btn.showTranscript">Show transcript</button>
               <p id="listeningTranscript" class="reading-content hidden"></p>
             </div>
 
             <div class="panel">
               <h3>Comprehension check</h3>
               <div id="listeningQuestions"></div>
-              <button id="listeningSubmitBtn">Submit answers</button>
+              <button id="listeningSubmitBtn" data-i18n="btn.submitAnswers">Submit answers</button>
               <div id="listeningResult"></div>
             </div>
 
             <div class="panel">
-              <h3>Dictation practice</h3>
+              <h3 data-i18n="heading.dictationPractice">Dictation practice</h3>
               <p style="font-size:12px;opacity:0.7">Play one sentence, type what you hear, and check your accuracy.</p>
               <div class="inline-form">
-                <button id="dictationPlayBtn">🔊 Play sentence</button>
+                <button id="dictationPlayBtn" data-i18n="btn.playSentence">🔊 Play sentence</button>
                 <span id="dictationProgress" style="font-size:12px;opacity:0.7"></span>
               </div>
-              <input id="dictationInput" type="text" placeholder="Type the sentence you heard…" style="margin-top:8px;width:100%" />
+              <input id="dictationInput" type="text" placeholder="Type the sentence you heard…" style="margin-top:8px;width:100%" / data-i18n-placeholder="ph.typeHeardSentence">
               <div class="inline-form">
-                <button id="dictationCheckBtn">Check</button>
-                <button id="dictationNextBtn" class="secondary">Next sentence →</button>
+                <button id="dictationCheckBtn" data-i18n="btn.check">Check</button>
+                <button id="dictationNextBtn" class="secondary" data-i18n="btn.nextSentence">Next sentence →</button>
               </div>
               <div id="dictationResult"></div>
             </div>
@@ -1191,7 +1197,7 @@
         <div id="writingPanel" class="hidden">
           <div id="writingPromptList" class="grammar-topic-list"></div>
           <div id="writingPromptDetail" class="hidden">
-            <button id="writingBackBtn" class="secondary">← Back to prompts</button>
+            <button id="writingBackBtn" class="secondary" data-i18n="btn.backToPrompts">← Back to prompts</button>
             <h2 id="writingPromptTitle"></h2>
 
             <div class="panel">
@@ -1207,9 +1213,9 @@
 
             <div class="panel">
               <h3>Your writing <span id="writingLiveWordCount" style="font-size:12px;opacity:0.7"></span></h3>
-              <textarea id="writingTextarea" rows="10" style="width:100%;resize:vertical" placeholder="Write your response here…"></textarea>
+              <textarea id="writingTextarea" rows="10" style="width:100%;resize:vertical" placeholder="Write your response here…" data-i18n-placeholder="ph.writeResponse"></textarea>
               <div class="inline-form">
-                <button id="writingSubmitBtn">Get AI feedback</button>
+                <button id="writingSubmitBtn" data-i18n="btn.getAiFeedback">Get AI feedback</button>
                 <span id="writingSubmitStatus" style="font-size:12px;opacity:0.75"></span>
               </div>
               <div id="writingError" class="error"></div>
@@ -1217,7 +1223,7 @@
 
             <div id="writingFeedback" class="hidden">
               <div class="panel">
-                <h3>Overall feedback</h3>
+                <h3 data-i18n="heading.overallFeedback">Overall feedback</h3>
                 <p id="wfOverall"></p>
                 <table class="kv-table">
                   <tr><td>Grammar</td><td id="wfGrammar"></td></tr>
@@ -1227,17 +1233,17 @@
                 </table>
               </div>
               <div class="panel">
-                <h3>Strengths</h3>
+                <h3 data-i18n="heading.strengths">Strengths</h3>
                 <ul id="wfStrengths"></ul>
-                <h3>Suggestions</h3>
+                <h3 data-i18n="heading.suggestions">Suggestions</h3>
                 <ul id="wfImprovements"></ul>
               </div>
               <div class="panel">
-                <h3>Grammar &amp; spelling issues</h3>
+                <h3 data-i18n="heading.grammarIssues">Grammar &amp; spelling issues</h3>
                 <div id="wfMistakes"></div>
               </div>
               <div class="panel">
-                <h3>Model answer</h3>
+                <h3 data-i18n="heading.modelAnswer">Model answer</h3>
                 <p id="wfModel" class="reading-content"></p>
               </div>
             </div>
@@ -1247,7 +1253,7 @@
         <div id="quizPanel" class="hidden">
           <div id="quizSetup">
             <div class="panel">
-              <h3>Generate a quiz</h3>
+              <h3 data-i18n="heading.generateQuiz">Generate a quiz</h3>
               <div class="inline-form">
                 <label style="font-size:12px;display:flex;align-items:center;gap:4px">Category
                   <select id="quizCategory">
@@ -1265,13 +1271,13 @@
                     <option value="C1">C1 — Advanced</option>
                   </select>
                 </label>
-                <button id="quizGenerateBtn">Generate quiz</button>
+                <button id="quizGenerateBtn" data-i18n="btn.generateQuiz">Generate quiz</button>
               </div>
               <div id="quizGenStatus" style="font-size:12px;opacity:0.75"></div>
               <div id="quizError" class="error"></div>
             </div>
             <div class="panel">
-              <h3>Recent quizzes</h3>
+              <h3 data-i18n="heading.recentQuizzes">Recent quizzes</h3>
               <div id="quizProgress"></div>
             </div>
           </div>
@@ -1279,17 +1285,17 @@
           <div id="quizActive" class="hidden">
             <h2 id="quizActiveTitle"></h2>
             <div id="quizQuestions"></div>
-            <button id="quizSubmitBtn">Submit quiz</button>
-            <button id="quizNewBtn" class="secondary hidden">New quiz</button>
+            <button id="quizSubmitBtn" data-i18n="btn.submitQuiz">Submit quiz</button>
+            <button id="quizNewBtn" class="secondary hidden" data-i18n="btn.newQuiz">New quiz</button>
             <div id="quizResultSummary"></div>
           </div>
         </div>
 
         <div id="historyPanel" class="hidden">
           <div class="panel">
-            <h3>Learning history</h3>
+            <h3 data-i18n="heading.learningHistory">Learning history</h3>
             <div id="historySummary" style="font-size:13px;opacity:0.85"></div>
-            <button id="historyRefreshBtn" class="secondary" style="margin-top:8px">Refresh</button>
+            <button id="historyRefreshBtn" class="secondary" style="margin-top:8px" data-i18n="btn.refresh">Refresh</button>
           </div>
           <div class="panel">
             <table class="data-table">
@@ -1303,13 +1309,13 @@
 
         <div id="reviewPanel" class="hidden">
           <div class="panel">
-            <h3>Vocabulary review</h3>
+            <h3 data-i18n="heading.vocabularyReview">Vocabulary review</h3>
             <p style="font-size:12px;opacity:0.75;margin-top:-4px">
               Spaced repetition brings each saved word back just before you'd forget it.
               Rate how well you remembered — that sets when you'll see it next.
             </p>
             <div id="reviewStats" style="font-size:13px;opacity:0.85"></div>
-            <button id="reviewStartBtn" style="margin-top:8px">Start review</button>
+            <button id="reviewStartBtn" style="margin-top:8px" data-i18n="btn.startReview">Start review</button>
           </div>
 
           <div id="reviewCardArea" class="panel hidden">
@@ -1317,19 +1323,19 @@
             <div id="reviewCard" class="review-card">
               <div id="reviewWord" class="review-word"></div>
               <div id="reviewCefr" class="review-cefr"></div>
-              <button id="reviewShowBtn" class="secondary" style="margin-top:14px">Show answer</button>
+              <button id="reviewShowBtn" class="secondary" style="margin-top:14px" data-i18n="btn.showAnswer">Show answer</button>
               <div id="reviewAnswer" class="review-answer hidden"></div>
             </div>
             <div id="reviewRatingRow" class="review-rating-row hidden">
-              <button class="review-rate-btn" data-rating="again">Again</button>
-              <button class="review-rate-btn" data-rating="hard">Hard</button>
-              <button class="review-rate-btn" data-rating="good">Good</button>
-              <button class="review-rate-btn" data-rating="easy">Easy</button>
+              <button class="review-rate-btn" data-i18n="review.again" data-rating="again">Again</button>
+              <button class="review-rate-btn" data-i18n="review.hard" data-rating="hard">Hard</button>
+              <button class="review-rate-btn" data-i18n="review.good" data-rating="good">Good</button>
+              <button class="review-rate-btn" data-i18n="review.easy" data-rating="easy">Easy</button>
             </div>
           </div>
 
           <div class="panel">
-            <h3>Starter word pack</h3>
+            <h3 data-i18n="heading.starterWordPack">Starter word pack</h3>
             <p style="font-size:12px;opacity:0.75;margin-top:-4px">
               Add a set of core words for a level straight into your review deck,
               so you have something to practise from day one.
@@ -1348,7 +1354,7 @@
                 <option value="10" selected>10 words</option>
                 <option value="20">20 words</option>
               </select>
-              <button id="seedBtn">Add to deck</button>
+              <button id="seedBtn" data-i18n="btn.addToDeck">Add to deck</button>
             </div>
             <div id="seedResult" style="font-size:13px;opacity:0.85;margin-top:6px"></div>
           </div>
@@ -1361,7 +1367,7 @@
 
       <div id="placementModal" class="modal-backdrop hidden">
         <div class="modal">
-          <h3>Placement test</h3>
+          <h3 data-i18n="heading.placementTest">Placement test</h3>
           <p id="placementModalIntro" style="font-size:13px;opacity:0.85">
             Answer a few short questions. The test adapts to you — it gets harder
             when you're right and easier when you're not — so it only takes a
@@ -1372,8 +1378,8 @@
           <div id="placementError" class="error"></div>
           <div id="placementResult" class="hidden"></div>
           <div style="display:flex;gap:8px;margin-top:12px">
-            <button id="placementSubmitBtn">Submit answers</button>
-            <button id="placementCloseBtn" class="secondary">Close</button>
+            <button id="placementSubmitBtn" data-i18n="btn.submitAnswers">Submit answers</button>
+            <button id="placementCloseBtn" class="secondary" data-i18n="btn.close">Close</button>
           </div>
         </div>
       </div>
@@ -1606,6 +1612,7 @@
       </div>
     </div>
 
+    <script src="i18n.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>

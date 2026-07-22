@@ -38,6 +38,11 @@ export const users = sqliteTable("users", {
   targetLanguage: text("target_language", { enum: ["english", "chinese"] })
     .notNull()
     .default("english"),
+  // Stage 36: the INTERFACE language, deliberately independent of
+  // targetLanguage -- a Chinese speaker learning English wants a Chinese UI.
+  uiLocale: text("ui_locale", { enum: ["en", "zh"] })
+    .notNull()
+    .default("en"),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),
