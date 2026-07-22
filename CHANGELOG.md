@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.20.0 — Stage 32: English content depth
+
+- **The English path now runs all the way to C2.** Previously it stopped at C1 — and that C1 unit had no listening or writing content — so the "advanced" end of beginner-to-advanced was unreachable by construction. There is now one unit per CEFR level A1–C2, every unit covering all six lesson types: **6 units, 50 lessons** (was 5 units, 33).
+- **English content nearly doubled: 38 items, up from 22.** Grammar 9→13, reading 5→11, listening 4→7, writing 4→7. Every CEFR level A1–C2 now has content in every content module.
+- **No level is a dead end any more.** Every level from A1 to C1 previously had exactly one reading passage, so a learner exhausted it in a single sitting; each now has at least two.
+- **New grammar fills real syllabus gaps** rather than padding counts: B1 *Gerunds and Infinitives* (a conspicuous absence, including meaning-changing pairs like *stop smoking* / *stop to smoke*), C1 *Inversion for Emphasis*, C2 *Cleft Sentences*, and C2 *Hedging and Nuanced Modality* — knowing how strongly to state a claim, which is arguably the key C2 writing skill.
+- **New C1/C2 material is argumentative, not descriptive**, because what distinguishes reading and listening at that level is following a developed argument: a C1 essay on natural-language interfaces, a C2 essay on the paradox of choice, a C1 research interview, and a C2 conference-talk opening full of concessive, self-qualifying discourse.
+- **New writing tasks match real registers**: a B2 formal complaint, the standard C1 discuss-both-views essay, and a C2 critical review whose grammar focus deliberately reuses the two new C2 grammar points.
+- **Content-depth goals are now enforced by tests**, not left to drift: every module has content at every level; the path runs A1→C2; every unit of every course covers all six lesson types; no level has fewer than two reading passages; ids stay unique.
+- Because the curriculum is a read-time overlay (Stage 27), all of this counts **retroactively** — a student who already read a passage sees it ticked off in the expanded path with no migration.
+- Verified: backend **166 tests passing** (+5), AI service 80 pytest passing, backend `tsc` clean, types build clean.
+
 ## v1.19.0 — Stage 31: Chinese writing prompts and quiz categories
 
 - **Writing and Quiz now follow the learner's language**, closing the last two English-only modules. Every Chinese course unit now covers all six lesson types.

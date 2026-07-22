@@ -65,6 +65,58 @@ const CLIPS: ListeningClipRecord[] = [
       "adaptation involves building stronger sea walls and improving drainage systems. The report " +
       "concludes that acting now will be far less expensive than dealing with the consequences later.",
   },
+  // --- Stage 32: completing the top of the ladder (C1, C2) plus more at B1 ---
+  {
+    id: "listen-library-announcement",
+    title: "A Library Announcement",
+    cefrLevel: "B1",
+    estimatedSeconds: 45,
+    transcript:
+      "Good afternoon, everyone. This is a short announcement from the library staff. " +
+      "Please note that the second floor will be closed this Thursday and Friday while " +
+      "new shelving is installed. All books normally kept upstairs have been moved to the " +
+      "temporary section behind the main desk. If you cannot find what you need, please " +
+      "ask a member of staff rather than searching on your own. Borrowing times are not " +
+      "affected, and the study rooms on the ground floor remain open as usual. " +
+      "Thank you for your patience.",
+  },
+  {
+    id: "listen-research-interview",
+    title: "An Interview With a Researcher",
+    cefrLevel: "C1",
+    estimatedSeconds: 70,
+    transcript:
+      "Interviewer: Your study looked at how people remember what they read on screens " +
+      "compared with paper. What surprised you most? " +
+      "Researcher: Honestly, how consistent the effect was. Across every age group we " +
+      "tested, comprehension of longer arguments was slightly better on paper. " +
+      "Interviewer: Why might that be? " +
+      "Researcher: We think it's partly physical. A printed page gives you a stable sense " +
+      "of where you are in a text, and that spatial memory seems to support recall. " +
+      "Scrolling removes it. But I'd be cautious about concluding that screens are simply " +
+      "worse. When we asked people to slow down and take notes, the difference largely " +
+      "disappeared. The medium shapes how we read, and it's the reading behaviour, not the " +
+      "device itself, that does most of the work.",
+  },
+  {
+    id: "listen-conference-talk",
+    title: "Opening of a Conference Talk",
+    cefrLevel: "C2",
+    estimatedSeconds: 85,
+    transcript:
+      "Thank you for that generous introduction, though I suspect it sets expectations " +
+      "rather higher than I can meet. I want to begin with a confession: for the first ten " +
+      "years of my career, I was almost certainly wrong about the central question I had " +
+      "set out to answer. Not wrong in some trivial, correctable way, but wrong in my " +
+      "framing of the problem itself. What I had treated as a technical shortcoming turned " +
+      "out to be a question about incentives, and no amount of engineering was ever going " +
+      "to resolve it. I mention this not out of false modesty, but because the field has a " +
+      "tendency to present its history as a smooth accumulation of insight, when in " +
+      "practice much of what we now regard as obvious was arrived at only after a long " +
+      "detour. So what I would like to offer this afternoon is less a set of conclusions " +
+      "than an account of where the detours were, and what, with hindsight, might have " +
+      "shortened them.",
+  }
 ];
 
 export function listListeningClips(

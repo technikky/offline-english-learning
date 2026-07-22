@@ -68,6 +68,81 @@ const PROMPTS: WritingPromptDetail[] = [
       "Conclude with a balanced final thought.",
     ],
   },
+  // --- Stage 32: completing C1/C2 and adding a second B2 task ---
+  {
+    id: "write-a-formal-complaint",
+    title: "A Formal Complaint",
+    cefrLevel: "B2",
+    wordCountTarget: 160,
+    prompt:
+      "You ordered a product online that arrived damaged, and your first email received no " +
+      "reply. Write a formal complaint to the company explaining what happened and what you " +
+      "want them to do about it.",
+    targetVocabulary: [
+      "purchase",
+      "faulty",
+      "refund",
+      "resolve",
+      "unacceptable",
+      "prompt response",
+    ],
+    grammarFocus: "The passive voice and polite but firm modal verbs (should, would expect)",
+    hints: [
+      "Open by stating clearly what you bought and when.",
+      "Describe the problem factually, without emotional language.",
+      "State exactly what outcome you want, and give a reasonable deadline.",
+    ],
+  },
+  {
+    id: "write-a-balanced-argument",
+    title: "A Balanced Argument",
+    cefrLevel: "C1",
+    wordCountTarget: 280,
+    prompt:
+      "Some people argue that university education should be free for everyone; others say " +
+      "students should contribute to the cost. Discuss both views and give your own opinion, " +
+      "supporting it with reasons and examples.",
+    targetVocabulary: [
+      "subsidise",
+      "taxpayer",
+      "access",
+      "long-term investment",
+      "counterargument",
+      "on balance",
+    ],
+    grammarFocus:
+      "Concessive structures (while, although, admittedly), relative clauses, and inversion for emphasis",
+    hints: [
+      "Devote one paragraph to each view, presenting the strongest version of it.",
+      "Acknowledge the opposing case before you answer it — that is what makes an argument credible.",
+      "Signal your own position clearly in the final paragraph with a phrase like 'On balance'.",
+    ],
+  },
+  {
+    id: "write-a-critical-review",
+    title: "A Critical Review",
+    cefrLevel: "C2",
+    wordCountTarget: 350,
+    prompt:
+      "Write a critical review of a book, film, or article that you found genuinely flawed but " +
+      "worth engaging with. Summarise its central claim fairly, identify where the reasoning " +
+      "or execution breaks down, and explain what it nonetheless gets right.",
+    targetVocabulary: [
+      "premise",
+      "compelling",
+      "overstate",
+      "nuance",
+      "notwithstanding",
+      "fall short of",
+    ],
+    grammarFocus:
+      "Hedging and nuanced modality, cleft sentences for emphasis, and complex noun phrases",
+    hints: [
+      "Summarise the argument so fairly that its author would accept your description.",
+      "Distinguish between a weakness in the argument and a matter of taste.",
+      "Hedge claims you cannot fully support ('arguably', 'tends to'), and boost only the ones you can.",
+    ],
+  }
 ];
 
 // Stage 31: prompts for the language being learned. Ids stay globally unique

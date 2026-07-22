@@ -34,7 +34,7 @@ export interface Course {
 }
 
 export const ENGLISH_COURSE: Course = {
-  title: "English: A1 to C1",
+  title: "English: A1 to C2",
   units: [
     {
       id: "unit-a1",
@@ -44,6 +44,7 @@ export const ENGLISH_COURSE: Course = {
         { type: "grammar", refId: "present-tense", title: "Present Simple Tense" },
         { type: "grammar", refId: "past-tense", title: "Past Simple Tense" },
         { type: "reading", refId: "a-day-at-the-park", title: "Read: A Day at the Park" },
+        { type: "reading", refId: "the-lost-key", title: "Read: The Lost Key" },
         { type: "listening", refId: "listen-morning-routine", title: "Listen: A Morning Routine" },
         { type: "writing", refId: "write-my-family", title: "Write: My Family" },
         { type: "conversation", refId: "daily_life", title: "Talk: Daily Life" },
@@ -58,6 +59,7 @@ export const ENGLISH_COURSE: Course = {
         { type: "grammar", refId: "articles", title: "Articles: a, an, the" },
         { type: "grammar", refId: "prepositions", title: "Prepositions" },
         { type: "reading", refId: "the-new-neighbor", title: "Read: The New Neighbor" },
+        { type: "reading", refId: "the-morning-market", title: "Read: The Morning Market" },
         { type: "listening", refId: "listen-weekend-plans", title: "Listen: Weekend Plans" },
         { type: "writing", refId: "write-a-memorable-trip", title: "Write: A Memorable Trip" },
         { type: "conversation", refId: "shopping", title: "Talk: Shopping" },
@@ -71,8 +73,15 @@ export const ENGLISH_COURSE: Course = {
       lessons: [
         { type: "grammar", refId: "present-perfect", title: "Present Perfect Tense" },
         { type: "grammar", refId: "passive-voice", title: "The Passive Voice" },
+        { type: "grammar", refId: "gerunds-infinitives", title: "Gerunds and Infinitives" },
         { type: "reading", refId: "working-from-home", title: "Read: Working from Home" },
+        { type: "reading", refId: "learning-to-cook", title: "Read: Learning to Cook" },
         { type: "listening", refId: "listen-office-meeting", title: "Listen: An Office Meeting" },
+        {
+          type: "listening",
+          refId: "listen-library-announcement",
+          title: "Listen: A Library Announcement",
+        },
         { type: "writing", refId: "write-technology-opinion", title: "Write: Technology Opinion" },
         { type: "conversation", refId: "business_meeting", title: "Talk: Business Meeting" },
         { type: "quiz", refId: "vocabulary", title: "Quiz: Vocabulary" },
@@ -86,8 +95,10 @@ export const ENGLISH_COURSE: Course = {
         { type: "grammar", refId: "conditionals", title: "Conditionals" },
         { type: "grammar", refId: "modal-verbs", title: "Modal Verbs" },
         { type: "reading", refId: "the-power-of-habits", title: "Read: The Power of Habits" },
+        { type: "reading", refId: "the-value-of-boredom", title: "Read: The Value of Boredom" },
         { type: "listening", refId: "listen-climate-report", title: "Listen: A Climate Report" },
         { type: "writing", refId: "write-environment-essay", title: "Write: Environment Essay" },
+        { type: "writing", refId: "write-a-formal-complaint", title: "Write: A Formal Complaint" },
         { type: "conversation", refId: "debate", title: "Talk: Debate Practice" },
         { type: "quiz", refId: "grammar", title: "Quiz: Grammar" },
       ],
@@ -95,14 +106,57 @@ export const ENGLISH_COURSE: Course = {
     {
       id: "unit-c1",
       level: "C1",
-      title: "Mastery",
-      // C1 listening/writing content isn't authored yet (see docs/34-stage27-plan.md);
-      // the unit uses the C1 content that does exist. Adding C1 clips/prompts later
-      // and appending lessons here extends the path with no other change.
+      title: "Precision and Register",
+      // Stage 32 completed this unit: C1 listening and writing content now exist,
+      // so it covers all six lesson types like every other unit.
       lessons: [
         { type: "grammar", refId: "relative-clauses", title: "Relative Clauses" },
-        { type: "reading", refId: "the-ethics-of-artificial-intelligence", title: "Read: The Ethics of AI" },
+        { type: "grammar", refId: "inversion", title: "Inversion for Emphasis" },
+        {
+          type: "reading",
+          refId: "the-ethics-of-artificial-intelligence",
+          title: "Read: The Ethics of AI",
+        },
+        {
+          type: "reading",
+          refId: "the-language-of-machines",
+          title: "Read: The Language of Machines",
+        },
+        {
+          type: "listening",
+          refId: "listen-research-interview",
+          title: "Listen: An Interview With a Researcher",
+        },
+        {
+          type: "writing",
+          refId: "write-a-balanced-argument",
+          title: "Write: A Balanced Argument",
+        },
         { type: "conversation", refId: "culture", title: "Talk: Culture" },
+        { type: "quiz", refId: "vocabulary", title: "Quiz: Vocabulary" },
+      ],
+    },
+    {
+      // Stage 32: the top of the ladder. Until now the English path stopped at
+      // C1, which capped how far a learner could actually be taken.
+      id: "unit-c2",
+      level: "C2",
+      title: "Mastery",
+      lessons: [
+        { type: "grammar", refId: "cleft-sentences", title: "Cleft Sentences" },
+        { type: "grammar", refId: "hedging-and-nuance", title: "Hedging and Nuanced Modality" },
+        {
+          type: "reading",
+          refId: "the-paradox-of-choice",
+          title: "Read: The Paradox of Choice",
+        },
+        {
+          type: "listening",
+          refId: "listen-conference-talk",
+          title: "Listen: Opening of a Conference Talk",
+        },
+        { type: "writing", refId: "write-a-critical-review", title: "Write: A Critical Review" },
+        { type: "conversation", refId: "debate", title: "Talk: Debate Practice" },
         { type: "quiz", refId: "vocabulary", title: "Quiz: Vocabulary" },
       ],
     },

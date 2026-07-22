@@ -168,6 +168,80 @@ const CURRICULUM: GrammarTopicDetail[] = [
       "The movie that won the award was directed by a newcomer.",
     ],
   },
+  // --- Stage 32: filling real syllabus gaps and building out C1/C2 ---
+  {
+    id: "gerunds-infinitives",
+    level: "intermediate",
+    cefrLevel: "B1",
+    title: "Gerunds and Infinitives",
+    explanation:
+      "Some verbs are followed by -ing (a gerund), others by to + verb (an infinitive), and a " +
+      "few by either. Enjoy, avoid, finish, suggest and mind take -ing. Want, decide, hope, " +
+      "promise and agree take to + verb. After a preposition, always use -ing. A few verbs " +
+      "(stop, remember, forget) change meaning depending on which you choose.",
+    examples: [
+      "I enjoy swimming in the sea.",
+      "She decided to move to another city.",
+      "He is good at solving problems.",
+      "I stopped smoking. (I quit) / I stopped to smoke. (I paused in order to smoke)",
+      "Remember to lock the door. (do it) / I remember locking the door. (the memory)",
+    ],
+  },
+  {
+    id: "inversion",
+    level: "advanced",
+    cefrLevel: "C1",
+    title: "Inversion for Emphasis",
+    explanation:
+      "When a negative or limiting expression starts a sentence, the subject and auxiliary swap " +
+      "places, as in a question. This is a formal, emphatic structure used in writing and " +
+      "speeches. Common triggers: never, rarely, seldom, not only, no sooner, little, only " +
+      "then, under no circumstances. If there is no auxiliary, add do/does/did.",
+    examples: [
+      "Never have I seen such a beautiful sunset.",
+      "Not only did she finish first, but she also broke the record.",
+      "Rarely do we get an opportunity like this.",
+      "No sooner had he sat down than the phone rang.",
+      "Under no circumstances should you open this door.",
+    ],
+  },
+  {
+    id: "cleft-sentences",
+    level: "advanced",
+    cefrLevel: "C2",
+    title: "Cleft Sentences",
+    explanation:
+      "A cleft sentence splits one idea into two clauses to put the spotlight on a particular " +
+      "part of it. An it-cleft (It is X that…) highlights a noun phrase; a what-cleft (What I " +
+      "need is…) highlights an action or thing. These let you control emphasis in writing " +
+      "without changing your words, and they are a hallmark of fluent, controlled prose.",
+    examples: [
+      "It was Maria who solved the problem. (not someone else)",
+      "It wasn't until midnight that we finally arrived.",
+      "What surprised me most was his honesty.",
+      "What we need is a clearer plan.",
+      "All I want is a quiet evening.",
+    ],
+  },
+  {
+    id: "hedging-and-nuance",
+    level: "advanced",
+    cefrLevel: "C2",
+    title: "Hedging and Nuanced Modality",
+    explanation:
+      "Advanced writers rarely state things as absolute fact. Hedging softens a claim so it is " +
+      "defensible: modal verbs (may, might, could), distancing verbs (appears, suggests, tends " +
+      "to), and qualifiers (broadly, arguably, to some extent). The opposite — boosting — " +
+      "strengthens a claim (clearly, undoubtedly). Choosing the right strength is what makes " +
+      "academic and professional English sound credible rather than naive.",
+    examples: [
+      "The results suggest that the treatment may be effective. (careful)",
+      "This tends to happen when demand rises sharply.",
+      "Arguably, the policy has had little measurable effect.",
+      "The evidence would seem to point in a different direction.",
+      "There is undoubtedly room for improvement. (boosted, not hedged)",
+    ],
+  },
 ];
 
 // Stage 28: topics for the language the student is learning. Ids are globally
