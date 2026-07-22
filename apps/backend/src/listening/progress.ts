@@ -3,6 +3,7 @@ import type { ListeningProgressEntry, ListeningProgressResponse } from "@english
 import { db } from "../db/client";
 import { listeningResults } from "../db/schema";
 import { listListeningClips } from "./clips";
+import { getTargetLanguage } from "../users/language";
 
 export async function getListeningProgress(studentId: number): Promise<ListeningProgressResponse> {
   const results = await db
@@ -10,7 +11,8 @@ export async function getListeningProgress(studentId: number): Promise<Listening
     .from(listeningResults)
     .where(eq(listeningResults.studentId, studentId));
 
-  const clips: ListeningProgressEntry[] = listListeningClips()
+  const language = await getTargetLanguage(studentId);
+  const clips: ListeningProgressEntry[] = listListeningClips(language)
     .map((clip) => {
       const clipResults = results.filter((r) => r.clipId === clip.id);
       const bestScore =

@@ -3104,6 +3104,7 @@ async function changeTargetLanguage(language) {
 
     loadGrammarTopics();
     loadReadingPassages();
+    loadListeningClips();
     loadPlacementStatus();
     if (!document.getElementById("pathPanel").classList.contains("hidden")) {
       loadCurriculum();

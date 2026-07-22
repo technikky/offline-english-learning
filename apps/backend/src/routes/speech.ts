@@ -12,6 +12,7 @@ import { pronunciationResults } from "../db/schema";
 import { authenticate } from "../auth/middleware";
 import { aiSpeechClient } from "../speech/aiSpeechClient";
 import { scorePronunciation } from "../speech/scoring";
+import { getTargetLanguage } from "../users/language";
 
 export function registerSpeechRoutes(app: FastifyInstance): void {
   app.post<{ Body: TranscribeRequest }>(
@@ -23,7 +24,8 @@ export function registerSpeechRoutes(app: FastifyInstance): void {
         return reply.code(400).send({ error: "audioBase64 is required" });
       }
 
-      const transcript = await aiSpeechClient.transcribe(audioBase64);
+      const targetLanguage = await getTargetLanguage(request.authUser!.sub);
+      const transcript = await aiSpeechClient.transcribe(audioBase64, targetLanguage);
       const response: TranscribeResponse = { transcript };
       return response;
     },
@@ -39,7 +41,8 @@ export function registerSpeechRoutes(app: FastifyInstance): void {
       }
 
       const selectedVoice = voice === "male" ? "male" : "female";
-      const audioBase64 = await aiSpeechClient.synthesize(text, selectedVoice);
+      const targetLanguage = await getTargetLanguage(request.authUser!.sub);
+      const audioBase64 = await aiSpeechClient.synthesize(text, selectedVoice, targetLanguage);
       const response: SynthesizeResponse = { audioBase64 };
       return response;
     },
@@ -56,8 +59,13 @@ export function registerSpeechRoutes(app: FastifyInstance): void {
           .send({ error: "targetPhrase and audioBase64 are required" });
       }
 
-      const transcript = await aiSpeechClient.transcribe(audioBase64);
-      const { accuracyScore, feedback } = scorePronunciation(targetPhrase, transcript);
+      const targetLanguage = await getTargetLanguage(request.authUser!.sub);
+      const transcript = await aiSpeechClient.transcribe(audioBase64, targetLanguage);
+      const { accuracyScore, feedback } = scorePronunciation(
+        targetPhrase,
+        transcript,
+        targetLanguage,
+      );
 
       await db.insert(pronunciationResults).values({
         studentId: request.authUser!.sub,

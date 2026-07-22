@@ -10,8 +10,11 @@ a male and a female AI voice:
 |---|---|---|---|
 | `en_US-lessac-medium.onnx` | lessac | female | default voice; pronunciation practice; female avatar |
 | `en_US-ryan-medium.onnx` | ryan | male | male avatar |
+| `zh_CN-huayan-medium.onnx` | huayan | female | **Stage 29**: all Mandarin Chinese speech (listening clips, pronunciation playback) |
 
-Both are `en_US`, medium quality, 22050 Hz.
+All are medium quality, 22050 Hz. The two `en_US` voices back the male/female
+avatar choice; Chinese has a single vendored voice, so the avatar gender does
+not change Chinese speech.
 
 ## Restoring (fully offline install: copy these files from the offline package)
 
@@ -25,9 +28,14 @@ curl -L -o en_US-lessac-medium.onnx       "$BASE/lessac/medium/en_US-lessac-medi
 curl -L -o en_US-lessac-medium.onnx.json  "$BASE/lessac/medium/en_US-lessac-medium.onnx.json"
 curl -L -o en_US-ryan-medium.onnx         "$BASE/ryan/medium/en_US-ryan-medium.onnx"
 curl -L -o en_US-ryan-medium.onnx.json    "$BASE/ryan/medium/en_US-ryan-medium.onnx.json"
+
+# Stage 29: Mandarin Chinese voice (note the different zh path)
+ZH=https://huggingface.co/rhasspy/piper-voices/resolve/main/zh/zh_CN
+curl -L -o zh_CN-huayan-medium.onnx      "$ZH/huayan/medium/zh_CN-huayan-medium.onnx"
+curl -L -o zh_CN-huayan-medium.onnx.json "$ZH/huayan/medium/zh_CN-huayan-medium.onnx.json"
 ```
 
 Each `.onnx` is ~60 MB. The AI service resolves them via the paths in
 `apps/ai-service/app/speech.py` (`PIPER_VOICE_PATHS`), overridable per-gender
-with the `PIPER_VOICE_PATH` (female/default) and `PIPER_VOICE_PATH_MALE` env
-vars.
+with the `PIPER_VOICE_PATH` (female/default), `PIPER_VOICE_PATH_MALE` and
+`PIPER_VOICE_PATH_CHINESE` env vars.

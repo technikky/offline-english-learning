@@ -52,6 +52,9 @@ class VocabularyExplainResponse(BaseModel):
 
 class TranscribeRequest(BaseModel):
     audioBase64: str
+    # Stage 29: picks the Whisper model + decode language (English keeps the
+    # fast English-only tiny.en; Chinese uses the multilingual model).
+    targetLanguage: Literal["english", "chinese"] = "english"
 
 
 class TranscribeResponse(BaseModel):
@@ -61,6 +64,9 @@ class TranscribeResponse(BaseModel):
 class SynthesizeRequest(BaseModel):
     text: str
     voice: Literal["male", "female"] = "female"
+    # Stage 29: selects the Piper voice; Chinese uses the vendored Mandarin
+    # voice, for which the male/female choice does not apply.
+    targetLanguage: Literal["english", "chinese"] = "english"
 
 
 class SynthesizeResponse(BaseModel):

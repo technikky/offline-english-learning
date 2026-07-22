@@ -6,6 +6,7 @@ import { listListeningClips, getListeningClip, splitIntoSentences } from "../lis
 import { getOrCreateListeningComprehension } from "../listening/comprehension";
 import { getListeningProgress } from "../listening/progress";
 import { scoreTextSimilarity } from "../speech/textSimilarity";
+import { getTargetLanguage } from "../users/language";
 import type {
   DictationCheckRequest,
   DictationCheckResponse,
@@ -19,8 +20,8 @@ function normalizeAnswer(value: string): string {
 }
 
 export function registerListeningRoutes(app: FastifyInstance): void {
-  app.get("/listening/clips", { preHandler: authenticate }, async () => {
-    return listListeningClips();
+  app.get("/listening/clips", { preHandler: authenticate }, async (request) => {
+    return listListeningClips(await getTargetLanguage(request.authUser!.sub));
   });
 
   app.get<{ Params: { id: string } }>(
@@ -106,7 +107,7 @@ export function registerListeningRoutes(app: FastifyInstance): void {
         return reply.code(400).send({ error: "target and attempt are required" });
       }
       const response: DictationCheckResponse = {
-        score: scoreTextSimilarity(target, attempt),
+        score: scoreTextSimilarity(target, attempt, await getTargetLanguage(request.authUser!.sub)),
       };
       return response;
     },

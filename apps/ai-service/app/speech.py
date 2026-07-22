@@ -22,42 +22,75 @@ _PIPER_VOICES_DIR = os.path.join(
 # single-voice behavior for callers that don't specify a gender.
 PIPER_VOICE_PATH = os.path.join(_PIPER_VOICES_DIR, "en_US-lessac-medium.onnx")
 PIPER_VOICE_PATH_MALE = os.path.join(_PIPER_VOICES_DIR, "en_US-ryan-medium.onnx")
+# Stage 29: the vendored Mandarin voice. Only one Chinese voice is bundled, so
+# Chinese speech doesn't vary by avatar gender.
+PIPER_VOICE_PATH_CHINESE = os.path.join(_PIPER_VOICES_DIR, "zh_CN-huayan-medium.onnx")
 
-_whisper_model: WhisperModel | None = None
-# One lazily-loaded PiperVoice per gender, cached so we don't reload a ~60MB
-# model on every request (both fit comfortably in memory alongside the LLM).
+# Stage 29: Whisper model per target language. English keeps the small, fast
+# English-only `tiny.en` it has always used; Chinese needs a *multilingual*
+# model (`small`), which is far larger, so it is only loaded if someone
+# actually speaks Chinese. Both are cached separately and lazily.
+WHISPER_MODEL_BY_LANGUAGE = {
+    "english": os.environ.get("WHISPER_MODEL", "tiny.en"),
+    "chinese": os.environ.get("WHISPER_MODEL_MULTILINGUAL", "small"),
+}
+
+_whisper_models: dict[str, WhisperModel] = {}
+# One lazily-loaded PiperVoice per cache key, so we don't reload a ~60MB model
+# on every request (they fit comfortably in memory alongside the LLM).
 _piper_voices: dict[str, PiperVoice] = {}
 
 
-def _get_whisper_model_name() -> str:
-    return os.environ.get("WHISPER_MODEL", "tiny.en")
+def _normalize_language(language: str | None) -> str:
+    return "chinese" if language == "chinese" else "english"
 
 
-def _get_piper_voice_path(voice: str = "female") -> str:
+def _get_whisper_model_name(language: str = "english") -> str:
+    return WHISPER_MODEL_BY_LANGUAGE[_normalize_language(language)]
+
+
+def _get_piper_voice_path(voice: str = "female", language: str = "english") -> str:
+    if _normalize_language(language) == "chinese":
+        return os.environ.get("PIPER_VOICE_PATH_CHINESE", PIPER_VOICE_PATH_CHINESE)
     if voice == "male":
         return os.environ.get("PIPER_VOICE_PATH_MALE", PIPER_VOICE_PATH_MALE)
     return os.environ.get("PIPER_VOICE_PATH", PIPER_VOICE_PATH)
 
 
-def load_whisper_model() -> WhisperModel:
-    global _whisper_model
-    if _whisper_model is None:
+def load_whisper_model(language: str = "english") -> WhisperModel:
+    normalized = _normalize_language(language)
+    if normalized not in _whisper_models:
         os.makedirs(WHISPER_MODELS_DIR, exist_ok=True)
-        _whisper_model = WhisperModel(
-            _get_whisper_model_name(), models_dir=WHISPER_MODELS_DIR
+        if normalized == "chinese":
+            # Pin the decode language so the multilingual model doesn't
+            # mis-detect short utterances as another language.
+            _whisper_models[normalized] = WhisperModel(
+                _get_whisper_model_name("chinese"),
+                models_dir=WHISPER_MODELS_DIR,
+                language="zh",
+            )
+        else:
+            # Constructed exactly as before, so English behaviour is unchanged.
+            _whisper_models[normalized] = WhisperModel(
+                _get_whisper_model_name("english"), models_dir=WHISPER_MODELS_DIR
+            )
+    return _whisper_models[normalized]
+
+
+def load_piper_voice(voice: str = "female", language: str = "english") -> PiperVoice:
+    normalized_voice = "male" if voice == "male" else "female"
+    normalized_language = _normalize_language(language)
+    # Chinese has a single vendored voice, so gender is not part of its key.
+    key = "chinese" if normalized_language == "chinese" else normalized_voice
+    if key not in _piper_voices:
+        _piper_voices[key] = PiperVoice.load(
+            _get_piper_voice_path(normalized_voice, normalized_language)
         )
-    return _whisper_model
-
-
-def load_piper_voice(voice: str = "female") -> PiperVoice:
-    normalized = "male" if voice == "male" else "female"
-    if normalized not in _piper_voices:
-        _piper_voices[normalized] = PiperVoice.load(_get_piper_voice_path(normalized))
-    return _piper_voices[normalized]
+    return _piper_voices[key]
 
 
 def is_whisper_loaded() -> bool:
-    return _whisper_model is not None
+    return len(_whisper_models) > 0
 
 
 def is_piper_loaded() -> bool:
@@ -95,8 +128,8 @@ def _read_wav_as_float32(wav_path: str) -> np.ndarray:
     return (samples / 32768.0).astype(np.float32)
 
 
-def transcribe_audio(audio_base64: str) -> str:
-    model = load_whisper_model()
+def transcribe_audio(audio_base64: str, language: str = "english") -> str:
+    model = load_whisper_model(language)
     audio_bytes = base64.b64decode(audio_base64)
 
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
@@ -111,8 +144,8 @@ def transcribe_audio(audio_base64: str) -> str:
         os.unlink(tmp_path)
 
 
-def synthesize_speech(text: str, voice: str = "female") -> str:
-    piper_voice = load_piper_voice(voice)
+def synthesize_speech(text: str, voice: str = "female", language: str = "english") -> str:
+    piper_voice = load_piper_voice(voice, language)
     buffer = io.BytesIO()
     with wave.open(buffer, "wb") as wav_file:
         piper_voice.synthesize_wav(text, wav_file)

@@ -1,4 +1,5 @@
-import { normalizeWords, scoreTextSimilarity } from "./textSimilarity";
+import type { TargetLanguage } from "@englishclass/types";
+import { normalizeTokens, scoreTextSimilarity } from "./textSimilarity";
 
 export interface PronunciationScore {
   accuracyScore: number;
@@ -8,12 +9,16 @@ export interface PronunciationScore {
 /** Word-level similarity as a proxy for "how close was the spoken attempt to
  * the target phrase," not a phoneme-level pronunciation scorer (that's a
  * different, more specialized model; see docs/12-stage9-plan.md). */
-export function scorePronunciation(targetPhrase: string, transcript: string): PronunciationScore {
-  if (normalizeWords(targetPhrase).length === 0) {
+export function scorePronunciation(
+  targetPhrase: string,
+  transcript: string,
+  language: TargetLanguage = "english",
+): PronunciationScore {
+  if (normalizeTokens(targetPhrase, language).length === 0) {
     return { accuracyScore: 0, feedback: "No target phrase to compare against." };
   }
 
-  const accuracyScore = scoreTextSimilarity(targetPhrase, transcript);
+  const accuracyScore = scoreTextSimilarity(targetPhrase, transcript, language);
 
   let feedback: string;
   if (accuracyScore >= 95) {

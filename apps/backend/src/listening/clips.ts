@@ -1,8 +1,12 @@
-import type { ListeningClipSummary } from "@englishclass/types";
+import type { ListeningClipSummary, TargetLanguage } from "@englishclass/types";
 
 export interface ListeningClipRecord extends ListeningClipSummary {
   transcript: string;
 }
+
+// Imported after the interface so the Chinese catalog can reference it as a
+// type-only import (erased at compile time, so there is no runtime cycle).
+import { CHINESE_CLIPS } from "../chinese/clips";
 
 // Stage 17: curated listening scripts. Same "curate the content, generate the
 // varied part" split as reading (Stage 15): the transcript is authored for
@@ -63,23 +67,33 @@ const CLIPS: ListeningClipRecord[] = [
   },
 ];
 
-export function listListeningClips(): ListeningClipSummary[] {
-  return CLIPS.map(({ id, title, cefrLevel, estimatedSeconds }) => ({
+export function listListeningClips(
+  language: TargetLanguage = "english",
+): ListeningClipSummary[] {
+  const catalog = language === "chinese" ? CHINESE_CLIPS : CLIPS;
+  return catalog.map(({ id, title, cefrLevel, estimatedSeconds, language: lang }) => ({
     id,
     title,
     cefrLevel,
     estimatedSeconds,
+    language: lang,
   }));
 }
 
 export function getListeningClip(id: string): ListeningClipRecord | undefined {
-  return CLIPS.find((clip) => clip.id === id);
+  return CLIPS.find((clip) => clip.id === id) ?? CHINESE_CLIPS.find((clip) => clip.id === id);
 }
 
-/** Splits a transcript into sentences for sentence-by-sentence dictation mode. */
+/** Splits a transcript into sentences for sentence-by-sentence dictation mode.
+ *
+ * Stage 29: Chinese sentences end with full-width punctuation and are written
+ * without spaces, so the English-only rule (terminator followed by whitespace)
+ * would return the entire clip as a single "sentence". The first alternative
+ * below splits directly after Chinese terminators; English behaviour is
+ * unchanged because those characters never appear in English text. */
 export function splitIntoSentences(transcript: string): string[] {
   return transcript
-    .split(/(?<=[.!?])\s+/)
+    .split(/(?<=[。！？])|(?<=[.!?])\s+/)
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
 }

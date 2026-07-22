@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.17.0 — Stage 29: Chinese speech (listening + pronunciation)
+
+- **Chinese is now a full four-skill language**, not read-and-type only. Two new models were vendored (with approval): multilingual Whisper `small` (466 MB) and the Mandarin Piper voice `zh_CN-huayan-medium` (61 MB). The bundled `ggml-tiny.en` is English-only and cannot transcribe Chinese at all.
+- **English pays nothing for this.** Whisper models are cached per language and loaded lazily, so the 466 MB multilingual model is only loaded if someone actually speaks Chinese; the English model is constructed exactly as before, leaving its behaviour unchanged.
+- **Three curated Mandarin listening clips** (A1 自我介绍, A2 问路, B1 春节), synthesized on demand by the new voice and appended as listening lessons to the Chinese course units.
+- **Fixed two latent English-only bugs that Chinese exposed** — both would have made Chinese *look* like it worked while always giving wrong results:
+  - Pronunciation and dictation scoring **always returned 0 for Chinese**, because the tokenizer stripped every non-latin character. Chinese is now compared character by character (one hanzi ≈ one syllable), and punctuation is excluded so full-width/half-width differences don't penalise a learner.
+  - Dictation treated an **entire Chinese clip as one sentence**, because sentence splitting required whitespace after the terminator. Chinese full-width `。！？` are now handled. English behaviour is unchanged in both cases.
+- Speech language is derived **server-side** from the authenticated user, so no client change was needed for speech to follow the learner's language.
+- **Verified with a real model round-trip**, not just unit tests: synthesized `你好，我叫李明。我是学生。` → 2.37 s of audio → transcribed back with **100% character accuracy**. English speech was separately confirmed unaffected.
+- Both new assets are gitignored like every other vendored model, and the `offline-sdk` READMEs document the exact restore commands (plus the new `WHISPER_MODEL_MULTILINGUAL` / `PIPER_VOICE_PATH_CHINESE` overrides) so an offline install can rebuild them.
+- Verified: backend **147 tests passing** (+8), AI service **59 pytest passing** (+6), backend `tsc` clean, types build clean, `renderer.js` `node --check` clean.
+
 ## v1.16.0 — Stage 28: Chinese as a target language
 
 - **The platform now teaches Mandarin Chinese, not just English.** A new "I'm learning" selector switches a student between English and Chinese; the content catalogs, the curriculum path, and the AI conversation partner all follow the setting.

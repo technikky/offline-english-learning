@@ -640,6 +640,8 @@ export interface ListeningClipSummary {
   title: string;
   cefrLevel: CefrLevel;
   estimatedSeconds: number;
+  /** Stage 29: which language this clip teaches (defaults to English). */
+  language?: TargetLanguage;
 }
 
 export interface ListeningClipDetail extends ListeningClipSummary {

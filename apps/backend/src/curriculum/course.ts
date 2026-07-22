@@ -113,11 +113,10 @@ export const ENGLISH_COURSE: Course = {
 // Chinese lesson name and an English gloss. Levels stay on the CEFR scale
 // internally (the UI shows the HSK equivalent for Chinese learners).
 //
-// Chinese units currently use grammar, reading and conversation only:
-// listening needs a Chinese TTS voice, and the writing prompts and quiz
-// categories are still English-specific. Those are tracked as follow-ups in
-// docs/35-stage28-plan.md -- appending lessons here is all that's needed once
-// the content exists.
+// Stage 29 added listening (the zh_CN Piper voice is now vendored). Writing
+// prompts and quiz categories are still English-specific, so Chinese units
+// omit them -- tracked as follow-ups in docs/36-stage29-plan.md; appending
+// lessons here is all that's needed once that content exists.
 export const CHINESE_COURSE: Course = {
   title: "中文 Chinese: HSK 1 to HSK 4",
   units: [
@@ -129,6 +128,11 @@ export const CHINESE_COURSE: Course = {
         { type: "grammar", refId: "zh-basic-sentence", title: "Basic Sentence Order (主谓宾)" },
         { type: "grammar", refId: "zh-questions-ma", title: "Yes/No Questions with 吗" },
         { type: "reading", refId: "zh-read-my-day", title: "Read: 我的一天 (My Day)" },
+        {
+          type: "listening",
+          refId: "zh-listen-introduction",
+          title: "Listen: 自我介绍 (Introducing Yourself)",
+        },
         { type: "conversation", refId: "daily_life", title: "Talk: Daily Life" },
       ],
     },
@@ -144,6 +148,11 @@ export const CHINESE_COURSE: Course = {
           refId: "zh-read-at-the-restaurant",
           title: "Read: 在饭馆 (At the Restaurant)",
         },
+        {
+          type: "listening",
+          refId: "zh-listen-directions",
+          title: "Listen: 问路 (Asking for Directions)",
+        },
         { type: "conversation", refId: "restaurant", title: "Talk: Restaurant" },
       ],
     },
@@ -158,6 +167,11 @@ export const CHINESE_COURSE: Course = {
           type: "reading",
           refId: "zh-read-learning-chinese",
           title: "Read: 学中文难吗？(Is Chinese Hard?)",
+        },
+        {
+          type: "listening",
+          refId: "zh-listen-spring-festival",
+          title: "Listen: 春节 (Spring Festival)",
         },
         { type: "conversation", refId: "free_talk", title: "Talk: Free Conversation" },
       ],

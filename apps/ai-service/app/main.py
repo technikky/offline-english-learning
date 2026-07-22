@@ -221,12 +221,14 @@ def quiz_generate(request: QuizGenerateRequest) -> QuizGenerateResponse:
 @app.post("/v1/speech/transcribe")
 def speech_transcribe(request: TranscribeRequest) -> TranscribeResponse:
     with INFERENCE_LOCK:
-        transcript = transcribe_audio(request.audioBase64)
+        transcript = transcribe_audio(request.audioBase64, request.targetLanguage)
     return TranscribeResponse(transcript=transcript)
 
 
 @app.post("/v1/speech/synthesize")
 def speech_synthesize(request: SynthesizeRequest) -> SynthesizeResponse:
     with INFERENCE_LOCK:
-        audio_base64 = synthesize_speech(request.text, request.voice)
+        audio_base64 = synthesize_speech(
+            request.text, request.voice, request.targetLanguage
+        )
     return SynthesizeResponse(audioBase64=audio_base64)
