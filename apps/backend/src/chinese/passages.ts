@@ -122,4 +122,72 @@ export const CHINESE_PASSAGES: PassageRecord[] = [
       "attention. The key, therefore, is not whether to use a phone, but whether we can " +
       "control our own habits of use.",
   },
+  // Stage 35: HSK 5-6 passages. These deliberately carry a translation but NO
+  // pinyin: an HSK 5-6 learner reads characters directly, and full-passage
+  // romanisation at this level sustains exactly the crutch they need to drop.
+  // The reader hides the pinyin toggle automatically when the field is absent.
+  {
+    id: "zh-read-ai-and-work",
+    language: "chinese",
+    title: "人工智能与工作 (AI and Work)",
+    cefrLevel: "C1",
+    estimatedReadingMinutes: 6,
+    content:
+      "关于人工智能是否会大规模取代人类工作，社会上一直存在两种截然不同的看法。" +
+      "悲观的一方认为，机器不知疲倦、成本低廉，一旦技术成熟，大量重复性岗位必然消失；" +
+      "乐观的一方则指出，历史上每一次技术革命虽然淘汰了旧职业，但同时创造了更多新职业。" +
+      "然而，这两种看法都可能过于简单。真正值得关注的，或许不是工作岗位的总数，而是结构的变化。" +
+      "由于人工智能最擅长处理有明确规则的任务，受冲击最大的往往不是体力劳动者，" +
+      "而是从事中等技能文书工作的人群。与此同时，需要判断力、协调能力和人际沟通的岗位反而更加稀缺。" +
+      "因此，与其争论机器会不会抢走工作，不如思考教育体系应当如何调整，" +
+      "使人们具备机器难以替代的能力。",
+    translation:
+      "Society has long held two sharply different views on whether artificial intelligence will " +
+      "replace human work on a large scale. Pessimists argue that machines never tire and are " +
+      "cheap, so once the technology matures large numbers of repetitive jobs must disappear. " +
+      "Optimists counter that every technological revolution in history, while eliminating old " +
+      "occupations, simultaneously created more new ones. However, both views may be too simple. " +
+      "What deserves attention is perhaps not the total number of jobs, but the change in their " +
+      "structure. Because AI is best at tasks with clear rules, those hit hardest are often not " +
+      "manual labourers but people doing mid-skill clerical work. At the same time, roles " +
+      "requiring judgement, coordination and interpersonal communication become scarcer still. " +
+      "Rather than arguing over whether machines will take our jobs, then, it is more useful to " +
+      "consider how the education system should adapt so that people acquire the capabilities " +
+      "machines cannot easily replace.",
+  },
+  {
+    id: "zh-read-language-and-thought",
+    language: "chinese",
+    title: "语言与思维 (Language and Thought)",
+    cefrLevel: "C2",
+    estimatedReadingMinutes: 7,
+    content:
+      "语言究竟在多大程度上塑造思维，是语言学中一个长期争论不休的问题。" +
+      "上世纪中叶，有学者提出，母语的结构决定了使用者认识世界的方式；" +
+      "这一观点影响深远，却也因缺乏严格的证据而屡遭批评。" +
+      "近几十年来，实验研究让讨论重新变得具体。" +
+      "例如，某些语言不使用左右，而只用东南西北描述方位，" +
+      "其使用者在陌生环境中辨别方向的能力确实明显更强；" +
+      "又如，颜色词的划分不同，会影响人们区分相近色块的反应速度。" +
+      "不过，这类差异大多体现在反应快慢上，而非能否理解本身。" +
+      "归根结底，语言似乎并不限制我们能想什么，" +
+      "而是通过长期使用，让我们习惯于优先注意某些方面。" +
+      "这一结论看似温和，实则意味深长：" +
+      "它提醒我们，所谓客观的观察，往往早已被表达它的工具悄悄塑造。",
+    translation:
+      "Just how far language shapes thought is a question linguistics has debated endlessly. In " +
+      "the mid-twentieth century, some scholars proposed that the structure of one's native " +
+      "language determines how its speakers perceive the world; the view was enormously " +
+      "influential, yet was repeatedly criticised for lacking rigorous evidence. In recent " +
+      "decades, experimental research has made the discussion concrete again. Some languages, " +
+      "for instance, do not use left and right but describe position only by compass direction, " +
+      "and their speakers are indeed markedly better at orienting themselves in unfamiliar " +
+      "surroundings; likewise, differences in how colour terms divide the spectrum affect how " +
+      "quickly people distinguish similar shades. Most such differences, however, show up in " +
+      "speed of response rather than in whether something can be understood at all. Ultimately, " +
+      "language appears not to limit what we can think, but through long use to accustom us to " +
+      "attending to certain aspects first. Mild as it sounds, this conclusion carries real " +
+      "weight: it reminds us that so-called objective observation has often already been quietly " +
+      "shaped by the instrument used to express it.",
+  }
 ];

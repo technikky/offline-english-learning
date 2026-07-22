@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.23.0 - Stage 35: HSK 5-6 course units
+
+- **Removes the last structural ceiling in the platform.** The Chinese path stopped at HSK 4 (B2) - two whole bands below where the English path reached - so a Chinese learner literally could not be taken to an advanced level. It now runs **HSK 1 to HSK 6: 6 units, 42 lessons**, every unit covering all six lesson types, matching the English A1-C2 ladder.
+- Stage 34 had already built the HSK 5-6 *vocabulary*, so the wordlist covered C1/C2 while grammar, reading, listening and writing were all **zero** there. Chinese content is now **2/1/1/1 at every level A1-C2**.
+- **Five new grammar points, chosen for what genuinely distinguishes advanced Mandarin**: B2 *The 被 Passive* (completing a thin B2); C1 *Resultative and Potential Complements* (看得懂/看不懂, and the crucial distinction from 能 - 我不能看 is *not permitted*, 我看不懂 is *lacking the ability*); C1 *Formal Connectives 书面语* (由于/然而/因此/从而); C2 *成语*, including the discipline of using them sparingly; and C2 *书面语 vs 口语 register control*, since mixing registers is the commonest thing that marks otherwise-fluent writing as non-native.
+- **New C1/C2 reading, listening and writing are argumentative rather than descriptive**, because at HSK 5-6 the difficulty is following and building an argument, not decoding characters.
+- **A deliberate pedagogical decision**: the HSK 5-6 passages carry a translation but **no pinyin**, unlike HSK 1-4. At this level a learner reads characters directly, and full-passage romanisation sustains exactly the crutch they need to drop. The reader already hides the pinyin toggle when absent, so it degrades cleanly.
+- Two new units: **unit-zh-c1 分析与论证 (Analysis & Argument)** and **unit-zh-c2 语言的精通 (Mastery of Register)**.
+- **Parity is now enforced by tests**: Chinese must have content at every CEFR level in every module, and the Chinese path must run one unit per band HSK 1-6. The existing guards cover the rest - every unit of every course covers all six types, and every lesson id resolves against real content.
+- Because the curriculum is a read-time overlay (Stage 27), existing Chinese progress ticks off in the expanded path with no migration.
+- Documented limitations: Chinese still has one reading/listening/writing item per level versus two reading passages per level in English, so it is complete but thinner; the HSK-to-CEFR mapping remains approximate.
+- Verified: backend **193 tests passing** (+2), AI service 80 pytest passing, backend `tsc` clean, types build clean.
+
 ## v1.22.0 - Stage 34: HSK vocabulary wordlist
 
 - **Closes the last major asymmetry between the two languages.** Stage 33 gave English a curated CEFR wordlist; Chinese learners got none of its three benefits. New `chinese/wordlist.ts` adds **120 curated HSK-graded entries** (25/25/25/20/15/10 across HSK 1-6, mapped onto the internal CEFR scale), with pinyin carried inline so they need no schema change.

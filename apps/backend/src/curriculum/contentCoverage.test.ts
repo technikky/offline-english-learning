@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { CefrLevel } from "@englishclass/types";
-import { COURSES, ENGLISH_COURSE } from "./course";
+import { COURSES, CHINESE_COURSE, ENGLISH_COURSE } from "./course";
 import { listGrammarTopics } from "../grammar/curriculum";
 import { listReadingPassages } from "../reading/passages";
 import { listListeningClips } from "../listening/clips";
@@ -31,6 +31,26 @@ test("English has content at every CEFR level in every content module", () => {
       assert.ok(levels.has(level), `English ${name} has nothing at ${level}`);
     }
   }
+});
+
+test("Chinese has content at every CEFR level in every content module", () => {
+  const modules = {
+    grammar: listGrammarTopics("chinese"),
+    reading: listReadingPassages("chinese"),
+    listening: listListeningClips("chinese"),
+    writing: listWritingPrompts("chinese"),
+  };
+  for (const [name, items] of Object.entries(modules)) {
+    const levels = levelsOf(items);
+    for (const level of ENGLISH_LEVELS) {
+      assert.ok(levels.has(level), `Chinese ${name} has nothing at ${level} (HSK equivalent)`);
+    }
+  }
+});
+
+test("the Chinese path runs all the way to HSK 6 (C2)", () => {
+  const levels = CHINESE_COURSE.units.map((u) => u.level);
+  assert.deepEqual(levels, ENGLISH_LEVELS, "one Chinese unit per band, HSK 1 through HSK 6");
 });
 
 test("the English path runs all the way to C2", () => {

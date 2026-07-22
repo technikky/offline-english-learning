@@ -167,11 +167,12 @@ export const ENGLISH_COURSE: Course = {
 // Chinese lesson name and an English gloss. Levels stay on the CEFR scale
 // internally (the UI shows the HSK equivalent for Chinese learners).
 //
-// Stage 29 added listening (the zh_CN Piper voice is now vendored) and Stage 31
-// added Chinese writing prompts and Chinese quiz categories, so every unit now
-// covers all six lesson types. HSK 5-6 content is still to be written.
+// Stage 29 added listening (the zh_CN Piper voice is now vendored), Stage 31
+// added Chinese writing prompts and quiz categories, and Stage 35 built out
+// HSK 5-6 -- so the Chinese path now spans HSK 1-6 with all six lesson types
+// in every unit, matching the English A1-C2 ladder.
 export const CHINESE_COURSE: Course = {
-  title: "中文 Chinese: HSK 1 to HSK 4",
+  title: "中文 Chinese: HSK 1 to HSK 6",
   units: [
     {
       id: "unit-zh-a1",
@@ -241,6 +242,7 @@ export const CHINESE_COURSE: Course = {
       title: "进阶表达 Advanced Expression",
       lessons: [
         { type: "grammar", refId: "zh-complement-degree", title: "Degree Complements with 得" },
+        { type: "grammar", refId: "zh-bei-passive", title: "The 被 Passive" },
         {
           type: "reading",
           refId: "zh-read-phones-and-life",
@@ -257,6 +259,72 @@ export const CHINESE_COURSE: Course = {
           refId: "zh-write-learning-opinion",
           title: "Write: 学外语的看法 (Views on Language Learning)",
         },
+        { type: "quiz", refId: "vocabulary", title: "Quiz: Vocabulary 词汇" },
+      ],
+    },
+    {
+      // Stage 35: HSK 5. Until now the Chinese path stopped at HSK 4, which
+      // capped a Chinese learner two whole bands below where the English path
+      // reaches -- the same ceiling problem Stage 32 fixed for English.
+      id: "unit-zh-c1",
+      level: "C1",
+      title: "分析与论证 Analysis & Argument",
+      lessons: [
+        {
+          type: "grammar",
+          refId: "zh-potential-complements",
+          title: "Resultative and Potential Complements",
+        },
+        { type: "grammar", refId: "zh-formal-connectives", title: "Formal Connectives (书面语)" },
+        {
+          type: "reading",
+          refId: "zh-read-ai-and-work",
+          title: "Read: 人工智能与工作 (AI and Work)",
+        },
+        {
+          type: "listening",
+          refId: "zh-listen-city-interview",
+          title: "Listen: 城市交通访谈 (Urban Transport Interview)",
+        },
+        {
+          type: "writing",
+          refId: "zh-write-technology-argument",
+          title: "Write: 科技与生活 (Technology and Life)",
+        },
+        { type: "conversation", refId: "debate", title: "Talk: Debate Practice" },
+        { type: "quiz", refId: "grammar", title: "Quiz: Grammar 语法" },
+      ],
+    },
+    {
+      // Stage 35: HSK 6 -- the top of the Chinese ladder. Idiom and register
+      // control are what actually separate advanced Mandarin from merely
+      // correct Mandarin, so both grammar points target exactly that.
+      id: "unit-zh-c2",
+      level: "C2",
+      title: "语言的精通 Mastery of Register",
+      lessons: [
+        { type: "grammar", refId: "zh-chengyu", title: "成语: Four-Character Idioms" },
+        {
+          type: "grammar",
+          refId: "zh-literary-register",
+          title: "书面语 and 口语: Controlling Register",
+        },
+        {
+          type: "reading",
+          refId: "zh-read-language-and-thought",
+          title: "Read: 语言与思维 (Language and Thought)",
+        },
+        {
+          type: "listening",
+          refId: "zh-listen-lecture-opening",
+          title: "Listen: 讲座开场 (Opening of a Lecture)",
+        },
+        {
+          type: "writing",
+          refId: "zh-write-critical-commentary",
+          title: "Write: 评论文章 (A Critical Commentary)",
+        },
+        { type: "conversation", refId: "culture", title: "Talk: Culture" },
         { type: "quiz", refId: "vocabulary", title: "Quiz: Vocabulary 词汇" },
       ],
     },

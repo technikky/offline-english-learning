@@ -65,4 +65,41 @@ export const CHINESE_CLIPS: ListeningClipRecord[] = [
       "专家表示，垃圾分类不但能节约资源，而且能减少对土地和水的污染。" +
       "不过他们也提醒，要真正解决问题，最重要的还是从源头上减少浪费。",
   },
+  // Stage 35: HSK 5-6 clips. Denser and far more formal in register than the
+  // HSK 1-4 set: an interview with real turn-taking, and an academic opening.
+  {
+    id: "zh-listen-city-interview",
+    language: "chinese",
+    title: "城市交通访谈 (An Interview on Urban Transport)",
+    cefrLevel: "C1",
+    estimatedSeconds: 75,
+    transcript:
+      "主持人：这几年很多城市都在限制私家车，效果究竟如何？" +
+      "专家：从数据上看，高峰期的拥堵确实有所缓解，但幅度没有大家想象的那么大。" +
+      "主持人：这是为什么呢？" +
+      "专家：因为交通需求会自己调整。路一旦通畅，原本改坐地铁的人又会开回来，" +
+      "最后重新回到原来的拥堵水平。" +
+      "主持人：那您认为应该怎么办？" +
+      "专家：单靠限制很难解决问题。关键在于让公共交通足够方便，" +
+      "使人们自愿选择它，而不是被迫接受。" +
+      "换句话说，与其堵住一条路，不如打开另一条。",
+  },
+  {
+    id: "zh-listen-lecture-opening",
+    language: "chinese",
+    title: "讲座开场 (Opening of a Lecture)",
+    cefrLevel: "C2",
+    estimatedSeconds: 90,
+    transcript:
+      "各位下午好，感谢主办方的邀请。" +
+      "在正式开始之前，我想先说明一点：今天要讲的内容，并没有一个干净利落的结论。" +
+      "过去二十年里，我和同事们反复研究这个题目，" +
+      "得到的结果与其说是答案，不如说是一系列越来越精确的问题。" +
+      "我之所以强调这一点，是因为学术报告往往给人一种错觉，" +
+      "仿佛研究是一条笔直向前的路；而事实上，其中大部分时间都花在了绕路和退回上。" +
+      "因此，今天的报告我会分成三个部分：" +
+      "首先介绍这一领域公认的基本事实，" +
+      "其次说明哪些看似确定的结论其实并不牢靠，" +
+      "最后谈谈在现有条件下，我们究竟还能做些什么。",
+  }
 ];

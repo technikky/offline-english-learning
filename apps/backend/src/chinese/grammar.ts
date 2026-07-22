@@ -145,4 +145,108 @@ export const CHINESE_GRAMMAR_TOPICS: GrammarTopicDetail[] = [
       "他写汉字写得很漂亮。(Tā xiě hànzì xiě de hěn piàoliang.) — He writes characters beautifully.",
     ],
   },
+  // --- Stage 35: completing B2 and building out HSK 5-6 (C1/C2) ---
+  {
+    id: "zh-bei-passive",
+    language: "chinese",
+    level: "advanced",
+    cefrLevel: "B2",
+    title: "The 被 Passive",
+    explanation:
+      "被 marks a passive: Receiver + 被 (+ Doer) + Verb + result. The doer can be omitted. " +
+      "Unlike the English passive, Chinese traditionally uses 被 for something unfortunate or " +
+      "unwanted, though modern written Chinese has relaxed this. In speech, 让 and 叫 are common " +
+      "alternatives, but they require the doer to be stated. As with 把, the verb needs something " +
+      "after it — a bare verb is wrong.",
+    examples: [
+      "我的自行车被偷了。(Wǒ de zìxíngchē bèi tōu le.) — My bicycle was stolen.",
+      "窗户被风吹开了。(Chuānghu bèi fēng chuī kāi le.) — The window was blown open by the wind.",
+      "他被老师批评了。(Tā bèi lǎoshī pīpíng le.) — He was criticised by the teacher.",
+      "蛋糕让弟弟吃完了。(Dàngāo ràng dìdi chī wán le.) — The cake was eaten by my brother. (spoken)",
+      "这个问题已经被解决了。(Zhège wèntí yǐjīng bèi jiějué le.) — This problem has been solved.",
+    ],
+  },
+  {
+    id: "zh-potential-complements",
+    language: "chinese",
+    level: "advanced",
+    cefrLevel: "C1",
+    title: "Resultative and Potential Complements",
+    explanation:
+      "A resultative complement states the outcome of an action: 看懂 (read-and-understand), " +
+      "做完 (do-and-finish). Insert 得 or 不 between verb and result to say whether the outcome " +
+      "is achievable: 看得懂 (can understand it) / 看不懂 (can't understand it). This is not the " +
+      "same as 能 — 我不能看 means you are not permitted or not free to, while 我看不懂 means you " +
+      "lack the ability to understand. Getting this distinction right is a clear marker of " +
+      "advanced control.",
+    examples: [
+      "这本书我看得懂。(Zhè běn shū wǒ kàn de dǒng.) — I can understand this book.",
+      "他说得太快，我听不懂。(Tā shuō de tài kuài, wǒ tīng bu dǒng.) — He speaks too fast; I can't follow.",
+      "今天的作业我做得完。(Jīntiān de zuòyè wǒ zuò de wán.) — I can finish today's homework.",
+      "东西太多，我拿不了。(Dōngxi tài duō, wǒ ná bu liǎo.) — There's too much; I can't carry it.",
+      "这个字我想不起来。(Zhège zì wǒ xiǎng bu qǐlái.) — I can't recall this character.",
+    ],
+  },
+  {
+    id: "zh-formal-connectives",
+    language: "chinese",
+    level: "advanced",
+    cefrLevel: "C1",
+    title: "Formal Connectives (书面语)",
+    explanation:
+      "Written and academic Chinese uses a different set of connectives from speech. 由于 replaces " +
+      "因为, 然而 replaces 但是, 因此/从而 replace 所以, and 总而言之 closes an argument. Many work " +
+      "in pairs: 不仅…而且…, 既…又…, 无论…都…. Using these correctly is what makes an essay read as " +
+      "written Chinese rather than transcribed speech.",
+    examples: [
+      "由于时间有限，我们只讨论第一个问题。(Yóuyú shíjiān yǒuxiàn, ...) — As time is limited, we will discuss only the first issue.",
+      "然而，事实并非如此。(Rán'ér, shìshí bìngfēi rúcǐ.) — However, the facts are not so.",
+      "该政策不仅降低了成本，而且提高了效率。(Gāi zhèngcè bùjǐn ...) — The policy not only cut costs but raised efficiency.",
+      "从而使问题得到了解决。(Cóng'ér shǐ wèntí dédào le jiějué.) — Thereby allowing the problem to be resolved.",
+      "总而言之，这项措施利大于弊。(Zǒng'éryánzhī, ...) — In short, this measure does more good than harm.",
+    ],
+  },
+  {
+    id: "zh-chengyu",
+    language: "chinese",
+    level: "advanced",
+    cefrLevel: "C2",
+    title: "成语: Four-Character Idioms",
+    explanation:
+      "成语 are fixed four-character expressions, usually drawn from classical texts, that compress " +
+      "a whole idea into four syllables. They function as single words — normally as a predicate or " +
+      "modifier — and cannot be altered or expanded. Used well, one 成语 replaces a clause and marks " +
+      "genuinely native-level writing; used carelessly or too densely, it reads as showing off. The " +
+      "rule of thumb is at most one or two in a paragraph, and only where you are certain of the " +
+      "register.",
+    examples: [
+      "它的重要性不言而喻。(Bùyán'éryù.) — Its importance goes without saying.",
+      "归根结底，这是教育问题。(Guīgēn-jiédǐ.) — In the final analysis, this is a question of education.",
+      "他在公司里举足轻重。(Jǔzú-qīngzhòng.) — He carries decisive weight in the company.",
+      "环境对人有潜移默化的影响。(Qiányí-mòhuà.) — The environment shapes people imperceptibly.",
+      "这两种说法大同小异。(Dàtóng-xiǎoyì.) — These two accounts are broadly alike.",
+    ],
+  },
+  {
+    id: "zh-literary-register",
+    language: "chinese",
+    level: "advanced",
+    cefrLevel: "C2",
+    title: "书面语 and 口语: Controlling Register",
+    explanation:
+      "Chinese separates spoken and written registers more sharply than English does, and mixing " +
+      "them is the most common thing that marks otherwise-fluent writing as non-native. Written " +
+      "Chinese prefers 之 over 的 in set phrases, 者 over 的人, 若 over 如果, 已 over 已经, 均 over " +
+      "都, and 与 over 和. Conversely, particles like 吧, 呢 and 啊 belong to speech and should not " +
+      "appear in a formal essay. The skill is not knowing the fancier word, but choosing the " +
+      "register consistently throughout a text.",
+    examples: [
+      "三分之二的学生同意。(Sān fēn zhī èr...) — Two thirds of students agree. (之 in a set structure)",
+      "参与者均须提前报名。(Cānyùzhě jūn xū...) — All participants must register in advance. (者/均, formal)",
+      "若有疑问，请与我们联系。(Ruò yǒu yíwèn, qǐng yǔ wǒmen liánxì.) — If you have questions, contact us.",
+      "此事已引起广泛关注。(Cǐ shì yǐ yǐnqǐ guǎngfàn guānzhù.) — This matter has attracted wide attention.",
+      "口语：这个问题很难吧？→ 书面语：该问题颇具难度。(spoken vs written phrasing of the same idea)",
+    ],
+  },
+
 ];

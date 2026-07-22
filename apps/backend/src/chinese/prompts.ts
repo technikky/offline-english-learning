@@ -116,4 +116,61 @@ export const CHINESE_WRITING_PROMPTS: WritingPromptDetail[] = [
       "最后用「总之」做一个简短的结论。(Conclude briefly with 总之.)",
     ],
   },
+  // Stage 35: HSK 5-6 writing tasks. Both are argumentative rather than
+  // descriptive, and their grammar focus deliberately reuses the new C1/C2
+  // grammar points (formal connectives, chengyu, register control).
+  {
+    id: "zh-write-technology-argument",
+    language: "chinese",
+    title: "科技与生活 (Technology and Life)",
+    cefrLevel: "C1",
+    wordCountTarget: 350,
+    prompt:
+      "有人认为科技让生活更方便，也有人认为科技让人更焦虑。你同意哪一种看法？" +
+      "请写一篇议论文，说明你的观点，并用具体例子支持。 " +
+      "(Some think technology makes life more convenient; others think it makes people more " +
+      "anxious. Which view do you agree with? Write an argumentative essay with concrete examples.)",
+    targetVocabulary: [
+      "趋势 (qūshì) - trend",
+      "依赖 (yīlài) - to rely on",
+      "效率 (xiàolǜ) - efficiency",
+      "忽视 (hūshì) - to overlook",
+      "衡量 (héngliáng) - to weigh up",
+      "由于...因此... (yóuyú...yīncǐ...) - because..., therefore...",
+    ],
+    grammarFocus:
+      "Formal written connectives and potential complements",
+    hints: [
+      "State your position clearly in the opening paragraph, without hedging.",
+      "Concede what the opposing view gets right before rebutting it.",
+      "Use written connectives, not the spoken ranhou / haiyou of conversation.",
+    ],
+  },
+  {
+    id: "zh-write-critical-commentary",
+    language: "chinese",
+    title: "评论文章 (A Critical Commentary)",
+    cefrLevel: "C2",
+    wordCountTarget: 450,
+    prompt:
+      "选择一个你熟悉的社会现象（例如网络流行语、短视频、考试制度），" +
+      "写一篇评论：客观说明现象，分析其成因，指出利弊，并提出自己的判断。 " +
+      "(Choose a social phenomenon you know well and write a commentary: describe it objectively, " +
+      "analyse its causes, weigh pros and cons, and give your own judgement.)",
+    targetVocabulary: [
+      "现象 (xiànxiàng) - phenomenon",
+      "本质 (běnzhì) - essence",
+      "制约 (zhìyuē) - to constrain",
+      "权衡 (quánhéng) - to weigh up",
+      "归根结底 (guīgēn-jiédǐ) - in the final analysis",
+      "不言而喻 (bùyán-éryù) - it goes without saying",
+    ],
+    grammarFocus:
+      "Chengyu used sparingly, formal register control, and bei passives for objectivity",
+    hints: [
+      "Describe the phenomenon objectively first; save your judgement for later.",
+      "At most one or two chengyu per paragraph - a misused idiom is worse than none.",
+      "Keep one register throughout; no spoken particles such as ba or ne.",
+    ],
+  }
 ];
